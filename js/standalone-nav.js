@@ -227,7 +227,7 @@ class StandaloneNavigation {
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
                             </button>
                             <div class="subnav">
-                                <a href="${adminPath}../team/" class="subnav-link">
+                                <a href="${adminPath}../projects/" class="subnav-link">
                                     <i class="subnav-icon" data-feather="users"></i>
                                     <span>Meetup Integration</span>
                                 </a>
