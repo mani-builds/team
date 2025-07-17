@@ -60,6 +60,10 @@
                             <span>Gemini CLI</span>
                         </label>
                     </div>
+                    <div id="claude-install-text" style="display: none; margin-top: 12px; font-size: 14px; color: var(--text-secondary);">
+                        In the <span id="repo-name-install">team</span> folder, install <a href="https://nodejs.org/en/download" target="_blank" style="color: var(--accent-blue); text-decoration: none;">NodeJS 18+</a>, then install Claude Code CLI:
+                        <pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; margin: 8px 0 0 0; display: inline-block;"><code>npm install -g @anthropic-ai/claude-code</code></pre>
+                    </div>
                 </div>
             </div>
             <div id="cli-commands" style="display: none; margin-top: 16px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
@@ -1040,6 +1044,8 @@ Ready: AI features are available`;
             const claudeCodeCommands = document.getElementById('claude-code-commands');
             const geminiCommands = document.getElementById('gemini-commands');
             const repoNameSpan = document.getElementById('repo-name');
+            const repoNameInstall = document.getElementById('repo-name-install');
+            const claudeInstallText = document.getElementById('claude-install-text');
             
             const userAgent = navigator.userAgent;
             const platform = navigator.platform;
@@ -1058,6 +1064,7 @@ Ready: AI features are available`;
             
             // Update the repo name in the instructions
             repoNameSpan.textContent = repoName;
+            repoNameInstall.textContent = repoName;
             
             let detectedOS = '';
             let osDetails = '';
@@ -1177,6 +1184,13 @@ Ready: AI features are available`;
                 const selectedOS = osSelect.value;
                 const claudeCodeChecked = claudeCodeCli.checked;
                 const geminiChecked = geminiCli.checked;
+                
+                // Show/hide Claude install text based on checkbox state
+                if (claudeCodeChecked) {
+                    claudeInstallText.style.display = 'none';
+                } else {
+                    claudeInstallText.style.display = 'block';
+                }
                 
                 // Show/hide the commands container
                 if (claudeCodeChecked || geminiChecked) {
