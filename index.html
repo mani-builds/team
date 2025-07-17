@@ -875,10 +875,6 @@
                                 <i class="subnav-icon" data-feather="book"></i>
                                 <span>Getting Started</span>
                             </a>
-                            <a href="#dashboard" class="subnav-link" data-tab="dashboard">
-                                <i class="subnav-icon" data-feather="bar-chart-2"></i>
-                                <span>Dashboard</span>
-                            </a>
                         </div>
                     </div>
                 </div>
@@ -895,13 +891,23 @@
                                 <i class="subnav-icon" data-feather="target"></i>
                                 <span>Opportunities</span>
                             </a>
+                            <a href="/projects/" class="subnav-link">
+                                <i class="subnav-icon" data-feather="calendar"></i>
+                                <span>Active Projects</span>
+                            </a>
+                            <!--
+                            <a href="#opportunities" class="subnav-link" data-tab="opportunities">
+                                <i class="subnav-icon" data-feather="target"></i>
+                                <span>Opportunities</span>
+                            </a>
                             <a href="#assigned-tasks" class="subnav-link" data-tab="assigned-tasks">
                                 <i class="subnav-icon" data-feather="check-square"></i>
                                 <span>Assigned Tasks</span>
                             </a>
-                            <a href="#timelines" class="subnav-link" data-tab="timelines">
+                            -->
+                            <a href="/data-commons/docs/data/" class="subnav-link">
                                 <i class="subnav-icon" data-feather="calendar"></i>
-                                <span>Timelines</span>
+                                <span>UN Timelines</span>
                             </a>
                         </div>
                     </div>
@@ -915,14 +921,20 @@
                             <i class="nav-arrow" data-feather="chevron-right"></i>
                         </button>
                         <div class="subnav">
+                            <a href="projects/#list=modelteam" class="subnav-link" data-tab="people" title="people">
+                                <i class="subnav-icon" data-feather="users"></i>
+                                <span>Model Team</span>
+                            </a>
                             <a href="#people" class="subnav-link" data-tab="people" title="people">
                                 <i class="subnav-icon" data-feather="user"></i>
                                 <span>People</span>
                             </a>
+                            <!--
                             <a href="#teams" class="subnav-link" data-tab="teams">
                                 <i class="subnav-icon" data-feather="users"></i>
                                 <span>Teams</span>
                             </a>
+                            -->
                             <a href="#organizations" class="subnav-link" data-tab="organizations">
                                 <i class="subnav-icon" data-feather="grid"></i>
                                 <span>Organizations</span>
@@ -999,7 +1011,7 @@
                         </div>
 
                         <div style="float:right; margin-right:20px">
-                            <b><a href="https://bolt.new" style="color: var(--accent-blue);">Bolt AI</a> - Partner Tool Development</b><br>
+                            <b><a href="https://bolt.new" style="color: var(--accent-blue);">Bolt AI</a> - <a href="admin">Partner Tool Development</a></b><br>
                         </div>
 
                         <div class="tabs">
@@ -2625,8 +2637,8 @@
             // Handle subnav clicks
             document.querySelectorAll('.subnav-link').forEach(link => {
                 link.addEventListener('click', function(e) {
-                    // Don't prevent default for external links
-                    if (this.classList.contains('external-link')) {
+                    // Don't prevent default for external links or absolute paths
+                    if (this.classList.contains('external-link') || this.getAttribute('href').startsWith('/')) {
                         return; // Let the browser handle the navigation naturally
                     }
                     

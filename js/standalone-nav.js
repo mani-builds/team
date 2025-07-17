@@ -139,9 +139,9 @@ class StandaloneNavigation {
                                     <i class="subnav-icon" data-feather="book"></i>
                                     <span>Getting Started</span>
                                 </a>
-                                <a href="${rootPath}#home/dashboard" class="subnav-link">
+                                <a href="/projects" class="subnav-link">
                                     <i class="subnav-icon" data-feather="bar-chart-2"></i>
-                                    <span>Dashboard</span>
+                                    <span>Active Projects</span>
                                 </a>
                             </div>
                         </div>
@@ -163,9 +163,9 @@ class StandaloneNavigation {
                                     <i class="subnav-icon" data-feather="check-square"></i>
                                     <span>Assigned Tasks</span>
                                 </a>
-                                <a href="${rootPath}#projects/timelines" class="subnav-link">
+                                <a href="/data-commons/docs/data/" class="subnav-link">
                                     <i class="subnav-icon" data-feather="calendar"></i>
-                                    <span>Timelines</span>
+                                    <span>UN Timelines</span>
                                 </a>
                             </div>
                         </div>
@@ -179,6 +179,10 @@ class StandaloneNavigation {
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
                             </button>
                             <div class="subnav">
+                                <a href="${rootPath}/projects/#list=modelteam" class="subnav-link">
+                                    <i class="subnav-icon" data-feather="user"></i>
+                                    <span>Model Team</span>
+                                </a>
                                 <a href="${rootPath}#people/people" class="subnav-link">
                                     <i class="subnav-icon" data-feather="user"></i>
                                     <span>People</span>

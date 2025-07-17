@@ -30,9 +30,55 @@
                 Configure Your Server
                 <!-- Google Gemini Insights -->
             </h1>
-            <p><a href="../import-data.html">Our Data Import Page</a> let's you send a dataset to Gemini for analysis when <a href="../">running the site locally</a>. Test and validate your Google Gemini AI API key configuration. This ensures the AI integration is working properly for enhanced SuiteCRM functionality.<br><br>
+            <p><a href="../import-data.html">Our Data Import Page</a> let's you send a dataset to Claude and Gemini for analysis when <a href="../">running the site locally</a>. Test and validate your Google Gemini AI API key configuration. This ensures the AI integration is working properly for enhanced SuiteCRM functionality.<br><br>
 
             We've created a robust page for <a href="../../projects/#list=modelteam">Coding Meetup Integration</a></p>
+        </div>
+
+        <div class="card" id="os-detection-panel">
+            <h2 class="card-title">Operating System & CLI Tools</h2>
+            <div style="display: flex; gap: 32px; margin-bottom: 16px;">
+                <div>
+                    <select id="os" style="padding: 8px 12px; border: 1px solid var(--border-medium); border-radius: var(--radius-sm); font-size: 14px; min-width: 150px;">
+                        <option value="">Select OS...</option>
+                        <option value="Mac">Mac</option>
+                        <option value="PC">PC</option>
+                        <option value="Linux">Linux</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div id="os-info" style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;"></div>
+                </div>
+                <div>
+                    <span style="font-weight: 500; margin-right: 12px;">CLI Already Installed:</span>
+                    <div style="display: inline-flex; gap: 16px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" id="claude-code-cli" style="margin: 0;">
+                            <span>Claude Code CLI</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" id="gemini-cli" style="margin: 0;">
+                            <span>Gemini CLI</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div id="cli-commands" style="display: none; margin-top: 16px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+                <div id="cli-instructions" style="margin-bottom: 16px;">
+                    Launch a terminal in your "<span id="repo-name">team</span>" repo and run your Command Line Interface (CLI) in a virtual environment.
+                </div>
+                <div id="claude-code-commands" style="display: none;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Claude Code CLI Installation:</h4>
+                    <pre style="background: var(--bg-primary); padding: 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; line-height: 1.4; margin: 0; overflow-x: auto;"><code>python3 -m venv env
+source env/bin/activate
+npx @anthropic-ai/claude-code</code></pre>
+                </div>
+                <div id="gemini-commands" style="display: none;">
+                    <h4 style="margin: 16px 0 8px 0; color: var(--text-primary);">Gemini CLI Installation:</h4>
+                    <pre style="background: var(--bg-primary); padding: 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; line-height: 1.4; margin: 0; overflow-x: auto;"><code>python3 -m venv env
+source env/bin/activate
+npm install -g @google/generative-ai</code></pre>
+                </div>
+            </div>
         </div>
 
         <div class="card" id="web-server-panel">
@@ -984,10 +1030,229 @@ Ready: AI features are available`;
         // Event listeners
         testButton.addEventListener('click', testGeminiAPI);
 
+        // OS Detection and CLI functionality
+        function detectAndSetOS() {
+            const osSelect = document.getElementById('os');
+            const osInfo = document.getElementById('os-info');
+            const claudeCodeCli = document.getElementById('claude-code-cli');
+            const geminiCli = document.getElementById('gemini-cli');
+            const cliCommands = document.getElementById('cli-commands');
+            const claudeCodeCommands = document.getElementById('claude-code-commands');
+            const geminiCommands = document.getElementById('gemini-commands');
+            const repoNameSpan = document.getElementById('repo-name');
+            
+            const userAgent = navigator.userAgent;
+            const platform = navigator.platform;
+            
+            // Detect repo folder name from current URL path
+            let repoName = 'team'; // Default fallback
+            const currentPath = window.location.pathname;
+            const pathSegments = currentPath.split('/').filter(segment => segment);
+            
+            // Look for the segment before 'admin/server'
+            const adminIndex = pathSegments.findIndex(segment => segment === 'admin');
+            if (adminIndex > 0) {
+                // There's a folder before 'admin'
+                repoName = pathSegments[adminIndex - 1];
+            }
+            
+            // Update the repo name in the instructions
+            repoNameSpan.textContent = repoName;
+            
+            let detectedOS = '';
+            let osDetails = '';
+            
+            // Detect OS based on user agent and platform
+            if (userAgent.includes('Mac') || platform.includes('Mac')) {
+                detectedOS = 'Mac';
+                osDetails = `Detected: macOS (${platform})`;
+            } else if (userAgent.includes('Windows') || platform.includes('Win')) {
+                detectedOS = 'PC';
+                osDetails = `Detected: Windows (${platform})`;
+            } else if (userAgent.includes('Linux') || platform.includes('Linux')) {
+                detectedOS = 'Linux';
+                osDetails = `Detected: Linux (${platform})`;
+            } else {
+                detectedOS = 'Other';
+                osDetails = `Detected: Unknown OS (${platform})`;
+            }
+            
+            // Auto-select the detected OS
+            osSelect.value = detectedOS;
+            osInfo.textContent = osDetails;
+            
+            // Function to detect CLI installations
+            async function detectCLIInstallations() {
+                // Try to detect Claude Code CLI
+                try {
+                    // Check if we can detect Claude Code CLI presence
+                    // This is a heuristic - we'll check for common indicators
+                    const claudeCodeDetected = await checkClaudeCodeCLI();
+                    if (claudeCodeDetected) {
+                        claudeCodeCli.checked = true;
+                        localStorage.setItem('claude-code-cli-installed', 'true');
+                    }
+                } catch (e) {
+                    // Detection failed, continue
+                }
+                
+                // Try to detect Gemini CLI
+                try {
+                    // Check if we can detect Gemini CLI presence
+                    const geminiDetected = await checkGeminiCLI();
+                    if (geminiDetected) {
+                        geminiCli.checked = true;
+                        localStorage.setItem('gemini-cli-installed', 'true');
+                    }
+                } catch (e) {
+                    // Detection failed, continue
+                }
+            }
+            
+            // Helper function to check Claude Code CLI
+            async function checkClaudeCodeCLI() {
+                // Multiple heuristics to detect Claude Code CLI presence
+                const hasClaudeHistory = localStorage.getItem('claude-code-usage') === 'true';
+                const isDevelopmentEnv = window.location.hostname === 'localhost' || 
+                                       window.location.hostname === '127.0.0.1';
+                
+                // Check if we're currently in a Claude Code session (heuristic)
+                const isClaudeCodeSession = window.location.search.includes('claude') || 
+                                          document.referrer.includes('claude') ||
+                                          localStorage.getItem('claude-session') === 'true';
+                
+                // Check for development environment indicators
+                const hasDevIndicators = window.location.port === '8081' || // Rust API port
+                                        window.location.port === '8887' || // Webroot container
+                                        window.location.port === '8888';   // Direct repo serving
+                
+                // Auto-detect if we're in a development environment with Claude indicators
+                if (isDevelopmentEnv && hasDevIndicators) {
+                    // Set usage flag for future detection
+                    localStorage.setItem('claude-code-usage', 'true');
+                    return true;
+                }
+                
+                return hasClaudeHistory && isDevelopmentEnv;
+            }
+            
+            // Helper function to check Gemini CLI
+            async function checkGeminiCLI() {
+                // Check for Gemini-related indicators
+                const hasGeminiHistory = localStorage.getItem('gemini-cli-usage') === 'true';
+                const isDevelopmentEnv = window.location.hostname === 'localhost' || 
+                                       window.location.hostname === '127.0.0.1';
+                
+                // Check if Gemini API is configured (from the current page's config)
+                const hasGeminiConfig = currentConfig && currentConfig.gemini_api_key_present;
+                
+                // If Gemini API is configured, it's likely they have or need the CLI
+                if (hasGeminiConfig && isDevelopmentEnv) {
+                    localStorage.setItem('gemini-cli-usage', 'true');
+                    return true;
+                }
+                
+                return hasGeminiHistory && isDevelopmentEnv;
+            }
+            
+            // Load saved CLI selections from localStorage (fallback if detection fails)
+            const savedClaudeCode = localStorage.getItem('claude-code-cli-installed');
+            const savedGemini = localStorage.getItem('gemini-cli-installed');
+            
+            if (savedClaudeCode === 'true') {
+                claudeCodeCli.checked = true;
+            }
+            if (savedGemini === 'true') {
+                geminiCli.checked = true;
+            }
+            
+            // Attempt to detect CLI installations
+            detectCLIInstallations().then(() => {
+                // Update commands after detection
+                updateCliCommands();
+            });
+            
+            // Function to update CLI commands display
+            function updateCliCommands() {
+                const selectedOS = osSelect.value;
+                const claudeCodeChecked = claudeCodeCli.checked;
+                const geminiChecked = geminiCli.checked;
+                
+                // Show/hide the commands container
+                if (claudeCodeChecked || geminiChecked) {
+                    cliCommands.style.display = 'block';
+                } else {
+                    cliCommands.style.display = 'none';
+                    return;
+                }
+                
+                // Update Claude Code CLI commands based on OS
+                if (claudeCodeChecked) {
+                    claudeCodeCommands.style.display = 'block';
+                    const claudeCodeCommandsContent = claudeCodeCommands.querySelector('pre code');
+                    
+                    if (selectedOS === 'Mac' || selectedOS === 'Linux') {
+                        claudeCodeCommandsContent.textContent = `python3 -m venv env
+source env/bin/activate
+npx @anthropic-ai/claude-code`;
+                    } else if (selectedOS === 'PC') {
+                        claudeCodeCommandsContent.textContent = `python -m venv env
+env\\Scripts\\activate
+npx @anthropic-ai/claude-code`;
+                    } else {
+                        claudeCodeCommandsContent.textContent = `# For Unix/Linux/Mac:
+python3 -m venv env
+source env/bin/activate
+npx @anthropic-ai/claude-code
+
+# For Windows:
+python -m venv env
+env\\Scripts\\activate
+npx @anthropic-ai/claude-code`;
+                    }
+                } else {
+                    claudeCodeCommands.style.display = 'none';
+                }
+                
+                // Update Gemini CLI commands (same for all OS)
+                if (geminiChecked) {
+                    geminiCommands.style.display = 'block';
+                } else {
+                    geminiCommands.style.display = 'none';
+                }
+            }
+            
+            // Add OS select change event listener
+            osSelect.addEventListener('change', function() {
+                const selectedOS = this.value;
+                if (selectedOS) {
+                    osInfo.textContent = `Selected: ${selectedOS}`;
+                } else {
+                    osInfo.textContent = osDetails; // Show detection again if blank is selected
+                }
+                updateCliCommands();
+            });
+            
+            // Add checkbox event listeners
+            claudeCodeCli.addEventListener('change', function() {
+                localStorage.setItem('claude-code-cli-installed', this.checked);
+                updateCliCommands();
+            });
+            
+            geminiCli.addEventListener('change', function() {
+                localStorage.setItem('gemini-cli-installed', this.checked);
+                updateCliCommands();
+            });
+            
+            // Initial update of CLI commands
+            updateCliCommands();
+        }
+
         // Initialize page
         updateWebServerPanel(); // Check web server status
         updateRustApiPanel(false); // Start with inactive state
         loadConfiguration();
+        detectAndSetOS(); // Auto-detect and set OS
         
         // Load README without logging to keep the interface clean
         displayFile("README.md", "readmeDiv", "_parent", null, false);
