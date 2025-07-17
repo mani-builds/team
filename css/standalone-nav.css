@@ -265,12 +265,16 @@
 }
 
 .sidebar.collapsed .nav-arrow {
-    opacity: 1;
-    width: 16px;
+    display: none;
 }
 
 .sidebar.collapsed .nav-link {
-    margin-left: 0;
+    margin-left: 8px;
+    justify-content: center;
+}
+
+.sidebar.collapsed .nav-icon {
+    margin-right: 0;
 }
 
 .sidebar.collapsed.hovered:not(.locked) .nav-arrow {
