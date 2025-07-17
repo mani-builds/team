@@ -1,0 +1,109 @@
+[package]
+name = "MemberCommons"
+version = "0.3.0"
+edition = "2021"
+authors = ["Loren Heyns <your.email@example.com>"]
+description = "Bolt AI Integration with Common SQL Rust REST API and Azure PostgreSQL"
+license = "MIT"
+repository = "https://github.com/modelearth/team"
+keywords = ["crm", "ai", "bolt.new", "suitecrm", "postgresql"]
+categories = ["command-line-utilities", "web-programming"]
+
+[dependencies]
+# Async Runtime
+tokio = { version = "1.36", features = ["full"] }
+
+# Web Framework
+actix-web = { version = "4.5", optional = true }
+actix-cors = { version = "0.7", optional = true }
+
+# Database - PostgreSQL
+sqlx = { version = "0.7.4", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+
+# CLI
+clap = { version = "4.5", features = ["derive", "color", "suggestions"] }
+
+# Error Handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+env_logger = "0.11"
+log = "0.4"
+
+# Configuration
+dotenv = "0.15"
+url = "2.5"
+
+# UUID Generation
+uuid = { version = "1.7", features = ["v4", "serde"] }
+
+# Date/Time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Gemini AI Client (when available)
+# gemini_client_rust = "0.1"
+
+# HTTP Client for Gemini API
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+
+# Additional CLI tools
+dialoguer = "0.11"
+colored = "2.1"
+
+# Table Display
+prettytable-rs = "0.10"
+
+# Additional Configuration
+dirs = "5.0"
+
+# Excel Processing
+calamine = "0.25"
+mime_guess = "2.0"
+
+# Google APIs
+google-apis-common = "5.0.3"
+google-sheets4 = "5.0.3"
+
+[dev-dependencies]
+# Testing
+mockito = "1.4"
+tempfile = "3.10"
+criterion = "0.5"
+
+[profile.release]
+# Optimize for size
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+
+[profile.dev]
+# Faster compilation in development
+opt-level = 0
+debug = true
+
+[[bin]]
+name = "gemini_crm"
+path = "src/main.rs"
+
+[features]
+default = ["cli", "api"]
+cli = []
+api = ["actix-web", "actix-cors"]
+
+# Optional features (disabled until dependencies are added)
+# telemetry = ["opentelemetry", "opentelemetry-jaeger"]
+# metrics = ["prometheus"]
+
+[build-dependencies]
+# Add any build dependencies here if needed
+
+[workspace]
+# If you want to split into multiple crates later
+members = ["."]

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(curl:*)",
+      "Bash(rg:*)",
+      "Bash(pgrep:*)",
+      "Bash(curl:*)",
+      "Bash(rg:*)",
+      "Bash(cat:*)",
+      "Bash(lsof:*)",
+      "Bash(env)",
+      "Bash(find:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo:*)",
+      "Bash(node:*)"
+    ],
+    "deny": []
+  }
+}

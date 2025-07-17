@@ -1,0 +1,3021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coding Meetup Integration - MemberCommons</title>
+    <link rel="icon" type="image/x-icon" href="../img/logo/neighborhood/favicon.png">
+    <link rel="stylesheet" href="../css/common.css">
+    <link rel="stylesheet" href="../css/shared-styles.css">
+    <style>
+        .container {
+            max-width: 1000px;
+        }
+        
+        .readme-content {
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            background: var(--bg-tertiary);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        
+        .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .message-log {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-top: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .message-log:empty {
+            display: none;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .input-button-group {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        
+        .input-button-group .form-control {
+            flex: 1;
+        }
+        
+        @media (max-width: 500px) {
+            .input-button-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .input-button-group .btn {
+                width: 100%;
+            }
+        }
+        
+        .setup-steps {
+            margin: 20px 0;
+        }
+        
+        .step-item {
+            display: flex;
+            margin-bottom: 24px;
+            padding: 16px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-content h4 {
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-size: 16px;
+        }
+        
+        .step-content p {
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+        
+        .status-message {
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            font-size: 13px;
+            display: none;
+        }
+        
+        .status-message.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-message.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-message.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--accent-blue);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        
+        .config-form {
+            background: var(--bg-tertiary);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        
+        .config-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .form-help {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            margin-bottom: 16px;
+        }
+        
+        .participants-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .participants-table th,
+        .participants-table td {
+            padding: 12px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .participants-table th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .participants-table td {
+            color: var(--text-secondary);
+        }
+        
+        .participants-table tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+        
+        .table-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        /* 3-dot menu styles */
+        .menu-container {
+            position: relative;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        
+        .menu-button {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .menu-button:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .menu-button.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        
+        .menu-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            min-width: 180px;
+            z-index: 1000;
+            margin-top: 4px;
+            display: none;
+        }
+        
+        .menu-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .menu-item:hover {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .menu-item.active {
+            background-color: var(--accent-blue);
+            color: white;
+        }
+        
+        /* Fullscreen styles */
+        .fullscreen-mode {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            background: var(--bg-primary) !important;
+            overflow: auto !important;
+            padding: 20px !important;
+            box-sizing: border-box !important;
+        }
+        
+        .fullscreen-mode .container {
+            max-width: none !important;
+            margin: 0 !important;
+        }
+        
+        .fullscreen-mode .breadcrumb {
+            display: none !important;
+        }
+        
+        /* Condensed layout styles */
+        .condensed-mode .view-buttons {
+            display: none;
+        }
+        
+        .condensed-mode .view-buttons-condensed {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .condensed-mode .legend-controls {
+            display: none;
+        }
+        
+        .condensed-mode .legend-controls-condensed {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .view-buttons-condensed {
+            display: none;
+        }
+        
+        .legend-controls-condensed {
+            display: none;
+        }
+        
+        .condensed-icon-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-light);
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .condensed-icon-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .condensed-icon-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .config-actions {
+                flex-direction: column;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .participants-table {
+                font-size: 12px;
+            }
+            
+            .participants-table th,
+            .participants-table td {
+                padding: 8px 4px;
+            }
+            
+            .table-info {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .upload-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+        
+        .upload-group {
+            display: flex;
+            gap: 8px;
+            align-items: flex-end;
+        }
+        
+        .alternative-upload {
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .alternative-upload h4 {
+            font-size: 16px;
+        }
+        
+        /* Present Participants Control */
+        .present-control {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+        
+        .present-input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .present-input-group input {
+            flex: 1;
+        }
+        
+        #present {
+            text-align: right;
+            caret-color: var(--text-primary) !important;
+            padding-right: 18px !important; /* Extra padding to ensure cursor visibility */
+            box-sizing: border-box;
+        }
+        
+        #present:focus {
+            caret-color: var(--accent-blue) !important;
+        }
+        
+        #present-toggle {
+            white-space: nowrap;
+            min-width: 100px;
+        }
+        
+        #present-toggle.active {
+            background: var(--accent-green);
+            color: white;
+            border-color: var(--accent-green);
+        }
+        
+        /* Present participant highlighting */
+        .participant-present {
+            border: 3px solid var(--accent-green) !important;
+            box-shadow: 0 0 0 1px var(--accent-green) !important;
+        }
+        
+        .participant-present .participant-name {
+            color: var(--accent-green) !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Keep gallery names white when present border is added */
+        .participant-present .gallery-name {
+            color: white !important;
+            font-weight: 700 !important;
+        }
+        
+        /* Table row highlighting */
+        .participants-table tr.participant-present {
+            background: rgba(16, 185, 129, 0.1) !important;
+            border-left: 4px solid var(--accent-green) !important;
+        }
+        
+        .participants-table tr.participant-present td:first-child {
+            color: var(--accent-green) !important;
+            font-weight: 600 !important;
+        }
+        
+        /* View Controls */
+        .view-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .view-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .view-btn {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid var(--border-light);
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+        }
+        
+        .view-btn.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        
+        .view-btn:hover:not(.active) {
+            background: var(--border-light);
+        }
+        
+        /* Column View (Default) - Using table-list style */
+        .participants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .participant-card {
+            background: var(--bg-tertiary);
+            padding: 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+        
+        .participant-card:hover {
+            background: var(--bg-secondary);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .participant-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            font-size: 16px;
+        }
+        
+        .participant-info {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+        
+        .participant-info strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        .participant-projects {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 8px;
+            line-height: 1.4;
+            border-top: 1px solid var(--border-light);
+            padding-top: 8px;
+        }
+        
+        .participant-projects strong {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        /* Gallery View */
+        .participants-gallery {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+        }
+        
+        .gallery-card {
+            background: linear-gradient(135deg, var(--card-bg-1), var(--card-bg-2));
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            text-align: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .gallery-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .gallery-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .gallery-card:hover::before {
+            opacity: 1;
+        }
+        
+        .gallery-name {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .gallery-info {
+            font-size: 12px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        /* Team-based color variations for gallery cards */
+        .gallery-card.team-js { --card-bg-1: #667eea; --card-bg-2: #764ba2; }
+        .gallery-card.team-ml { --card-bg-1: #f093fb; --card-bg-2: #f5576c; }
+        .gallery-card.team-react { --card-bg-1: #4facfe; --card-bg-2: #00f2fe; }
+        .gallery-card.team-io { --card-bg-1: #43e97b; --card-bg-2: #38f9d7; }
+        .gallery-card.team-ai { --card-bg-1: #fa709a; --card-bg-2: #fee140; }
+        .gallery-card.team-flask { --card-bg-1: #ff9a9e; --card-bg-2: #fecfef; }
+        .gallery-card.team-suite { --card-bg-1: #a8edea; --card-bg-2: #fed6e3; }
+        .gallery-card.team-us { --card-bg-1: #ffecd2; --card-bg-2: #fcb69f; }
+        .gallery-card.team-auth { --card-bg-1: #89f7fe; --card-bg-2: #66a6ff; }
+        .gallery-card.team-discord { --card-bg-1: #c2e9fb; --card-bg-2: #a1c4fd; }
+        .gallery-card.team-default { --card-bg-1: #d299c2; --card-bg-2: #fef9d7; }
+        
+        /* Team Legend */
+        .team-legend {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+        
+        .legend-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .legend-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+        
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+        
+        .legend-item:hover {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        
+        .legend-item.active {
+            background: var(--accent-blue);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        
+        /* Legend Controls */
+        .legend-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            position: relative;
+        }
+        
+        /* Sort Dropdown */
+        .sort-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            min-width: 200px;
+            z-index: 1000;
+            margin-top: 4px;
+        }
+        
+        .sort-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .sort-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .sort-items {
+            padding: 8px 0;
+        }
+        
+        .sort-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .sort-item:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .sort-item.active {
+            background-color: var(--accent-blue);
+            color: white;
+        }
+        
+        .sort-arrow {
+            font-size: 12px;
+            font-weight: bold;
+            min-width: 16px;
+            text-align: center;
+        }
+        
+        /* Status Dropdown */
+        .status-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            min-width: 220px;
+            z-index: 1000;
+            margin-top: 4px;
+        }
+        
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-light);
+        }
+        
+        .status-header h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .status-items {
+            padding: 8px 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .status-item:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .status-checkbox {
+            margin-right: 8px;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        .status-label {
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .participants-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .participants-gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .view-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .view-buttons {
+                justify-content: center;
+            }
+            
+            .legend-items {
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .participants-gallery {
+                grid-template-columns: 1fr;
+            }
+            
+            .view-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="../admin/">← Admin Dashboard</a>
+        </div>
+
+        <div class="header">
+            <h1>
+                <div class="gemini-icon">G</div>
+                Coding Meetup Integration
+            </h1>
+            <p>Filters a Google Sheet to share member details during meetups.
+                <!--  will eventually pull a list from a Google Meetup to filter the  -->
+            </p>
+        </div>
+
+        <div class="card" id="file-selection-panel" style="display: none;">
+            <h2 class="card-title">Select a List</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                Choose a data source for the participant list.
+            </p>
+            <div class="form-group">
+                <div class="input-button-group">
+                    <select id="fileSelect" class="form-control" style="width: auto; min-width: 200px; max-width: 100%;">
+                        <option value="modelteam" data-url="https://docs.google.com/spreadsheets/d/e/2PACX-1vRh5-bIR4hC1f9H3NtDCNT19hZXnqz8WRrBwTuLGnZiA5PWhFILUv2nS2FKE2TZ4dZ-RnJkZwHx1t2Y/pub?gid=1054734503&single=true&output=csv">Model Team (Default)</option>
+                        <option value="custom">Choose File...</option>
+                    </select>
+                    <button class="btn btn-primary" id="get-participants">
+                        <span class="loading-spinner" id="participants-spinner" style="display: none;"></span>
+                        Get List
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Custom file upload (hidden by default) -->
+            <div class="form-group" id="customFileSection" style="display: none;">
+                <label class="form-label">Upload Data</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls,.csv" style="display: none;" />
+                    <div class="file-input-display" id="fileDisplay" style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px; background: var(--bg-secondary); cursor: pointer; text-align: center;">
+                        <div class="file-info">
+                            <div class="file-name">Click to upload file</div>
+                            <div class="file-details" style="color: var(--text-muted); font-size: 12px;">Supports .csv, .xls and .xlsx formats</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="participants-result"></div>
+            
+            <!-- Status Messages -->
+            <div id="statusMessages" class="message-log" style="margin-top: 16px;"></div>
+        </div>
+
+        <div class="card" id="participants-table-card" style="display: none;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+                <h2 class="card-title" id="participants-list-title" style="margin: 0;">📊 Participants List</h2>
+                <div class="menu-container">
+                    <button class="menu-button" id="menu-toggle">
+                        ⋯
+                    </button>
+                    <div class="menu-dropdown" id="menu-dropdown">
+                        <div class="menu-item" id="select-list-toggle">
+                            <span>Select List</span>
+                        </div>
+                        <div class="menu-item" id="fullscreen-toggle">
+                            <span id="fullscreen-text">View Fullscreen</span>
+                        </div>
+                        <div class="menu-item" id="condensed-toggle">
+                            <span id="condensed-text">Condense Layout</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Present Participants Control -->
+            <div class="present-control">
+                <label class="form-label">Present Participants</label>
+                <div class="present-input-group">
+                    <input type="text" id="present" class="form-control" placeholder="Enter names separated by commas (e.g., Loren, Ivy, Gary)...">
+                    <button class="btn btn-secondary" id="present-toggle">
+                        <span id="present-toggle-text">Present</span>
+                        <span id="present-count">(0)</span>
+                    </button>
+                </div>
+                <small class="form-help">Type names and press comma or enter to highlight. Click "Present" to show only marked participants.</small>
+            </div>
+            
+            <!-- View Toggle Controls -->
+            <div class="view-controls">
+                <div class="view-buttons">
+                    <button class="btn btn-secondary view-btn active" id="column-view-btn" data-view="column">
+                        Columns
+                    </button>
+                    <button class="btn btn-secondary view-btn" id="table-view-btn" data-view="table">
+                        Table
+                    </button>
+                    <button class="btn btn-secondary view-btn" id="gallery-view-btn" data-view="gallery">
+                        Gallery
+                    </button>
+                </div>
+                <div class="view-buttons-condensed">
+                    <button class="condensed-icon-btn" id="column-view-condensed" data-view="column" title="Columns">
+                        ▦
+                    </button>
+                    <button class="condensed-icon-btn" id="table-view-condensed" data-view="table" title="Table">
+                        ☰
+                    </button>
+                    <button class="condensed-icon-btn" id="gallery-view-condensed" data-view="gallery" title="Gallery">
+                        ⊞
+                    </button>
+                </div>
+                <div class="table-info">
+                    <span id="participant-count" style="margin-right:10px">0 participants</span>
+                    <button class="btn btn-secondary" id="export-csv">
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Team Legend and Sort Controls (Shared across all views) -->
+            <div class="team-legend" id="team-legend" style="display: none;">
+                <div class="legend-header">
+                    <h4>Filter by Team</h4>
+                    <div class="legend-controls">
+                        <button class="btn btn-sm" id="sort-toggle">Sort by</button>
+                        <button class="btn btn-sm" id="status-toggle">Status</button>
+                    </div>
+                    <div class="legend-controls-condensed">
+                        <button class="condensed-icon-btn" id="filters-toggle" title="Filters">
+                            ⚙
+                        </button>
+                        <div class="menu-dropdown" id="filters-dropdown" style="display: none;">
+                            <div class="menu-item" id="condensed-sort-toggle">Sort by</div>
+                            <div class="menu-item" id="condensed-status-toggle">Status</div>
+                        </div>
+                        
+                        <!-- Sort Dropdown -->
+                        <div class="sort-dropdown" id="sort-dropdown" style="display: none;">
+                            <div class="sort-header">
+                                <h4>Sort by</h4>
+                                <button class="btn btn-sm" id="close-sort">×</button>
+                            </div>
+                            <div class="sort-items" id="sort-items"></div>
+                        </div>
+                        
+                        <!-- Status Dropdown -->
+                        <div class="status-dropdown" id="status-dropdown" style="display: none;">
+                            <div class="status-header">
+                                <h4>Filter by Status</h4>
+                                <button class="btn btn-sm" id="close-status">×</button>
+                            </div>
+                            <div class="status-items" id="status-items"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="legend-items" id="legend-items"></div>
+            </div>
+            
+            <!-- Column View (Default) -->
+            <div class="view-container" id="column-view">
+                <div class="participants-grid" id="participants-column-grid"></div>
+            </div>
+            
+            <!-- Table View -->
+            <div class="view-container" id="table-view" style="display: none;">
+                <div class="table-container">
+                    <table id="participants-table" class="participants-table">
+                        <thead id="table-header"></thead>
+                        <tbody id="table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Gallery View -->
+            <div class="view-container" id="gallery-view" style="display: none;">
+                <div class="participants-gallery" id="participants-gallery-grid"></div>
+            </div>
+        </div>
+        
+
+        <div class="card">
+            <h2 class="card-title">🚀 Setup Google Project</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                Configure and create your Google Cloud project for Coding Meetup Integration.
+            </p>
+            
+            <div class="config-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Project ID</label>
+                        <input type="text" id="project-id" class="form-control" placeholder="e.g., my-meetup-project">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Google Account Email</label>
+                        <input type="email" id="user-email" class="form-control" placeholder="your.email@gmail.com">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Organization ID (Optional)</label>
+                        <input type="text" id="org-id" class="form-control" placeholder="e.g., 123456789012">
+                        <small class="form-help">Leave blank for personal projects</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Billing Account ID (Optional)</label>
+                        <input type="text" id="billing-id" class="form-control" placeholder="e.g., 01234A-567890-BCDEF1">
+                        <small class="form-help">Required for API-enabled projects</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Service Account Key (JSON)</label>
+                    <textarea id="service-key" class="form-control" rows="4" placeholder="Paste your service account JSON key here for automated project creation">
+                    </textarea>
+                    <small class="form-help">Required for creating projects via API. Should have Cloud Resource Manager Admin role.</small>
+                </div>
+                <div class="config-actions">
+                    <button class="btn btn-secondary" id="load-config" onclick="loadConfiguration()">
+                        <i data-feather="refresh-cw"></i>
+                        Load from .env
+                    </button>
+                    <button class="btn btn-primary" id="save-config" onclick="saveConfiguration()">
+                        <i data-feather="save"></i>
+                        Save to .env
+                    </button>
+                </div>
+                <div id="config-status" class="status-message"></div>
+            </div>
+            
+            <div class="setup-steps">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Create Google Cloud Project</h4>
+                        <p>Create the "[project name]" project in Google Cloud Console or via API</p>
+                        <div class="button-group">
+                            <button class="btn btn-secondary" id="create-project-manual" onclick="createGoogleProjectManual()">
+                                <i data-feather="external-link"></i>
+                                Via Google Page
+                            </button>
+                            <button class="btn btn-primary" id="create-project-api" onclick="createGoogleProjectAPI()">
+                                <i data-feather="zap"></i>
+                                Create via API
+                            </button>
+                        </div>
+                        <div id="project-status" class="status-message"></div>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Enable Required APIs</h4>
+                        <p>Enable Google Sheets API and Google Meet API for the project</p>
+                        <button class="btn btn-secondary" id="enable-apis" onclick="enableAPIs()" disabled>
+                            <i data-feather="settings"></i>
+                            Enable APIs
+                        </button>
+                        <div id="apis-status" class="status-message"></div>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Create Service Account</h4>
+                        <p>Create service account for automated access to Google services</p>
+                        <button class="btn btn-secondary" id="create-service" onclick="createServiceAccount()" disabled>
+                            <i data-feather="key"></i>
+                            Create Service Account
+                        </button>
+                        <div id="service-status" class="status-message"></div>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Download Credentials</h4>
+                        <p>Download JSON credentials file for authentication</p>
+                        <button class="btn btn-secondary" id="download-creds" onclick="downloadCredentials()" disabled>
+                            <i data-feather="download"></i>
+                            Download Credentials
+                        </button>
+                        <div id="creds-status" class="status-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">📖 Coding Meetup Integration Guide</h2>
+            <div id="readmeDiv" class="readme-content">
+                <p style="color: var(--text-secondary); font-style: italic;">
+                    Loading README.md...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/common.js"></script>
+    <script src="../js/list.js"></script>
+    <script>
+        const GEMINI_API_BASE = 'http://localhost:8081/api';
+
+        // Google Meetup Participants
+        const getParticipantsButton = document.getElementById('get-participants');
+        const participantsSpinner = document.getElementById('participants-spinner');
+        const participantsResult = document.getElementById('participants-result');
+        const fileSelect = document.getElementById('fileSelect');
+        const customFileSection = document.getElementById('customFileSection');
+        const fileInput = document.getElementById('excelFile');
+        const fileDisplay = document.getElementById('fileDisplay');
+        const statusMessages = document.getElementById('statusMessages');
+        
+        let selectedFile = null;
+        let customFiles = {};
+
+        async function getMeetupParticipants() {
+            // Get URL from selected dropdown option
+            const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+            const meetupLink = selectedOption.getAttribute('data-url') || selectedFile;
+            const isCors = selectedOption.getAttribute('data-cors') === 'true';
+            
+            if (!meetupLink) {
+                participantsResult.innerHTML = '<div class="error-message">Please select a valid data source.</div>';
+                return;
+            }
+
+            try {
+                getParticipantsButton.disabled = true;
+                participantsSpinner.style.display = 'inline-block';
+                participantsResult.innerHTML = '';
+                
+                // Hide table initially
+                document.getElementById('participants-table-card').style.display = 'none';
+
+                // Use unified data loading from js/list.js
+                console.log(`Loading data from: ${meetupLink}, CORS: ${isCors}`);
+                const loadResult = await loadUnifiedData(meetupLink, {
+                    forceCorsProxy: isCors,
+                    API_BASE: GEMINI_API_BASE
+                });
+                
+                if (!loadResult.data || loadResult.data.length === 0) {
+                    throw new Error(`No data found in the source\n\nPath attempted: ${meetupLink}`);
+                }
+                
+                // Filter out any null/undefined rows
+                const validData = loadResult.data.filter(row => row && typeof row === 'object');
+                
+                if (validData.length === 0) {
+                    throw new Error(`No valid data found in the source\n\nPath attempted: ${meetupLink}`);
+                }
+                
+                displayParticipantsTable(validData);
+                
+                participantsResult.innerHTML = `<div class="success-message">Successfully loaded ${validData.length} records from ${loadResult.format.toUpperCase()} source!</div>`;
+
+            } catch (error) {
+                console.error('Full error details:', error);
+                participantsResult.innerHTML = `<div class="error-message"><h4>Error Loading Data</h4><p>${error.message}</p></div>`;
+                document.getElementById('participants-table-card').style.display = 'none';
+                
+                // Always show upload fallback when automatic fetch fails
+                console.log('Showing upload fallback due to error:', error.message);
+                document.getElementById('upload-fallback').style.display = 'block';
+            } finally {
+                getParticipantsButton.disabled = false;
+                participantsSpinner.style.display = 'none';
+            }
+        }
+
+        // Note: parseCSV function is now available from js/list.js
+        
+        // Current view mode and filtering
+        let currentView = localStorage.getItem('participantsViewMode') || 'column';
+        let currentTeamFilter = localStorage.getItem('participantsTeamFilter') || null;
+        
+        // File selection state
+        const STORAGE_KEY = 'listObject';
+        let allParticipantsData = [];
+        let presentParticipants = new Set();
+        
+        // Layout state
+        let isFullscreen = JSON.parse(localStorage.getItem('isFullscreen') || 'false');
+        let isCondensed = JSON.parse(localStorage.getItem('isCondensed') || 'false');
+        
+        // Sort functionality
+        let currentSortColumn = localStorage.getItem('participantsSortColumn') || 'Rows';
+        let currentSortOrder = localStorage.getItem('participantsSortOrder') || 'asc';
+        let originalDataOrder = [];
+        
+        // Status filtering
+        let selectedStatuses = new Set(JSON.parse(localStorage.getItem('participantsStatusFilter') || '["All"]'));
+        let availableStatuses = [];
+        
+        // Present participants toggle state
+        let showOnlyPresent = JSON.parse(localStorage.getItem('showOnlyPresent') || 'false');
+        
+        // Team color mapping
+        const teamColors = {
+            'js': { class: 'team-js', color: '#667eea', name: 'JS' },
+            'ml': { class: 'team-ml', color: '#f093fb', name: 'ML' },
+            'react': { class: 'team-react', color: '#4facfe', name: 'React' },
+            'io': { class: 'team-io', color: '#43e97b', name: 'IO' },
+            'ai': { class: 'team-ai', color: '#fa709a', name: 'AI' },
+            'flask': { class: 'team-flask', color: '#ff9a9e', name: 'Flask' },
+            'suite': { class: 'team-suite', color: '#a8edea', name: 'Suite' },
+            'us': { class: 'team-us', color: '#ffecd2', name: 'US' },
+            'auth': { class: 'team-auth', color: '#89f7fe', name: 'Auth' },
+            'discord': { class: 'team-discord', color: '#c2e9fb', name: 'Discord' },
+            'default': { class: 'team-default', color: '#d299c2', name: 'Other' }
+        };
+        
+        // Display participants in all views
+        function displayParticipantsTable(data) {
+            if (!data || data.length === 0) return;
+            
+            const tableCard = document.getElementById('participants-table-card');
+            const participantCount = document.getElementById('participant-count');
+            
+            // Update participant count
+            participantCount.textContent = `${data.length} participant${data.length !== 1 ? 's' : ''}`;
+            
+            // Store data globally
+            window.participantsData = data;
+            allParticipantsData = data;
+            originalDataOrder = [...data]; // Store original order
+            
+            // Load present participants from storage and apply highlighting
+            loadPresentParticipants();
+            updatePresentHighlighting();
+            
+            // Render all views
+            renderColumnView(data);
+            renderTableView(data);
+            renderGalleryView(data);
+            
+            // Apply saved sort preferences
+            if (currentSortColumn) {
+                applySortToData();
+            }
+            
+            // Update status button text
+            updateStatusButtonText();
+            
+            // Restore present toggle UI state
+            updatePresentToggleUI();
+            
+            // Apply all saved filters (team + status + present)
+            setTimeout(() => {
+                applyAllFilters();
+            }, 100);
+            
+            // Show the card and initialize view
+            tableCard.style.display = 'block';
+            switchView(currentView);
+        }
+        
+        // Render column view (default) - Using table-list style
+        function renderColumnView(data) {
+            const container = document.getElementById('participants-column-grid');
+            container.innerHTML = '';
+            
+            // Check if data is valid
+            if (!data || data.length === 0) {
+                console.error('No data provided to renderColumnView');
+                return;
+            }
+            
+            data.forEach(participant => {
+                if (!participant) return; // Skip null/undefined participants
+                const card = document.createElement('div');
+                card.className = 'participant-card';
+                card.dataset.participantName = participant.Name || 'Unknown';
+                
+                const name = participant.Name || 'Unknown';
+                const team = participant.Team || 'Not specified';
+                const projects = participant.Projects || 'No projects listed';
+                const status = participant.Status || 'Unknown';
+                const location = participant.Location || 'Location not specified';
+                
+                card.innerHTML = `
+                    <div class="participant-name">${name}</div>
+                    <div class="participant-info"><strong>Team:</strong> ${team}</div>
+                    <div class="participant-info"><strong>Status:</strong> <span class="participant-status ${status.toLowerCase()}">${status}</span></div>
+                    <div class="participant-info"><strong>Location:</strong> ${location}</div>
+                    <div class="participant-projects"><strong>Projects:</strong> ${projects}</div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        // Render table view
+        function renderTableView(data) {
+            const tableHeader = document.getElementById('table-header');
+            const tableBody = document.getElementById('table-body');
+            
+            // Check if data is valid
+            if (!data || data.length === 0) {
+                console.error('No data provided to renderTableView');
+                return;
+            }
+            
+            // Get headers from first row
+            const headers = Object.keys(data[0] || {});
+            
+            // Create table header
+            tableHeader.innerHTML = '';
+            const headerRow = document.createElement('tr');
+            headers.forEach(header => {
+                const th = document.createElement('th');
+                th.style.cursor = 'pointer';
+                th.style.userSelect = 'none';
+                th.style.position = 'relative';
+                
+                // Add click handler for sorting
+                th.addEventListener('click', () => sortBy(header));
+                
+                // Add header text and sort arrow
+                const headerText = document.createElement('span');
+                headerText.textContent = header;
+                th.appendChild(headerText);
+                
+                // Add sort arrow if this is the current sort column
+                if (currentSortColumn === header) {
+                    const arrow = document.createElement('span');
+                    arrow.innerHTML = currentSortOrder === 'asc' ? ' ↑' : ' ↓';
+                    arrow.style.marginLeft = '4px';
+                    arrow.style.fontSize = '12px';
+                    th.appendChild(arrow);
+                }
+                
+                headerRow.appendChild(th);
+            });
+            tableHeader.appendChild(headerRow);
+            
+            // Create table body
+            tableBody.innerHTML = '';
+            data.forEach(row => {
+                if (!row) return; // Skip null/undefined rows
+                const tr = document.createElement('tr');
+                tr.dataset.participantName = row.Name || 'Unknown';
+                headers.forEach(header => {
+                    const td = document.createElement('td');
+                    td.textContent = row[header] || '';
+                    tr.appendChild(td);
+                });
+                tableBody.appendChild(tr);
+            });
+        }
+        
+        // Get team class based on team value (checks all teams in comma-separated list)
+        function getTeamClass(teamString) {
+            if (!teamString) return 'team-default';
+            
+            // Split by comma and check each team
+            const teams = teamString.split(',').map(team => team.trim().toLowerCase());
+            
+            // Check for team keywords in order of priority
+            for (const team of teams) {
+                if (team.includes('js')) return 'team-js';
+                if (team.includes('ml')) return 'team-ml';
+                if (team.includes('react')) return 'team-react';
+                if (team.includes('io')) return 'team-io';
+                if (team.includes('ai')) return 'team-ai';
+                if (team.includes('flask')) return 'team-flask';
+                if (team.includes('suite')) return 'team-suite';
+                if (team.includes('us')) return 'team-us';
+                if (team.includes('auth')) return 'team-auth';
+                if (team.includes('discord')) return 'team-discord';
+            }
+            
+            return 'team-default';
+        }
+        
+        // Get all matching team classes for a participant (for filtering)
+        function getAllTeamClasses(teamString) {
+            if (!teamString) return ['team-default'];
+            
+            const matchingTeams = [];
+            const teams = teamString.split(',').map(team => team.trim().toLowerCase());
+            
+            // Check each team and collect all matches
+            for (const team of teams) {
+                if (team.includes('js')) matchingTeams.push('team-js');
+                else if (team.includes('ml')) matchingTeams.push('team-ml');
+                else if (team.includes('react')) matchingTeams.push('team-react');
+                else if (team.includes('io')) matchingTeams.push('team-io');
+                else if (team.includes('ai')) matchingTeams.push('team-ai');
+                else if (team.includes('flask')) matchingTeams.push('team-flask');
+                else if (team.includes('suite')) matchingTeams.push('team-suite');
+                else if (team.includes('us')) matchingTeams.push('team-us');
+                else if (team.includes('auth')) matchingTeams.push('team-auth');
+                else if (team.includes('discord')) matchingTeams.push('team-discord');
+            }
+            
+            return matchingTeams.length > 0 ? matchingTeams : ['team-default'];
+        }
+        
+        // Generate team legend
+        function generateTeamLegend(data) {
+            const teamLegend = document.getElementById('team-legend');
+            const legendItems = document.getElementById('legend-items');
+            
+            // Check if data is valid
+            if (!data || data.length === 0) {
+                teamLegend.style.display = 'none';
+                return;
+            }
+            
+            // Get unique teams from data (collect all team classes for each participant)
+            const teams = new Set();
+            data.forEach(participant => {
+                if (!participant) return; // Skip null/undefined participants
+                const teamClasses = getAllTeamClasses(participant.Team);
+                teamClasses.forEach(teamClass => teams.add(teamClass));
+            });
+            
+            // Create legend items
+            legendItems.innerHTML = '';
+            
+            // Add "Show All" button as first item
+            const showAllItem = document.createElement('div');
+            showAllItem.className = 'legend-item';
+            showAllItem.id = 'clear-team-filter';
+            showAllItem.innerHTML = `
+                <div class="legend-color" style="background: #ddd;"></div>
+                <span>Show All</span>
+            `;
+            showAllItem.addEventListener('click', clearTeamFilter);
+            legendItems.appendChild(showAllItem);
+            
+            // Add team filter buttons
+            teams.forEach(teamClass => {
+                const teamInfo = Object.values(teamColors).find(t => t.class === teamClass) || teamColors.default;
+                
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.dataset.team = teamClass;
+                legendItem.innerHTML = `
+                    <div class="legend-color" style="background: ${teamInfo.color};"></div>
+                    <span>${teamInfo.name}</span>
+                `;
+                
+                legendItem.addEventListener('click', () => filterByTeam(teamClass));
+                legendItems.appendChild(legendItem);
+            });
+            
+            teamLegend.style.display = teams.size > 1 ? 'block' : 'none';
+        }
+        
+        // Filter by team
+        function filterByTeam(teamClass) {
+            // If clicking on the already selected team, clear the filter
+            if (currentTeamFilter === teamClass) {
+                clearTeamFilter();
+                return;
+            }
+            
+            currentTeamFilter = teamClass;
+            
+            // Save team filter preference to localStorage
+            localStorage.setItem('participantsTeamFilter', teamClass);
+            
+            // Update legend active state
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.classList.toggle('active', item.dataset.team === teamClass);
+            });
+            
+            // Remove active state from "Show All" button
+            const showAllButton = document.getElementById('clear-team-filter');
+            if (showAllButton) {
+                showAllButton.classList.remove('active');
+            }
+            
+            // Apply all filters (team + status)
+            applyAllFilters();
+        }
+        
+        // Clear team filter
+        function clearTeamFilter() {
+            currentTeamFilter = null;
+            
+            // Remove team filter preference from localStorage
+            localStorage.removeItem('participantsTeamFilter');
+            
+            // Update legend active state
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Make "Show All" button active
+            const showAllButton = document.getElementById('clear-team-filter');
+            if (showAllButton) {
+                showAllButton.classList.add('active');
+            }
+            
+            // Apply all filters (status only now)
+            applyAllFilters();
+        }
+        
+        // Render gallery view
+        function renderGalleryView(data) {
+            generateTeamLegend(data);
+            renderGalleryCards(data);
+        }
+        
+        // Render gallery cards
+        function renderGalleryCards(data) {
+            const container = document.getElementById('participants-gallery-grid');
+            container.innerHTML = '';
+            
+            // Check if data is valid
+            if (!data || data.length === 0) {
+                console.error('No data provided to renderGalleryCards');
+                return;
+            }
+            
+            data.forEach(participant => {
+                if (!participant) return; // Skip null/undefined participants
+                const card = document.createElement('div');
+                const teamClass = getTeamClass(participant.Team);
+                card.className = `gallery-card ${teamClass}`;
+                card.dataset.participantName = participant.Name || 'Unknown';
+                
+                const name = participant.Name || 'Unknown';
+                const location = participant.Location || 'Location TBD';
+                const status = participant.Status || 'Status TBD';
+                
+                card.innerHTML = `
+                    <div class="gallery-name">${name}</div>
+                    <div class="gallery-info">${location}</div>
+                    <div class="gallery-info">${status}</div>
+                `;
+                
+                container.appendChild(card);
+            });
+        }
+        
+        // Sort functionality
+        function generateSortDropdown() {
+            const sortItems = document.getElementById('sort-items');
+            if (!allParticipantsData.length) return;
+            
+            // Get available columns from data
+            const columns = Object.keys(allParticipantsData[0]);
+            
+            // Add "Rows" as first option (original order)
+            const sortOptions = ['Rows', ...columns];
+            
+            sortItems.innerHTML = '';
+            sortOptions.forEach(column => {
+                const sortItem = document.createElement('div');
+                sortItem.className = 'sort-item';
+                sortItem.dataset.column = column;
+                
+                const isActive = currentSortColumn === column;
+                if (isActive) {
+                    sortItem.classList.add('active');
+                }
+                
+                const arrow = currentSortOrder === 'asc' ? '↑' : '↓';
+                sortItem.innerHTML = `
+                    <span>${column}</span>
+                    <span class="sort-arrow">${isActive ? arrow : ''}</span>
+                `;
+                
+                sortItem.addEventListener('click', () => sortBy(column));
+                sortItems.appendChild(sortItem);
+            });
+        }
+        
+        function sortBy(column) {
+            // If clicking the same column, toggle order
+            if (currentSortColumn === column) {
+                currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortOrder = 'asc';
+            }
+            
+            // Save sort preferences
+            localStorage.setItem('participantsSortColumn', currentSortColumn);
+            localStorage.setItem('participantsSortOrder', currentSortOrder);
+            
+            // Apply sort to data
+            applySortToData();
+            
+            // Update dropdown display
+            generateSortDropdown();
+            
+            // Hide dropdown
+            document.getElementById('sort-dropdown').style.display = 'none';
+        }
+        
+        function applySortToData() {
+            let sortedData = [...allParticipantsData];
+            
+            if (currentSortColumn === 'Rows') {
+                // Sort by original row order
+                if (currentSortOrder === 'desc') {
+                    sortedData.reverse();
+                } else {
+                    sortedData = [...originalDataOrder];
+                }
+            } else {
+                // Sort by column data
+                sortedData.sort((a, b) => {
+                    let valueA = a[currentSortColumn] || '';
+                    let valueB = b[currentSortColumn] || '';
+                    
+                    // Convert to string for comparison
+                    valueA = valueA.toString().toLowerCase();
+                    valueB = valueB.toString().toLowerCase();
+                    
+                    if (currentSortOrder === 'asc') {
+                        return valueA.localeCompare(valueB);
+                    } else {
+                        return valueB.localeCompare(valueA);
+                    }
+                });
+            }
+            
+            // Update global data
+            allParticipantsData = sortedData;
+            
+            // Re-render all views with current filters applied
+            applyAllFilters();
+        }
+        
+        function toggleSortDropdown() {
+            const dropdown = document.getElementById('sort-dropdown');
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (isVisible) {
+                dropdown.style.display = 'none';
+            } else {
+                generateSortDropdown();
+                dropdown.style.display = 'block';
+            }
+        }
+        
+        // Status filtering functionality
+        function generateStatusDropdown() {
+            const statusItems = document.getElementById('status-items');
+            if (!allParticipantsData.length) return;
+            
+            // Get unique status values from data
+            const statuses = new Set();
+            allParticipantsData.forEach(participant => {
+                const status = participant.Status || 'Unknown';
+                statuses.add(status);
+            });
+            
+            availableStatuses = ['All', ...Array.from(statuses).sort()];
+            
+            statusItems.innerHTML = '';
+            availableStatuses.forEach(status => {
+                const statusItem = document.createElement('div');
+                statusItem.className = 'status-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'status-checkbox';
+                checkbox.checked = selectedStatuses.has(status);
+                checkbox.id = `status-${status}`;
+                
+                const label = document.createElement('label');
+                label.className = 'status-label';
+                label.htmlFor = `status-${status}`;
+                label.textContent = status;
+                
+                statusItem.appendChild(checkbox);
+                statusItem.appendChild(label);
+                
+                // Add click handler for the whole item
+                statusItem.addEventListener('click', (e) => {
+                    if (e.target.type !== 'checkbox') {
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    handleStatusChange(status, checkbox.checked);
+                });
+                
+                statusItems.appendChild(statusItem);
+            });
+        }
+        
+        function handleStatusChange(status, isChecked) {
+            if (status === 'All') {
+                if (isChecked) {
+                    // Check all statuses
+                    selectedStatuses.clear();
+                    selectedStatuses.add('All');
+                    // Update all checkboxes
+                    document.querySelectorAll('.status-checkbox').forEach(cb => {
+                        cb.checked = cb.id === 'status-All';
+                    });
+                }
+            } else {
+                if (isChecked) {
+                    // Uncheck "All" and add specific status
+                    selectedStatuses.delete('All');
+                    selectedStatuses.add(status);
+                    document.getElementById('status-All').checked = false;
+                } else {
+                    // Remove specific status
+                    selectedStatuses.delete(status);
+                    
+                    // If no specific statuses selected, check "All"
+                    if (selectedStatuses.size === 0) {
+                        selectedStatuses.add('All');
+                        document.getElementById('status-All').checked = true;
+                    }
+                }
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('participantsStatusFilter', JSON.stringify(Array.from(selectedStatuses)));
+            
+            // Update button text
+            updateStatusButtonText();
+            
+            // Apply filters
+            applyAllFilters();
+        }
+        
+        function updateStatusButtonText() {
+            const button = document.getElementById('status-toggle');
+            const statusArray = Array.from(selectedStatuses);
+            
+            if (statusArray.includes('All') || statusArray.length === 0) {
+                button.textContent = 'Status';
+            } else if (statusArray.length === 1) {
+                button.textContent = statusArray[0] + ' Only';
+            } else {
+                button.textContent = statusArray[0] + '...';
+            }
+        }
+        
+        function toggleStatusDropdown() {
+            const dropdown = document.getElementById('status-dropdown');
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (isVisible) {
+                dropdown.style.display = 'none';
+            } else {
+                generateStatusDropdown();
+                dropdown.style.display = 'block';
+            }
+        }
+        
+        function applyAllFilters() {
+            let filteredData = [...allParticipantsData];
+            
+            // Apply status filter
+            if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
+                filteredData = filteredData.filter(participant => {
+                    const status = participant.Status || 'Unknown';
+                    return selectedStatuses.has(status);
+                });
+            }
+            
+            // Apply team filter if active
+            if (currentTeamFilter) {
+                filteredData = filteredData.filter(participant => {
+                    const participantTeamClasses = getAllTeamClasses(participant.Team);
+                    return participantTeamClasses.includes(currentTeamFilter);
+                });
+            }
+            
+            // Apply present participants filter if active
+            if (showOnlyPresent) {
+                filteredData = filteredData.filter(participant => {
+                    const name = participant.Name || 'Unknown';
+                    return Array.from(presentParticipants).some(presentName => 
+                        presentName.toLowerCase() === name.toLowerCase()
+                    );
+                });
+            }
+            
+            // Render filtered data in all views
+            renderColumnView(filteredData);
+            renderTableView(filteredData);
+            renderGalleryCards(filteredData);
+            
+            // Update participant count
+            const participantCount = document.getElementById('participant-count');
+            let countText = `${filteredData.length} participant${filteredData.length !== 1 ? 's' : ''}`;
+            
+            // Add filter description
+            const filters = [];
+            if (showOnlyPresent) {
+                filters.push('present only');
+            }
+            if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
+                const statusList = Array.from(selectedStatuses);
+                if (statusList.length === 1) {
+                    filters.push(statusList[0]);
+                } else {
+                    filters.push(`${statusList.length} statuses`);
+                }
+            }
+            if (currentTeamFilter) {
+                const teamName = teamColors[currentTeamFilter.replace('team-', '')] ? 
+                    teamColors[currentTeamFilter.replace('team-', '')].name : 'filtered team';
+                filters.push(teamName);
+            }
+            
+            if (filters.length > 0) {
+                countText += ` (${filters.join(', ')})`;
+            }
+            
+            participantCount.textContent = countText;
+            
+            // Reapply present highlighting
+            setTimeout(() => updatePresentHighlighting(), 100);
+        }
+        
+        // Switch between views
+        function switchView(viewType) {
+            currentView = viewType;
+            
+            // Save view preference to localStorage
+            localStorage.setItem('participantsViewMode', viewType);
+            
+            // Hide all views
+            document.getElementById('column-view').style.display = 'none';
+            document.getElementById('table-view').style.display = 'none';
+            document.getElementById('gallery-view').style.display = 'none';
+            
+            // Show selected view
+            document.getElementById(viewType + '-view').style.display = 'block';
+            
+            // Update button states for expanded view
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(viewType + '-view-btn').classList.add('active');
+            
+            // Update button states for condensed view
+            updateCondensedViewButtons();
+            
+            // Apply present highlighting after view switch
+            setTimeout(() => updatePresentHighlighting(), 100);
+            
+            // If switching to gallery view and there's a saved team filter, restore it
+            if (viewType === 'gallery' && currentTeamFilter && allParticipantsData.length > 0) {
+                setTimeout(() => {
+                    filterByTeam(currentTeamFilter);
+                }, 150);
+            }
+        }
+        
+        // Present participants functionality
+        function loadPresentParticipants() {
+            const stored = localStorage.getItem('presentParticipants');
+            if (stored) {
+                // Only populate the field if it's currently empty (page load scenario)
+                const presentInput = document.getElementById('present');
+                if (!presentInput.value.trim()) {
+                    presentInput.value = stored;
+                    // Scroll to the right to show the end of the text
+                    setTimeout(() => scrollPresentInputToRight(), 100);
+                }
+                presentParticipants = new Set(stored.split(',').map(name => name.trim()).filter(name => name));
+            }
+            updatePresentCount();
+        }
+        
+        function scrollPresentInputToRight() {
+            const presentInput = document.getElementById('present');
+            presentInput.scrollLeft = presentInput.scrollWidth - presentInput.clientWidth;
+        }
+        
+        function savePresentParticipants() {
+            const presentList = Array.from(presentParticipants).join(', ');
+            localStorage.setItem('presentParticipants', presentList);
+            // Don't overwrite the input field value to preserve user's typing
+        }
+        
+        function updatePresentCount() {
+            const count = presentParticipants.size;
+            document.getElementById('present-count').textContent = `(${count})`;
+        }
+        
+        function updatePresentHighlighting() {
+            // Remove existing highlighting
+            document.querySelectorAll('.participant-present').forEach(el => {
+                el.classList.remove('participant-present');
+            });
+            
+            // Apply highlighting to present participants
+            presentParticipants.forEach(name => {
+                const elements = document.querySelectorAll(`[data-participant-name]`);
+                elements.forEach(el => {
+                    if (el.dataset.participantName.toLowerCase() === name.toLowerCase()) {
+                        el.classList.add('participant-present');
+                    }
+                });
+            });
+        }
+        
+        function processPresentInput() {
+            const input = document.getElementById('present');
+            const value = input.value;
+            
+            // Parse names from input
+            presentParticipants = new Set();
+            value.split(',').forEach(name => {
+                const trimmed = name.trim();
+                if (trimmed) {
+                    presentParticipants.add(trimmed);
+                }
+            });
+            
+            // Save to storage
+            savePresentParticipants();
+            updatePresentCount();
+            updatePresentHighlighting();
+        }
+        
+        function togglePresentFilter() {
+            showOnlyPresent = !showOnlyPresent;
+            
+            // Save state to localStorage
+            localStorage.setItem('showOnlyPresent', JSON.stringify(showOnlyPresent));
+            
+            updatePresentToggleUI();
+            
+            // Apply all filters (includes present participant filtering)
+            applyAllFilters();
+        }
+        
+        function updatePresentToggleUI() {
+            const toggle = document.getElementById('present-toggle');
+            const toggleText = document.getElementById('present-toggle-text');
+            
+            if (showOnlyPresent) {
+                toggle.classList.add('active');
+                toggleText.textContent = 'All';
+            } else {
+                toggle.classList.remove('active');
+                toggleText.textContent = 'Present';
+            }
+        }
+
+        getParticipantsButton.addEventListener('click', getMeetupParticipants);
+        
+        // Export CSV functionality
+        document.getElementById('export-csv').addEventListener('click', function() {
+            if (!window.participantsData || window.participantsData.length === 0) {
+                alert('No participant data to export');
+                return;
+            }
+            
+            // Determine which data to export based on current filter state
+            let dataToExport = window.participantsData;
+            
+            // Generate date string for filename (YYYY-MM-DD format)
+            const today = new Date();
+            const dateString = today.getFullYear() + '-' + 
+                String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(today.getDate()).padStart(2, '0');
+            
+            let filename = `meetup-participants-${dateString}.csv`;
+            
+            // If showing only present participants, export only those
+            if (showOnlyPresent) {
+                dataToExport = window.participantsData.filter(participant => {
+                    const name = participant.Name || 'Unknown';
+                    return Array.from(presentParticipants).some(presentName => 
+                        presentName.toLowerCase() === name.toLowerCase()
+                    );
+                });
+                filename = `meetup-participants-present-${dateString}.csv`;
+            }
+            
+            if (dataToExport.length === 0) {
+                alert('No participants to export');
+                return;
+            }
+            
+            const headers = Object.keys(dataToExport[0]);
+            
+            // Create CSV content
+            let csvContent = headers.join(',') + '\n';
+            dataToExport.forEach(row => {
+                const values = headers.map(header => {
+                    const value = row[header] || '';
+                    // Escape quotes and wrap in quotes if contains comma
+                    return value.includes(',') ? `"${value.replace(/"/g, '""')}"` : value;
+                });
+                csvContent += values.join(',') + '\n';
+            });
+            
+            // Download CSV
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+        
+        // Google Project Setup Functions
+        let PROJECT_ID = '';
+        let USER_EMAIL = '';
+        
+        // Load configuration from .env file
+        async function loadConfiguration() {
+            const btn = document.getElementById('load-config');
+            const status = document.getElementById('config-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Loading...';
+            
+            try {
+                const response = await fetch(`${GEMINI_API_BASE}/config/env`);
+                const data = await response.json();
+                
+                // Update form fields if values exist in .env
+                if (data.google_project_id) {
+                    document.getElementById('project-id').value = data.google_project_id;
+                    PROJECT_ID = data.google_project_id;
+                    updateProjectNameInText(data.google_project_id);
+                }
+                
+                if (data.google_user_email) {
+                    document.getElementById('user-email').value = data.google_user_email;
+                    USER_EMAIL = data.google_user_email;
+                }
+                
+                if (data.google_org_id) {
+                    document.getElementById('org-id').value = data.google_org_id;
+                }
+                
+                if (data.google_billing_id) {
+                    document.getElementById('billing-id').value = data.google_billing_id;
+                }
+                
+                if (data.google_service_key) {
+                    document.getElementById('service-key').value = data.google_service_key;
+                }
+                
+                status.className = 'status-message success';
+                status.style.display = 'block';
+                status.innerHTML = '<i data-feather="check-circle"></i> Configuration loaded from .env file';
+                
+                // Change button text to indicate reload functionality and mark as successful
+                btn.innerHTML = '<i data-feather="refresh-cw"></i> Reload from .env';
+                btn.setAttribute('data-loaded', 'true');
+                
+                // Update feather icons
+                if (window.feather) feather.replace();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                let errorMessage = 'Error loading configuration: ';
+                if (error.message === 'Failed to fetch') {
+                    errorMessage = 'Backend API not available (fetch failed). To view requested data, run locally using the commands on our Admin Page.';
+                } else {
+                    errorMessage += error.message + '. To view requested data, run locally using the commands on our Admin Page.';
+                }
+                status.innerHTML = '<span style="color: var(--accent-red);">' + errorMessage + ' <a href="/admin" style="color: var(--accent-blue); text-decoration: underline;">Link to: /admin</a></span>';
+                
+                // Reset button text on error
+                btn.innerHTML = '<i data-feather="refresh-cw"></i> Load from .env';
+                btn.removeAttribute('data-loaded');
+            } finally {
+                btn.disabled = false;
+                
+                // Only reset button text if it wasn't successfully loaded
+                if (!btn.hasAttribute('data-loaded')) {
+                    btn.innerHTML = '<i data-feather="refresh-cw"></i> Load from .env';
+                }
+                
+                if (window.feather) feather.replace();
+            }
+        }
+        
+        // Save configuration to .env file
+        async function saveConfiguration() {
+            const btn = document.getElementById('save-config');
+            const status = document.getElementById('config-status');
+            const projectId = document.getElementById('project-id').value.trim();
+            const userEmail = document.getElementById('user-email').value.trim();
+            
+            if (!projectId || !userEmail) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please fill in both Project ID and Email fields';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Saving...';
+            
+            try {
+                const response = await fetch(`${GEMINI_API_BASE}/config/save-env`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        google_project_id: projectId,
+                        google_user_email: userEmail,
+                        google_org_id: document.getElementById('org-id').value.trim() || null,
+                        google_billing_id: document.getElementById('billing-id').value.trim() || null,
+                        google_service_key: document.getElementById('service-key').value.trim() || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update global variables
+                    PROJECT_ID = projectId;
+                    USER_EMAIL = userEmail;
+                    
+                    status.className = 'status-message success';
+                    status.style.display = 'block';
+                    status.innerHTML = '<i data-feather="check-circle"></i> Configuration saved to .env file';
+                } else {
+                    throw new Error(data.error || 'Failed to save configuration');
+                }
+                
+                // Update feather icons
+                if (window.feather) feather.replace();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                let errorMessage = 'Error saving configuration: ';
+                if (error.message === 'Failed to fetch') {
+                    errorMessage = 'Backend API not available (fetch failed). To view requested data, run locally using the commands on our Admin Page.';
+                } else {
+                    errorMessage += error.message + '. To view requested data, run locally using the commands on our Admin Page.';
+                }
+                status.innerHTML = '<span style="color: var(--accent-red);">' + errorMessage + ' <a href="/admin" style="color: var(--accent-blue); text-decoration: underline;">Link to: /admin</a></span>';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="save"></i> Save to .env';
+                if (window.feather) feather.replace();
+            }
+        }
+        
+        // Update PROJECT_ID and USER_EMAIL when form fields change
+        document.getElementById('project-id').addEventListener('input', function() {
+            PROJECT_ID = this.value.trim();
+            updateProjectNameInText(PROJECT_ID);
+        });
+        
+        document.getElementById('user-email').addEventListener('input', function() {
+            USER_EMAIL = this.value.trim();
+        });
+        
+        // Function to update project name in all text content
+        function updateProjectNameInText(projectName) {
+            const displayName = projectName || '[project name]';
+            
+            // Find all elements that contain project name references
+            const elementsToUpdate = [
+                // Status messages and instructions
+                ...document.querySelectorAll('.status-message'),
+                ...document.querySelectorAll('.step-content p'),
+                ...document.querySelectorAll('.step-content h4')
+            ];
+            
+            elementsToUpdate.forEach(element => {
+                if (element.innerHTML) {
+                    // Replace various patterns of project name references
+                    element.innerHTML = element.innerHTML
+                        .replace(/\[project id\]/g, displayName);
+                }
+            });
+        }
+        
+        // Manual project creation via Google Cloud Console
+        async function createGoogleProjectManual() {
+            const btn = document.getElementById('create-project-manual');
+            const status = document.getElementById('project-status');
+            
+            if (!PROJECT_ID) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please enter a Project ID first';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Opening...';
+            
+            try {
+                // Open Google Cloud Console in new tab for manual project creation
+                const projectUrl = `https://console.cloud.google.com/projectcreate?previousPage=%2Fwelcome&project=${PROJECT_ID}`;
+                window.open(projectUrl, '_blank');
+                
+                // Show instructions
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Manual Step Required:</strong><br>
+                    1. A new tab opened to Google Cloud Console<br>
+                    2. Set project name to: <strong>${PROJECT_ID || '[project name]'}</strong><br>
+                    3. Use billing account for: <strong>${USER_EMAIL}</strong><br>
+                    4. Click "Create" button<br>
+                    5. Return here and click "Project Created" when done
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> Project Created';
+                btn.onclick = () => confirmProjectCreated();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="external-link"></i> Via Google Page';
+            }
+        }
+        
+        // API-based project creation
+        async function createGoogleProjectAPI() {
+            const btn = document.getElementById('create-project-api');
+            const status = document.getElementById('project-status');
+            const serviceKey = document.getElementById('service-key').value.trim();
+            
+            if (!PROJECT_ID) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please enter a Project ID first';
+                return;
+            }
+            
+            if (!serviceKey) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please provide a Service Account Key for API access';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Creating...';
+            
+            try {
+                const response = await fetch(`${GEMINI_API_BASE}/google/create-project`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        project_id: PROJECT_ID,
+                        user_email: USER_EMAIL,
+                        org_id: document.getElementById('org-id').value.trim() || null,
+                        billing_id: document.getElementById('billing-id').value.trim() || null,
+                        service_key: serviceKey
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'status-message success';
+                    status.style.display = 'block';
+                    status.innerHTML = `
+                        <i data-feather="check-circle"></i> <strong>Project Created Successfully!</strong><br>
+                        Project ID: <strong>${PROJECT_ID}</strong><br>
+                        ${data.message || 'Ready to proceed to next step.'}
+                    `;
+                    
+                    btn.innerHTML = '<i data-feather="check"></i> Completed';
+                    btn.disabled = true;
+                    
+                    // Enable next step
+                    document.getElementById('enable-apis').disabled = false;
+                    
+                } else {
+                    throw new Error(data.error || 'Failed to create project');
+                }
+                
+                // Update feather icons
+                if (window.feather) feather.replace();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>API Creation Failed:</strong><br>
+                    ${error.message}<br><br>
+                    <strong>Troubleshooting:</strong><br>
+                    • Ensure service account has Cloud Resource Manager Admin role<br>
+                    • Check that the JSON key is valid<br>
+                    • Verify organization/billing permissions if using those fields
+                `;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="zap"></i> Create via API';
+                if (window.feather) feather.replace();
+            }
+        }
+        
+        function confirmProjectCreated() {
+            const btnManual = document.getElementById('create-project-manual');
+            const status = document.getElementById('project-status');
+            const enableBtn = document.getElementById('enable-apis');
+            
+            status.className = 'status-message success';
+            status.innerHTML = '<i data-feather="check-circle"></i> Project created successfully!';
+            
+            btnManual.disabled = true;
+            btnManual.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Also disable API button since project is created
+            const btnAPI = document.getElementById('create-project-api');
+            btnAPI.disabled = true;
+            btnAPI.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Enable next step
+            enableBtn.disabled = false;
+        }
+        
+        async function enableAPIs() {
+            const btn = document.getElementById('enable-apis');
+            const status = document.getElementById('apis-status');
+            const serviceBtn = document.getElementById('create-service');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Enabling...';
+            
+            try {
+                // Open APIs & Services page
+                const apisUrl = `https://console.cloud.google.com/apis/dashboard?project=${PROJECT_ID}`;
+                window.open(apisUrl, '_blank');
+                
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Enable these APIs:</strong><br>
+                    1. Google Sheets API<br>
+                    2. Google Meet API<br>
+                    3. Google Calendar API (optional)<br>
+                    <br>Click "APIs Enabled" when complete.
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> APIs Enabled';
+                btn.onclick = () => confirmAPIsEnabled();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="settings"></i> Enable APIs';
+            }
+        }
+        
+        function confirmAPIsEnabled() {
+            const btn = document.getElementById('enable-apis');
+            const status = document.getElementById('apis-status');
+            const serviceBtn = document.getElementById('create-service');
+            
+            status.className = 'status-message success';
+            status.innerHTML = '<i data-feather="check-circle"></i> APIs enabled successfully!';
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Enable next step
+            serviceBtn.disabled = false;
+        }
+        
+        async function createServiceAccount() {
+            const btn = document.getElementById('create-service');
+            const status = document.getElementById('service-status');
+            const credsBtn = document.getElementById('download-creds');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Creating...';
+            
+            try {
+                // Open Service Accounts page
+                const serviceUrl = `https://console.cloud.google.com/iam-admin/serviceaccounts?project=${PROJECT_ID}`;
+                window.open(serviceUrl, '_blank');
+                
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Create Service Account:</strong><br>
+                    1. Click "+ CREATE SERVICE ACCOUNT"<br>
+                    2. Name: <strong>${PROJECT_ID || '[project name]'}-service</strong><br>
+                    3. Description: <strong>Service account for ${PROJECT_ID || '[project name]'} integration</strong><br>
+                    4. Grant "Editor" role<br>
+                    5. Click "Service Account Created" when done
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> Service Account Created';
+                btn.onclick = () => confirmServiceAccountCreated();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="key"></i> Create Service Account';
+            }
+        }
+        
+        function confirmServiceAccountCreated() {
+            const btn = document.getElementById('create-service');
+            const status = document.getElementById('service-status');
+            const credsBtn = document.getElementById('download-creds');
+            
+            status.className = 'status-message success';
+            status.innerHTML = '<i data-feather="check-circle"></i> Service account created successfully!';
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Enable next step
+            credsBtn.disabled = false;
+        }
+        
+        async function downloadCredentials() {
+            const btn = document.getElementById('download-creds');
+            const status = document.getElementById('creds-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Preparing...';
+            
+            try {
+                // Open Service Accounts page
+                const serviceUrl = `https://console.cloud.google.com/iam-admin/serviceaccounts?project=${PROJECT_ID}`;
+                window.open(serviceUrl, '_blank');
+                
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Download Credentials:</strong><br>
+                    1. Click on the service account you created<br>
+                    2. Go to "Keys" tab<br>
+                    3. Click "ADD KEY" → "Create new key"<br>
+                    4. Select "JSON" format<br>
+                    5. Save as <strong>${PROJECT_ID || '[project name]'}-credentials.json</strong><br>
+                    6. Click "Credentials Downloaded" when done
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> Credentials Downloaded';
+                btn.onclick = () => confirmCredentialsDownloaded();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="download"></i> Download Credentials';
+            }
+        }
+        
+        function confirmCredentialsDownloaded() {
+            const btn = document.getElementById('download-creds');
+            const status = document.getElementById('creds-status');
+            
+            status.className = 'status-message success';
+            status.style.display = 'block';
+            status.innerHTML = `
+                <i data-feather="check-circle"></i> <strong>Setup Complete!</strong><br>
+                Your Google project is ready. Store the credentials file securely.<br>
+                <strong>Next:</strong> Configure the credentials in your application.
+            `;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i data-feather="check"></i> Completed';
+        }
+
+        // View switching event listeners
+        document.getElementById('column-view-btn').addEventListener('click', () => switchView('column'));
+        document.getElementById('table-view-btn').addEventListener('click', () => switchView('table'));
+        document.getElementById('gallery-view-btn').addEventListener('click', () => switchView('gallery'));
+        
+        // Team filter event listener (now handled in generateTeamLegend function)
+        
+        // Sort event listeners
+        document.getElementById('sort-toggle').addEventListener('click', toggleSortDropdown);
+        document.getElementById('close-sort').addEventListener('click', () => {
+            document.getElementById('sort-dropdown').style.display = 'none';
+        });
+        
+        // Status event listeners
+        document.getElementById('status-toggle').addEventListener('click', toggleStatusDropdown);
+        document.getElementById('close-status').addEventListener('click', () => {
+            document.getElementById('status-dropdown').style.display = 'none';
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            const sortDropdown = document.getElementById('sort-dropdown');
+            const sortToggle = document.getElementById('sort-toggle');
+            const statusDropdown = document.getElementById('status-dropdown');
+            const statusToggle = document.getElementById('status-toggle');
+            
+            if (!sortDropdown.contains(e.target) && !sortToggle.contains(e.target)) {
+                sortDropdown.style.display = 'none';
+            }
+            
+            if (!statusDropdown.contains(e.target) && !statusToggle.contains(e.target)) {
+                statusDropdown.style.display = 'none';
+            }
+        });
+        
+        // Present participants event listeners
+        const presentInput = document.getElementById('present');
+        presentInput.addEventListener('input', function(e) {
+            const value = e.target.value;
+            // Process input when comma is typed, but preserve the comma
+            if (value.endsWith(',')) {
+                // Extract the part before the comma for processing
+                const beforeComma = value.substring(0, value.length - 1);
+                if (beforeComma.trim()) {
+                    // Process the names before the comma
+                    const names = beforeComma.split(',').map(name => name.trim()).filter(name => name);
+                    names.forEach(name => {
+                        if (name) presentParticipants.add(name);
+                    });
+                    
+                    // Save to storage and update highlighting
+                    savePresentParticipants();
+                    updatePresentCount();
+                    updatePresentHighlighting();
+                }
+            }
+        });
+        
+        presentInput.addEventListener('keydown', function(e) {
+            // Process input when Enter is pressed
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                processPresentInput();
+            }
+        });
+        
+        presentInput.addEventListener('blur', function() {
+            // Process input when field loses focus
+            processPresentInput();
+            // Only scroll to the right if already near the right edge
+            if (presentInput.scrollLeft >= presentInput.scrollWidth - presentInput.clientWidth - 10) {
+                setTimeout(() => scrollPresentInputToRight(), 10); // Very fast, 10th of 10th
+            }
+        });
+        
+        document.getElementById('present-toggle').addEventListener('click', togglePresentFilter);
+        
+        // File selection handling functions
+        function handleFileDropdownChange() {
+            const value = fileSelect.value;
+            
+            // Clear previous results
+            participantsResult.innerHTML = '';
+            statusMessages.innerHTML = '';
+            
+            // Update the participant list title
+            updateParticipantListTitle();
+            
+            if (value === 'custom') {
+                // Show custom file upload section
+                customFileSection.style.display = 'block';
+                selectedFile = null;
+            } else if (value.startsWith('custom_')) {
+                // This is a previously uploaded custom file
+                const fileName = value.replace('custom_', '');
+                const customFile = customFiles[fileName];
+                if (customFile) {
+                    selectedFile = customFile;
+                    customFileSection.style.display = 'none';
+                }
+            } else {
+                // Hide custom file upload and use predefined file
+                customFileSection.style.display = 'none';
+                
+                // Get the selected option to check for data attributes
+                const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+                const dataUrl = selectedOption.getAttribute('data-url');
+                
+                if (dataUrl) {
+                    selectedFile = dataUrl;
+                    console.log(`Selected option: ${selectedOption.textContent} (${value}) - URL: ${dataUrl}`);
+                    
+                    // Auto-refresh the list when selection changes
+                    getMeetupParticipants();
+                }
+            }
+            
+            // Save selection to storage (use 'list=' instead of 'feed=')
+            if (value !== 'custom') {
+                saveFileSelectionToStorage(value, STORAGE_KEY);
+                updateListHashParam(value);
+            }
+        }
+        
+        function updateParticipantListTitle() {
+            const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+            const participantListTitle = document.getElementById('participants-list-title');
+            
+            if (selectedOption && selectedOption.textContent && selectedOption.value !== 'custom') {
+                // Use the title from the selected option
+                participantListTitle.textContent = `📊 ${selectedOption.textContent}`;
+            } else {
+                // Default title
+                participantListTitle.textContent = '📊 Participants List';
+            }
+        }
+        
+        function handleCustomFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Store the file object
+            customFiles[file.name] = file;
+            selectedFile = file;
+            
+            // Add the new file to the dropdown
+            const fileName = file.name;
+            const fileValue = `custom_${fileName}`;
+            
+            // Check if this file is already in the dropdown
+            let existingOption = Array.from(fileSelect.options).find(option => option.value === fileValue);
+            if (!existingOption) {
+                // Add new option before "Choose File..."
+                const newOption = document.createElement('option');
+                newOption.value = fileValue;
+                newOption.textContent = fileName;
+                newOption.selected = true;
+                
+                // Insert before the "Choose File..." option (last option)
+                fileSelect.insertBefore(newOption, fileSelect.lastElementChild);
+            } else {
+                // Select the existing option
+                existingOption.selected = true;
+            }
+            
+            // Update display
+            const fileSize = (file.size / 1024 / 1024).toFixed(2);
+            const fileType = file.name.toLowerCase().endsWith('.csv') ? 'CSV' : 'Excel';
+            fileDisplay.innerHTML = `
+                <div class="file-info">
+                    <div class="file-name">${fileName}</div>
+                    <div class="file-details">${fileType} file, ${fileSize} MB</div>
+                </div>
+            `;
+            
+            // Hide custom file section
+            customFileSection.style.display = 'none';
+        }
+        
+        function updateListHashParam(listValue) {
+            const urlParams = new URLSearchParams(window.location.hash.substring(1));
+            if (listValue) {
+                urlParams.set('list', listValue);
+            } else {
+                urlParams.delete('list');
+            }
+            
+            const newHash = urlParams.toString();
+            window.location.hash = newHash ? `#${newHash}` : '';
+        }
+        
+        async function initializeFileSelection() {
+            // Use shared function for Google Sheet loading and initialization
+            const selectedOption = await initializeFileSelectionWithGoogleSheet(fileSelect, 'list', STORAGE_KEY);
+            selectedFile = selectedOption.getAttribute('data-url') || selectedOption.value;
+            
+            // Update the participant list title with the selected option
+            updateParticipantListTitle();
+            
+            // Add event listeners
+            fileSelect.addEventListener('change', handleFileDropdownChange);
+            fileInput.addEventListener('change', handleCustomFileSelect);
+            
+            // Make file display clickable
+            fileDisplay.addEventListener('click', () => {
+                fileInput.click();
+            });
+        }
+        
+        // Restore saved view state
+        function restoreViewState() {
+            // Restore the saved view mode (currentView is already loaded from localStorage)
+            switchView(currentView);
+        }
+        
+        // 3-dot menu functionality
+        function toggleMenu() {
+            const dropdown = document.getElementById('menu-dropdown');
+            const button = document.getElementById('menu-toggle');
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (isVisible) {
+                dropdown.style.display = 'none';
+                button.classList.remove('active');
+            } else {
+                dropdown.style.display = 'block';
+                button.classList.add('active');
+            }
+        }
+        
+        function toggleFullscreen() {
+            isFullscreen = !isFullscreen;
+            localStorage.setItem('isFullscreen', JSON.stringify(isFullscreen));
+            
+            const card = document.getElementById('participants-table-card');
+            const fullscreenText = document.getElementById('fullscreen-text');
+            
+            if (isFullscreen) {
+                card.classList.add('fullscreen-mode');
+                fullscreenText.textContent = 'Exit Fullscreen';
+                document.body.style.overflow = 'hidden';
+            } else {
+                card.classList.remove('fullscreen-mode');
+                fullscreenText.textContent = 'View Fullscreen';
+                document.body.style.overflow = 'auto';
+            }
+            
+            // Close menu
+            document.getElementById('menu-dropdown').style.display = 'none';
+            document.getElementById('menu-toggle').classList.remove('active');
+        }
+        
+        function toggleCondensed() {
+            isCondensed = !isCondensed;
+            localStorage.setItem('isCondensed', JSON.stringify(isCondensed));
+            
+            const card = document.getElementById('participants-table-card');
+            const condensedText = document.getElementById('condensed-text');
+            
+            if (isCondensed) {
+                card.classList.add('condensed-mode');
+                condensedText.textContent = 'Expand Layout';
+            } else {
+                card.classList.remove('condensed-mode');
+                condensedText.textContent = 'Condense Layout';
+            }
+            
+            // Close menu
+            document.getElementById('menu-dropdown').style.display = 'none';
+            document.getElementById('menu-toggle').classList.remove('active');
+        }
+        
+        function toggleSelectList() {
+            const panel = document.getElementById('file-selection-panel');
+            const selectListToggle = document.getElementById('select-list-toggle');
+            
+            if (!panel) {
+                console.error('file-selection-panel element not found!');
+                return;
+            }
+            
+            // Use getComputedStyle to get the actual display value
+            const computedStyle = window.getComputedStyle(panel);
+            const isVisible = computedStyle.display !== 'none';
+            
+            if (isVisible) {
+                panel.style.display = 'none';
+                selectListToggle.querySelector('span').textContent = 'Select List';
+            } else {
+                panel.style.display = 'block';
+                selectListToggle.querySelector('span').textContent = 'Hide List Select';
+            }
+            
+            // Close menu
+            document.getElementById('menu-dropdown').style.display = 'none';
+            document.getElementById('menu-toggle').classList.remove('active');
+        }
+        
+        function updateCondensedViewButtons() {
+            // Update active state for condensed view buttons
+            document.querySelectorAll('.view-buttons-condensed .condensed-icon-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeBtn = document.getElementById(currentView + '-view-condensed');
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+        }
+        
+        function toggleFiltersDropdown() {
+            const dropdown = document.getElementById('filters-dropdown');
+            const isVisible = dropdown.style.display === 'block';
+            
+            if (isVisible) {
+                dropdown.style.display = 'none';
+            } else {
+                dropdown.style.display = 'block';
+            }
+        }
+        
+        function restoreLayoutState() {
+            const card = document.getElementById('participants-table-card');
+            const fullscreenText = document.getElementById('fullscreen-text');
+            const condensedText = document.getElementById('condensed-text');
+            
+            // Restore fullscreen state
+            if (isFullscreen) {
+                card.classList.add('fullscreen-mode');
+                fullscreenText.textContent = 'Exit Fullscreen';
+                document.body.style.overflow = 'hidden';
+            } else {
+                fullscreenText.textContent = 'View Fullscreen';
+            }
+            
+            // Restore condensed state
+            if (isCondensed) {
+                card.classList.add('condensed-mode');
+                condensedText.textContent = 'Expand Layout';
+            } else {
+                condensedText.textContent = 'Condense Layout';
+            }
+        }
+        
+        // Load README documentation and configuration
+        document.addEventListener('DOMContentLoaded', async function() {
+            displayFile("README.md", "readmeDiv", "_parent");
+            loadConfiguration(); // Auto-load configuration on page load
+            
+            // Restore saved view state
+            restoreViewState();
+            restoreLayoutState();
+            
+            // Initialize condensed view buttons
+            updateCondensedViewButtons();
+            
+            // Initialize file selection
+            await initializeFileSelection();
+            
+            // Auto-load data if default option is selected
+            const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+            if (selectedOption && selectedOption.getAttribute('data-url')) {
+                getMeetupParticipants();
+            }
+            
+            // Add event listeners for 3-dot menu
+            document.getElementById('menu-toggle').addEventListener('click', toggleMenu);
+            
+            document.getElementById('select-list-toggle').addEventListener('click', toggleSelectList);
+            
+            document.getElementById('fullscreen-toggle').addEventListener('click', toggleFullscreen);
+            document.getElementById('condensed-toggle').addEventListener('click', toggleCondensed);
+            
+            // Add event listeners for condensed view controls
+            document.getElementById('filters-toggle').addEventListener('click', toggleFiltersDropdown);
+            
+            // Add event listeners for condensed view buttons
+            document.querySelectorAll('.view-buttons-condensed .condensed-icon-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const view = this.dataset.view;
+                    switchView(view);
+                });
+            });
+            
+            // Add event listeners for condensed filters dropdown
+            document.getElementById('condensed-sort-toggle').addEventListener('click', function() {
+                document.getElementById('filters-dropdown').style.display = 'none';
+                toggleSortDropdown();
+            });
+            
+            document.getElementById('condensed-status-toggle').addEventListener('click', function() {
+                document.getElementById('filters-dropdown').style.display = 'none';
+                toggleStatusDropdown();
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(e) {
+                const menuDropdown = document.getElementById('menu-dropdown');
+                const menuToggle = document.getElementById('menu-toggle');
+                const filtersDropdown = document.getElementById('filters-dropdown');
+                const filtersToggle = document.getElementById('filters-toggle');
+                
+                if (!menuDropdown.contains(e.target) && !menuToggle.contains(e.target)) {
+                    menuDropdown.style.display = 'none';
+                    menuToggle.classList.remove('active');
+                }
+                
+                if (!filtersDropdown.contains(e.target) && !filtersToggle.contains(e.target)) {
+                    filtersDropdown.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
