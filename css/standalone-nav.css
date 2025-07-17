@@ -47,7 +47,7 @@
     width: var(--sidebar-collapsed);
 }
 
-.sidebar.collapsed.hovered {
+.sidebar.collapsed.hovered:not(.locked) {
     width: var(--sidebar-width);
 }
 
@@ -87,7 +87,7 @@
 }
 
 .logo-text {
-    display: none;
+    display: block;
     font-size: 16px;
     font-weight: 200;
     color: var(--text-primary);
@@ -99,11 +99,13 @@
 .sidebar.collapsed .logo-text {
     opacity: 0;
     width: 0;
+    display: none;
 }
 
-.sidebar.collapsed.hovered .logo-text {
+.sidebar.collapsed.hovered:not(.locked) .logo-text {
     opacity: 1;
     width: auto;
+    display: block;
 }
 
 .sidebar-toggle {
@@ -147,6 +149,27 @@
     margin-top: auto;
     border-top: 1px solid var(--border-light);
     padding: 8px;
+}
+
+/* Sidebar Expander - clickable area when collapsed and locked */
+.sidebar-expander {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 20px;
+    height: 100%;
+    background: transparent;
+    cursor: pointer;
+    z-index: 1001;
+    display: none;
+}
+
+.sidebar.collapsed.locked .sidebar-expander {
+    display: block;
+}
+
+.sidebar.collapsed.locked .sidebar-expander:hover {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 /* Navigation Menu */
@@ -198,7 +221,7 @@
 .sidebar.collapsed .nav-link.active {
     background: var(--bg-tertiary);
 }
-.sidebar.collapsed.hovered .nav-link.active {
+.sidebar.collapsed.hovered:not(.locked) .nav-link.active {
     background: none;
 }
 
@@ -223,7 +246,7 @@
     display: none;
 }
 
-.sidebar.collapsed.hovered .nav-text {
+.sidebar.collapsed.hovered:not(.locked) .nav-text {
     opacity: 1;
     width: auto;
     display: block;
@@ -250,7 +273,7 @@
     margin-left: 0;
 }
 
-.sidebar.collapsed.hovered .nav-arrow {
+.sidebar.collapsed.hovered:not(.locked) .nav-arrow {
     opacity: 1;
     width: 16px;
 }
@@ -260,7 +283,7 @@
     max-height: 0;
     overflow: hidden;
     transition: var(--transition-smooth);
-    background: var(--bg-tertiary);
+    background: transparent;
 }
 
 .subnav.expanded {
@@ -278,7 +301,7 @@
 }
 
 .subnav-link:hover {
-    background: var(--bg-secondary);
+    background: var(--bg-tertiary);
     color: var(--text-primary);
 }
 
@@ -299,7 +322,7 @@
     display: none;
 }
 
-.sidebar.collapsed.hovered .subnav {
+.sidebar.collapsed.hovered:not(.locked) .subnav {
     display: block;
 }
 
@@ -327,6 +350,10 @@
     
     .main-content {
         margin-left: 0;
+    }
+    
+    .logo-text {
+        display: none;
     }
     
     .mobile-overlay {

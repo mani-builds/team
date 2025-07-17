@@ -7,6 +7,10 @@
     <title>Configure Your Server - MemberCommons</title>
     <link rel="stylesheet" href="../../css/common.css">
     <link rel="stylesheet" href="../../css/shared-styles.css">
+    
+    <!-- Standalone Navigation -->
+    <link rel="stylesheet" href="../../css/standalone-nav.css">
+    <script src="../../js/standalone-nav.js"></script>
     <style>
         .container {
             max-width: 1000px;
@@ -28,7 +32,7 @@
             </h1>
             <p><a href="../import-data.html">Our Data Import Page</a> let's you send a dataset to Gemini for analysis when <a href="../">running the site locally</a>. Test and validate your Google Gemini AI API key configuration. This ensures the AI integration is working properly for enhanced SuiteCRM functionality.<br><br>
 
-            We've created a robust page for <a href="../../team/">Coding Meetup Integration</a></p>
+            We've created a robust page for <a href="../../projects/#list=modelteam">Coding Meetup Integration</a></p>
         </div>
 
         <div class="card" id="web-server-panel">
@@ -987,6 +991,13 @@ Ready: AI features are available`;
         
         // Load README without logging to keep the interface clean
         displayFile("README.md", "readmeDiv", "_parent", null, false);
+    </script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
     </script>
 </body>
 </html>

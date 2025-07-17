@@ -53,23 +53,21 @@ MemberCommons is a JAM Stack toolset for teams implementing partner tools using 
 
 ```
 MemberCommons/
-├── index.html              # Main application file
-├── css/                    # Stylesheets
-│   ├── projects.css        # Project management styles
-│   ├── people-teams.css    # People & teams styles
-│   └── account.css         # Account & survey styles
-├── js/                     # JavaScript modules
-│   ├── projects.js         # Project management functionality
-│   └── survey.js           # Survey & skills management
-├── config/                 # Configuration files
-│   └── settings.example.js # Example configuration
-├── src/                    # Rust backend source
-│   └── main.rs            # Main server application
-├── sql/                    # Database schema
+├── index.html                 # Main application file
+├── css/                       # Stylesheets
+│   ├── projects.css           # Project management styles
+│   ├── people-teams.css       # People & teams styles
+│   └── account.css            # Account & survey styles
+├── js/                        # JavaScript modules
+│   ├── projects.js            # Project management functionality
+│   └── survey.js              # Survey & skills management
+├── config/                    # Configuration files
+│   └── settings.example.js    # Example configuration
+├── src/                       # Rust backend source
+│   └── main.rs                # Main server application
+├── sql/                       # Database schema
 │   └── suitecrm-postgres.sql
-├── team/                   # Team meetup integration
-│   └──  index.html         # Team tools interface
-└── project/               # Additional frontend assets
+└── projects/                  # Team project tools, meetup integration
     └── edit.html
 ```
 

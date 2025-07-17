@@ -196,7 +196,7 @@ My Account
 ### File Structure
 - `src/main.rs` - Single-file application containing all logic
 - `sql/suitecrm-postgres.sql` - Database schema reference  
-- `project/edit.html` - Frontend template
+- `projects/edit.html` - Frontend template
 - `.bolt/prompt` - Original project specifications
 - `Cargo.toml` - Project configuration and dependencies
 

@@ -6,6 +6,10 @@
     <link rel="icon" type="image/x-icon" href="../../img/logo/neighborhood/favicon.png">
     <title>Database Admin - MemberCommons</title>
     <link rel="stylesheet" href="../../../css/shared-styles.css">
+    
+    <!-- Standalone Navigation -->
+    <link rel="stylesheet" href="../../../css/standalone-nav.css">
+    <script src="../../../js/standalone-nav.js"></script>
     <style>
         :root {
             --bg-primary: #F9FAFB;
@@ -37,12 +41,12 @@
             background-color: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
-            padding: 20px;
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
         }
 
         .header {
@@ -236,6 +240,97 @@
             margin-top: 16px;
             white-space: pre-wrap;
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+            
+            .header {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .header p {
+                font-size: 14px;
+            }
+            
+            .card {
+                padding: 16px;
+                margin-bottom: 16px;
+            }
+            
+            .card-title {
+                font-size: 18px;
+            }
+            
+            .actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .btn {
+                padding: 10px 16px;
+                font-size: 14px;
+                justify-content: center;
+            }
+            
+            .table-grid {
+                display: block;
+            }
+            
+            .table-item {
+                margin-bottom: 12px;
+                padding: 12px;
+            }
+            
+            .log-output {
+                padding: 12px;
+                font-size: 11px;
+                max-height: 200px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+            }
+            
+            .header {
+                padding: 12px;
+            }
+            
+            .header h1 {
+                font-size: 20px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+            
+            .card-title {
+                font-size: 16px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            
+            .btn {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+            
+            .log-output {
+                padding: 8px;
+                font-size: 10px;
+                max-height: 150px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -245,7 +340,7 @@
             <h1>Database Admin Panel</h1>
             <p><strong>Azure PostgreSQL Database Connection</strong> - Test live connection and explore actual database tables.<br>
                 You can create your Azure database from our <a href="https://github.com/modelearth/team/blob/main/admin/sql/suitecrm-postgres.sql">SQL create script</a> and <a href="https://github.com/modelearth/team/blob/main/admin/sql/add_foreign_keys.sql">foreign keys script</a>.<br>
-                Here's a page where you can <a href="../../../project/edit.html">experiment with posting a row</a> in the Azure projects table.<br>
+                Here's a page where you can <a href="../../../projects/edit.html">experiment with posting a row</a> in the Azure projects table.<br>
                 <a href="../../import-data.html">Import data</a> into the projects and accounts tables.
             </p>
         </div>
@@ -321,6 +416,13 @@
     <script>
         // Load README without logging to keep the interface clean
         displayFile("README.md", "readmeDiv", "_parent", null, false);
+    </script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
     </script>
 </body>
 </html>

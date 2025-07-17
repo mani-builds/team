@@ -48,6 +48,7 @@
         .container {
             max-width: 1200px;
             margin: 20px auto;
+            padding: 0 20px;
         }
 
         .header {
@@ -241,6 +242,10 @@
         }
 
         @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+            
             .admin-grid {
                 grid-template-columns: 1fr;
             }
@@ -268,7 +273,7 @@
 
         <div class="admin-grid">
 
-            <div class="admin-card clickable-card" onclick="window.location.href='../team/'">
+            <div class="admin-card clickable-card" onclick="window.location.href='../projects/#list=modelteam'">
                 <div class="admin-card-header">
                     <div class="admin-card-header-content">
                         <div class="admin-card-icon" style="background: var(--accent-purple); color: white;">
