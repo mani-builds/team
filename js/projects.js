@@ -242,47 +242,91 @@ class ProjectsManager {
         }
     }
 
+    // Get recognized fields from project data (similar to map/index.html)
+    getRecognizedFields(project) {
+        const recognized = {};
+        
+        // Title field - use project_description as title if no name/title is found
+        if (project.name) {
+            recognized.title = project.name;
+        } else if (project.title) {
+            recognized.title = project.title;
+        } else if (project.project_description) {
+            recognized.title = project.project_description;
+        }
+        
+        // Description field - use project_positions as description if no description is found
+        if (project.description) {
+            recognized.description = project.description;
+        } else if (project.project_positions) {
+            // Trim "description: " from the front of the text
+            let positionsText = project.project_positions.toString();
+            if (positionsText.toLowerCase().startsWith('description: ')) {
+                positionsText = positionsText.substring(13); // Remove "description: " (13 characters)
+            }
+            recognized.description = positionsText;
+        }
+        
+        // Copy other common fields
+        recognized.location = project.location;
+        recognized.funding = project.funding;
+        recognized.team_size = project.team_size;
+        recognized.status = project.status;
+        recognized.priority = project.priority;
+        recognized.skills = project.skills;
+        recognized.activities = project.activities;
+        recognized.created_by = project.created_by;
+        recognized.created_date = project.created_date;
+        recognized.deadline = project.deadline;
+        recognized.id = project.id;
+        
+        return recognized;
+    }
+
     // Render individual project card
     renderProjectCard(project) {
+        // Use recognized fields for consistent display
+        const recognized = this.getRecognizedFields(project);
+        
         const hasJobOpenings = project.activities.some(activity => activity.type === 'job_opening' && activity.status === 'open');
         const openActivities = project.activities.filter(activity => activity.status === 'open');
         
         return `
-            <div class="project-card ${project.priority}" data-project-id="${project.id}">
+            <div class="project-card ${recognized.priority}" data-project-id="${recognized.id}">
                 <div class="project-header">
                     <div class="project-title-section">
-                        <h3 class="project-title">${project.name}</h3>
+                        <h3 class="project-title">${recognized.title}</h3>
                         <div class="project-meta">
                             <span class="project-location">
                                 <i data-feather="map-pin"></i>
-                                ${project.location}
+                                ${recognized.location}
                             </span>
                             <span class="project-funding">
                                 <i data-feather="dollar-sign"></i>
-                                ${project.funding}
+                                ${recognized.funding}
                             </span>
                             <span class="project-team">
                                 <i data-feather="users"></i>
-                                ${project.team_size} members
+                                ${recognized.team_size} members
                             </span>
                         </div>
                     </div>
                     
                     <div class="project-status">
-                        <span class="status-badge status-${project.status}">${project.status.replace('_', ' ')}</span>
-                        ${project.priority === 'high' ? '<span class="priority-badge">High Priority</span>' : ''}
+                        <span class="status-badge status-${recognized.status}">${recognized.status.replace('_', ' ')}</span>
+                        ${recognized.priority === 'high' ? '<span class="priority-badge">High Priority</span>' : ''}
                     </div>
                 </div>
 
                 <div class="project-description">
-                    <p>${project.description}</p>
+                    <p>${recognized.description}</p>
                 </div>
 
                 <div class="project-skills">
-                    ${project.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    ${recognized.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
                 </div>
 
-                ${project.activities.length > 0 ? `
+                ${recognized.activities.length > 0 ? `
                     <div class="project-activities">
                         <h4 class="activities-title">Open Activities</h4>
                         ${openActivities.slice(0, 2).map(activity => `
