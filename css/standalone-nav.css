@@ -271,6 +271,8 @@
 .sidebar.collapsed .nav-link {
     margin-left: 8px;
     justify-content: center;
+    position: relative;
+    z-index: 10001;
 }
 
 .sidebar.collapsed .nav-icon {
@@ -379,19 +381,54 @@
 /* Tooltips for collapsed sidebar */
 .nav-tooltip {
     position: fixed;
-    background: var(--text-primary);
-    color: var(--bg-secondary);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 0;
+    border-radius: 24px;
+    font-size: 16px;
     font-weight: 500;
     white-space: nowrap;
-    z-index: 10000;
-    pointer-events: none;
+    z-index: 1000;
+    pointer-events: auto;
     opacity: 0;
     transition: opacity 0.2s ease;
+    height: 48px;
+    display: flex;
+    align-items: center;
 }
 
 .nav-tooltip.show {
     opacity: 1;
+}
+
+.tooltip-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.tooltip-text {
+    flex: 1;
+    padding: 0 18px 0 0;
+}
+
+.tooltip-link {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0 12px 0 24px;
+    font: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    border-radius: 24px;
+    transition: var(--transition-smooth);
+    margin: 0 -12px;
+}
+
+.tooltip-link:hover {
+    background: rgba(255, 255, 255, 0.1);
 }

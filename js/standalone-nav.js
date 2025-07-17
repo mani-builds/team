@@ -384,8 +384,34 @@ class StandaloneNavigation {
                 }
             };
             
+            // Tooltip handlers for collapsed nav
+            const mouseEnterHandler = (e) => {
+                if (this.isCollapsed && this.isLocked) {
+                    this.showTooltip(e, link);
+                }
+            };
+            
+            const mouseLeaveHandler = () => {
+                if (this.isCollapsed && this.isLocked) {
+                    // Add a small delay to allow moving to the tooltip
+                    setTimeout(() => {
+                        const tooltip = document.getElementById('nav-tooltip');
+                        if (tooltip && !tooltip.matches(':hover')) {
+                            this.hideTooltip();
+                        }
+                    }, 100);
+                }
+            };
+            
             link.addEventListener('click', clickHandler);
-            this.eventListeners.push({ element: link, event: 'click', handler: clickHandler });
+            link.addEventListener('mouseenter', mouseEnterHandler);
+            link.addEventListener('mouseleave', mouseLeaveHandler);
+            
+            this.eventListeners.push(
+                { element: link, event: 'click', handler: clickHandler },
+                { element: link, event: 'mouseenter', handler: mouseEnterHandler },
+                { element: link, event: 'mouseleave', handler: mouseLeaveHandler }
+            );
         });
         
         // Global click handler for mobile menu
@@ -609,6 +635,128 @@ class StandaloneNavigation {
         }
     }
     
+    showTooltip(event, navLink) {
+        // Remove existing tooltip
+        this.hideTooltip();
+        
+        // Get the nav text content
+        const navText = navLink.querySelector('.nav-text');
+        if (!navText) return;
+        
+        const tooltipText = navText.textContent.trim();
+        if (!tooltipText) return;
+        
+        // Get the nav icon
+        const navIcon = navLink.querySelector('.nav-icon');
+        if (!navIcon) return;
+        
+        // Create tooltip element
+        const tooltip = document.createElement('div');
+        tooltip.className = 'nav-tooltip show';
+        tooltip.id = 'nav-tooltip';
+        
+        // Create clickable link wrapper
+        const tooltipLink = document.createElement('button');
+        tooltipLink.className = 'tooltip-link';
+        
+        // Copy the navigation functionality from the main nav button
+        const href = navLink.getAttribute('data-href');
+        if (href) {
+            tooltipLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const hashMatch = href.match(/#([^']+)/);
+                
+                if (hashMatch) {
+                    const targetHash = hashMatch[1];
+                    const currentHash = window.location.hash.substring(1);
+                    
+                    // If already on the target page, navigate to the hash
+                    if (currentHash === targetHash) {
+                        window.location.href = href;
+                    } else {
+                        // Navigate to the target page
+                        window.location.href = href;
+                    }
+                } else {
+                    // Direct navigation (like admin path)
+                    window.location.href = href;
+                }
+            });
+        }
+        
+        // Clone the icon and create tooltip content
+        const iconClone = navIcon.cloneNode(true);
+        
+        // Handle both <i> and <svg> elements properly
+        if (iconClone.tagName === 'svg') {
+            iconClone.classList.add('tooltip-icon');
+        } else {
+            iconClone.className = 'tooltip-icon';
+        }
+        
+        const textSpan = document.createElement('span');
+        textSpan.className = 'tooltip-text';
+        textSpan.textContent = tooltipText;
+        
+        // Add icon and text to tooltip link
+        tooltipLink.appendChild(iconClone);
+        tooltipLink.appendChild(textSpan);
+        
+        // Add link to tooltip
+        tooltip.appendChild(tooltipLink);
+        
+        // Add tooltip event handlers to keep it visible when hovering
+        const tooltipMouseEnterHandler = () => {
+            tooltip.classList.add('show');
+        };
+        
+        const tooltipMouseLeaveHandler = () => {
+            this.hideTooltip();
+        };
+        
+        tooltip.addEventListener('mouseenter', tooltipMouseEnterHandler);
+        tooltip.addEventListener('mouseleave', tooltipMouseLeaveHandler);
+        
+        // Store handlers for cleanup
+        tooltip._enterHandler = tooltipMouseEnterHandler;
+        tooltip._leaveHandler = tooltipMouseLeaveHandler;
+        
+        // Add to body
+        document.body.appendChild(tooltip);
+        
+        // Refresh feather icons for the cloned icon
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        // Position tooltip
+        const rect = navLink.getBoundingClientRect();
+        const tooltipRect = tooltip.getBoundingClientRect();
+        
+        // Position tooltip so the icon aligns with the original nav circle
+        const left = rect.left;
+        const top = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+        
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+    }
+    
+    hideTooltip() {
+        const existingTooltip = document.getElementById('nav-tooltip');
+        if (existingTooltip) {
+            // Clean up event listeners
+            if (existingTooltip._enterHandler) {
+                existingTooltip.removeEventListener('mouseenter', existingTooltip._enterHandler);
+            }
+            if (existingTooltip._leaveHandler) {
+                existingTooltip.removeEventListener('mouseleave', existingTooltip._leaveHandler);
+            }
+            existingTooltip.remove();
+        }
+    }
+    
     // Clean up event listeners to prevent memory leaks
     destroy() {
         // Clear all timeouts
@@ -618,6 +766,9 @@ class StandaloneNavigation {
         if (this.resizeTimeout) {
             clearTimeout(this.resizeTimeout);
         }
+        
+        // Remove any tooltips
+        this.hideTooltip();
         
         // Remove all event listeners
         this.eventListeners.forEach(({ element, event, handler }) => {

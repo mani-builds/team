@@ -175,13 +175,17 @@ class ProjectsManager {
         
         container.innerHTML = `
             <div style="position:relative">
-            <img src="../img/presenting-bolt-4gov.png" style="width:100%;border-top-left-radius:25px;border-top-right-radius:25px;"><br><br></div>
+            <img src="img/presenting-bolt-4gov.png" style="width:100%;border-top-left-radius:25px;border-top-right-radius:25px;"><br><br></div>
                 
             <div class="projects-header">
                 
                 <div class="projects-title-section" style="clear:both">
                     <h2 class="section-title">Project Opportunities</h2>
-                    <p class="section-subtitle">Discover and contribute to tech projects that sharpen your <!--that need your--> skills.</p>
+                    <p><a href="../projects/">Our Active Projects</a></p>
+                    <p><a href="projects/#list=modelteam">Our Model Team</a></p>
+                    <br>
+
+                    <p class="section-subtitle">Mockups:</p>
                     <p>
                         <a href="/profile/preferences">Project Preferences - Bolt AI Prototype</a><br>
                         <a href="/profile/preferences/projects">Project Details - US DFC Funded Projects - Bolt AI Prototype</a><br>
