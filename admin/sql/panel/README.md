@@ -57,7 +57,7 @@ The server will start on `http://127.0.0.1:8081` by default.
 ```bash
 # From the webroot
 python -m http.server 8887
-# Then visit: http://localhost:8887/membercommons/admin/sql/panel/
+# Then visit: http://localhost:8887/team/admin/sql/panel/
 ```
 
 Or start with your local repo as the project root:

@@ -34,7 +34,7 @@ Inside the claude cmd window, start your local Rust API server by running:
 The above keeps the server running and also stores logs,
 whereas `cargo run -- serve` doesn't remain running inside the CLI.
 
-View the website locally at: [localhost:8887/membercommons](http://localhost:8887/membercommons/)
+View the website locally at: [localhost:8887/team](http://localhost:8887/team/)
 
 <!--
   # Check if server is running

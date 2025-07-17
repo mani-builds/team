@@ -52,7 +52,7 @@ MemberCommons is a JAM Stack toolset for teams implementing partner tools using 
 ## 📁 Project Structure
 
 ```
-MemberCommons/
+team/
 ├── index.html                 # Main application file
 ├── css/                       # Stylesheets
 │   ├── projects.css           # Project management styles
@@ -67,7 +67,7 @@ MemberCommons/
 │   └── main.rs                # Main server application
 ├── sql/                       # Database schema
 │   └── suitecrm-postgres.sql
-└── projects/                  # Team project tools, meetup integration
+└── projects/                  # Team and list tools, meetup integration
     └── edit.html
 ```
 
@@ -164,7 +164,7 @@ We recommend skipping 1 and open a server in your webroot instead.
    
 Then view here when coding (hit refresh after changing with an AI CLI above):
 
-[http://localhost:8887/membercommons](http://localhost:8887/membercommons)
+[http://localhost:8887/team/](http://localhost:8887/team/)
 
 
 ## 🔧 Configuration
