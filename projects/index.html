@@ -2045,6 +2045,11 @@
             savePresentParticipants();
             updatePresentCount();
             updatePresentHighlighting();
+            
+            // If present filter is active, refresh the list to show/hide participants
+            if (showOnlyPresent) {
+                applyAllFilters();
+            }
         }
         
         function togglePresentFilter() {
