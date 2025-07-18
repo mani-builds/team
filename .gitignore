@@ -7,6 +7,7 @@ settings.local.json
 # Auth keys and secrets
 *.key
 *.pem
+env/*
 .env
 .env.local
 .env.production

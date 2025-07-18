@@ -9,11 +9,9 @@
       "Bash(rg:*)",
       "Bash(cat:*)",
       "Bash(lsof:*)",
-      "Bash(env)",
       "Bash(find:*)",
       "Bash(cargo check:*)",
       "Bash(cargo:*)",
-      "Bash(node:*)",
       "Bash(sed:*)"
     ],
     "deny": []
