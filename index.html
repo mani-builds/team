@@ -2637,8 +2637,11 @@
             // Handle subnav clicks
             document.querySelectorAll('.subnav-link').forEach(link => {
                 link.addEventListener('click', function(e) {
-                    // Don't prevent default for external links or absolute paths
-                    if (this.classList.contains('external-link') || this.getAttribute('href').startsWith('/')) {
+                    const href = this.getAttribute('href');
+                    // Don't prevent default for external links, absolute paths, or relative paths to other pages
+                    if (this.classList.contains('external-link') || 
+                        href.startsWith('/') || 
+                        (href && !href.startsWith('#') && href.includes('/'))) {
                         return; // Let the browser handle the navigation naturally
                     }
                     
