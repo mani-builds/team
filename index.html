@@ -2106,8 +2106,42 @@
         // Initialize HashRouter
         const router = new HashRouter();
 
+        // Setup tab click handlers for all sections
+        function setupTabHandlers() {
+            // Handle tab clicks for both People and Account sections
+            document.addEventListener('click', function(e) {
+                if (e.target.matches('.tab[data-tab]')) {
+                    e.preventDefault();
+                    
+                    const tabName = e.target.dataset.tab;
+                    const section = e.target.closest('.section');
+                    
+                    if (section) {
+                        let sectionName = '';
+                        if (section.id === 'people-section') {
+                            sectionName = 'people';
+                        } else if (section.id === 'account-section') {
+                            sectionName = 'account';
+                        } else if (section.id === 'home-section') {
+                            sectionName = 'home';
+                        } else if (section.id === 'projects-section') {
+                            sectionName = 'projects';
+                        }
+                        
+                        if (sectionName && tabName) {
+                            // Navigate using the router
+                            router.navigate(sectionName, tabName);
+                        }
+                    }
+                }
+            });
+        }
+
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            
+            // Setup tab click handlers
+            setupTabHandlers();
 
             loadInitialData();
             
