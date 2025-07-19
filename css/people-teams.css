@@ -580,7 +580,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('img/presenting-bolt-4gov.png') center/cover;
+    background: url('../img/presenting-bolt-4gov.png') center/cover;
     opacity: 0.1;
     z-index: 0;
 }
