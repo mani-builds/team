@@ -180,7 +180,7 @@ class StandaloneNavigation {
                             </button>
                             <div class="subnav">
                                 <a href="${rootPath}/projects/#list=modelteam" class="subnav-link">
-                                    <i class="subnav-icon" data-feather="user"></i>
+                                    <i class="subnav-icon" data-feather="map"></i>
                                     <span>Model Team</span>
                                 </a>
                                 <a href="${rootPath}#people/people" class="subnav-link">
