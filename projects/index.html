@@ -14,6 +14,8 @@
     <style>
         .container {
             max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
         }
         
         .readme-content {
@@ -343,26 +345,45 @@
         
         /* Fullscreen styles */
         .fullscreen-mode {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
+            width: 100% !important;
+            min-height: 100vh !important;
             z-index: 9999 !important;
             background: var(--bg-primary) !important;
-            overflow: auto !important;
-            padding: 20px !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
             box-sizing: border-box !important;
         }
         
         .fullscreen-mode .container {
-            max-width: none !important;
+            max-width: 100% !important;
+            width: 100% !important;
             margin: 0 !important;
+            padding: 20px !important;
+            box-sizing: border-box !important;
+            overflow-x: hidden !important;
         }
         
         .fullscreen-mode .breadcrumb {
             display: none !important;
         }
+        
+        .fullscreen-mode .header {
+            display: none !important;
+        }
+        
+        .fullscreen-mode table {
+            table-layout: fixed !important;
+            width: 100% !important;
+            overflow-x: auto !important;
+        }
+        
+        .fullscreen-mode .card {
+            max-width: 100% !important;
+            overflow-x: hidden !important;
+        }
+        
         
         /* Condensed layout styles */
         .condensed-mode .view-buttons {
@@ -998,13 +1019,9 @@
             </p>
         </div>
 
-        <div class="card" id="file-selection-panel">
-            <h2 class="card-title">Select a List</h2>
-            <p style="color: var(--text-secondary); margin-bottom: 16px;">
-                Choose a data source for the participant list.
-            </p>
-            <div class="form-group">
-                <div class="input-button-group">
+        <div style="margin-bottom: 20px;">
+            <div class="input-button-group" id="input-button-group" style="display: flex; align-items: center; justify-content: space-between; padding: 0 32px;">
+                <div style="display: flex; gap: 12px; align-items: center;">
                     <select id="fileSelect" class="form-control" style="width: auto; min-width: 200px; max-width: calc(100% - 32px); flex: none;">
                         <option value="modelteam" data-url="https://docs.google.com/spreadsheets/d/e/2PACX-1vRh5-bIR4hC1f9H3NtDCNT19hZXnqz8WRrBwTuLGnZiA5PWhFILUv2nS2FKE2TZ4dZ-RnJkZwHx1t2Y/pub?gid=1054734503&single=true&output=csv">Model Team (Default)</option>
                         <option value="custom">Choose File...</option>
@@ -1014,31 +1031,6 @@
                         Get List
                     </button>
                 </div>
-            </div>
-            
-            <!-- Custom file upload (hidden by default) -->
-            <div class="form-group" id="customFileSection" style="display: none;">
-                <label class="form-label">Upload Data</label>
-                <div class="file-input-wrapper">
-                    <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls,.csv" style="display: none;" />
-                    <div class="file-input-display" id="fileDisplay" style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px; background: var(--bg-secondary); cursor: pointer; text-align: center;">
-                        <div class="file-info">
-                            <div class="file-name">Click to upload file</div>
-                            <div class="file-details" style="color: var(--text-muted); font-size: 12px;">Supports .csv, .xls and .xlsx formats</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="participants-result"></div>
-            
-            <!-- Status Messages -->
-            <div id="statusMessages" class="message-log" style="margin-top: 16px;"></div>
-        </div>
-
-        <div class="card" id="participants-table-card" style="display: none;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-                <h2 class="card-title" id="participants-list-title" style="margin: 0;">📊 Participants List</h2>
                 <div class="menu-container">
                     <button class="menu-button" id="menu-toggle">
                         ⋯
@@ -1056,14 +1048,31 @@
                         <div class="menu-item" id="export-csv-menu">
                             <span>Export CSV</span>
                         </div>
-                        <div class="menu-item" id="select-list-toggle">
-                            <span id="select-list-text">Hide List</span>
-                        </div>
                         <div class="menu-item" id="list-feeds-toggle">
-                            <span>List of all Feeds</span>
+                            <span>All Feeds</span>
                         </div>
                     </div>
                 </div>
+            </div>
+            
+            <!-- Custom file upload (hidden by default) -->
+            <div class="form-group" id="customFileSection" style="display: none;">
+                <label class="form-label">Upload Data</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls,.csv" style="display: none;" />
+                    <div class="file-input-display" id="fileDisplay" style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 16px; background: var(--bg-secondary); cursor: pointer; text-align: center;">
+                        <div class="file-info">
+                            <div class="file-name">Click to upload file</div>
+                            <div class="file-details" style="color: var(--text-muted); font-size: 12px;">Supports .csv, .xls and .xlsx formats</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="participants-table-card" style="display: none;">
+            <div style="margin-bottom: 20px;">
+                <h2 class="card-title" id="participants-list-title" style="margin: 0;">📊 Participants List</h2>
             </div>
             
             <!-- Present Participants Control -->
@@ -1096,35 +1105,6 @@
                         <button class="btn btn-secondary" id="revert-raw-data">Revert</button>
                     </div>
                     <small class="form-help">Edit the JSON data and click "Display Changes" to update the participant list. Click "Revert" to restore original data.</small>
-                </div>
-            </div>
-            
-            <!-- View Toggle Controls -->
-            <div class="view-controls">
-                <div class="view-buttons">
-                    <button class="btn btn-secondary view-btn active" id="column-view-btn" data-view="column">
-                        Columns
-                    </button>
-                    <button class="btn btn-secondary view-btn" id="table-view-btn" data-view="table">
-                        Table
-                    </button>
-                    <button class="btn btn-secondary view-btn" id="gallery-view-btn" data-view="gallery">
-                        Gallery
-                    </button>
-                </div>
-                <div class="view-buttons-condensed">
-                    <button class="condensed-icon-btn" id="column-view-condensed" data-view="column" title="Columns">
-                        ▦
-                    </button>
-                    <button class="condensed-icon-btn" id="table-view-condensed" data-view="table" title="Table">
-                        ☰
-                    </button>
-                    <button class="condensed-icon-btn" id="gallery-view-condensed" data-view="gallery" title="Gallery">
-                        ⊞
-                    </button>
-                </div>
-                <div class="table-info">
-                    <span id="participant-count" style="margin-right:10px">0 participants</span>
                 </div>
             </div>
             
@@ -1167,6 +1147,36 @@
                 <div class="legend-items" id="legend-items"></div>
             </div>
             
+            <!-- View Toggle Controls -->
+            <div class="view-controls">
+                <div class="view-buttons">
+                    <button class="btn btn-secondary view-btn active" id="column-view-btn" data-view="column">
+                        Columns
+                    </button>
+                    <button class="btn btn-secondary view-btn" id="table-view-btn" data-view="table">
+                        Table
+                    </button>
+                    <button class="btn btn-secondary view-btn" id="gallery-view-btn" data-view="gallery">
+                        Gallery
+                    </button>
+                </div>
+                <div class="view-buttons-condensed">
+                    <button class="condensed-icon-btn" id="column-view-condensed" data-view="column" title="Columns">
+                        ▦
+                    </button>
+                    <button class="condensed-icon-btn" id="table-view-condensed" data-view="table" title="Table">
+                        ☰
+                    </button>
+                    <button class="condensed-icon-btn" id="gallery-view-condensed" data-view="gallery" title="Gallery">
+                        ⊞
+                    </button>
+                </div>
+                <div class="table-info">
+                    <span id="results-count" style="margin-right:10px">0 results</span>
+                </div>
+            </div>
+            
+            
             <!-- Column View (Default) -->
             <div class="view-container" id="column-view">
                 <div class="participants-grid" id="participants-column-grid"></div>
@@ -1188,6 +1198,11 @@
             </div>
         </div>
         
+        <!-- Load Status Panel -->
+        <div class="card" id="loadStatus" style="display: none;">
+            <div id="participants-result"></div>
+            <div id="statusMessages" class="message-log"></div>
+        </div>
 
         <div class="card">
             <h2 class="card-title">🚀 Setup Google Project</h2>
@@ -1365,14 +1380,23 @@
                     throw new Error(`No valid data found in the source\n\nPath attempted: ${meetupLink}`);
                 }
                 
+                // Reset team legend flag for new data
+                initialTeamLegendGenerated = false;
                 displayParticipantsTable(validData);
                 
                 participantsResult.innerHTML = `<div class="success-message">Successfully loaded ${validData.length} records from ${loadResult.format.toUpperCase()} source!</div>`;
+                document.getElementById('loadStatus').style.display = 'block';
+                
+                // Show UI elements after successful data load
+                showListDisplayElements();
 
             } catch (error) {
                 console.error('Full error details:', error);
                 participantsResult.innerHTML = `<div class="error-message"><h4>Error Loading Data</h4><p>${error.message}</p></div>`;
-                document.getElementById('participants-table-card').style.display = 'none';
+                document.getElementById('loadStatus').style.display = 'block';
+                
+                // Show the table card so the 3-dot menu remains accessible
+                document.getElementById('participants-table-card').style.display = 'block';
                 
                 // Always show upload fallback when automatic fetch fails
                 console.log('Showing upload fallback due to error:', error.message);
@@ -1388,6 +1412,7 @@
         // Current view mode and filtering
         let currentView = getURLHashParam('display') || localStorage.getItem('participantsViewMode') || 'column';
         let currentTeamFilter = localStorage.getItem('participantsTeamFilter') || null;
+        let initialTeamLegendGenerated = false;
         
         // File selection state
         const STORAGE_KEY = 'listObject';
@@ -1422,6 +1447,7 @@
             'us': { class: 'team-us', color: '#ffecd2', name: 'US' },
             'auth': { class: 'team-auth', color: '#89f7fe', name: 'Auth' },
             'discord': { class: 'team-discord', color: '#c2e9fb', name: 'Discord' },
+            'modelteam': { class: 'team-modelteam', color: '#10B981', name: 'Model Team' },
             'default': { class: 'team-default', color: '#d299c2', name: 'Other' }
         };
         
@@ -1433,15 +1459,21 @@
             const preprocessedData = preprocessParticipantData(data);
             
             const tableCard = document.getElementById('participants-table-card');
-            const participantCount = document.getElementById('participant-count');
+            const resultsCount = document.getElementById('results-count');
             
-            // Update participant count
-            participantCount.textContent = `${preprocessedData.length} participant${preprocessedData.length !== 1 ? 's' : ''}`;
+            // Update results count (initial load shows all results)
+            resultsCount.textContent = `${preprocessedData.length} result${preprocessedData.length !== 1 ? 's' : ''} in ${preprocessedData.length} total`;
             
             // Store preprocessed data globally
             window.participantsData = preprocessedData;
             allParticipantsData = preprocessedData;
             originalDataOrder = [...preprocessedData]; // Store original order
+            
+            // Generate team legend only once from the initial full dataset
+            if (!initialTeamLegendGenerated) {
+                generateTeamLegend(preprocessedData);
+                initialTeamLegendGenerated = true;
+            }
             
             // Load present participants from storage and apply highlighting
             loadPresentParticipants();
@@ -1618,10 +1650,15 @@
         
         // Get all matching team classes for a participant (for filtering)
         function getAllTeamClasses(teamString) {
-            if (!teamString) return ['team-default'];
+            console.log('getAllTeamClasses called with:', teamString);
+            if (!teamString) {
+                console.log('No team string provided, using default');
+                return ['team-default'];
+            }
             
             const matchingTeams = [];
             const teams = teamString.split(',').map(team => team.trim().toLowerCase());
+            console.log('Teams after processing:', teams);
             
             // Check each team and collect all matches
             for (const team of teams) {
@@ -1637,34 +1674,49 @@
                 else if (team.includes('discord')) matchingTeams.push('team-discord');
             }
             
-            return matchingTeams.length > 0 ? matchingTeams : ['team-default'];
+            const result = matchingTeams.length > 0 ? matchingTeams : ['team-default'];
+            console.log('Team detection result:', result);
+            return result;
         }
         
         // Generate team legend
         function generateTeamLegend(data) {
+            console.log('generateTeamLegend called with data:', data.length, 'items');
             const teamLegend = document.getElementById('team-legend');
             const legendItems = document.getElementById('legend-items');
             
             // Check if data is valid
             if (!data || data.length === 0) {
+                console.log('No data provided, hiding team legend');
+                teamLegend.style.display = 'none';
+                return;
+            }
+            
+            // Check if Team column exists in the data
+            const hasTeamColumn = data.length > 0 && data[0].hasOwnProperty('Team');
+            if (!hasTeamColumn) {
+                console.log('No Team column found in data, hiding team legend');
                 teamLegend.style.display = 'none';
                 return;
             }
             
             // Get unique teams from data (collect all team classes for each participant)
             const teams = new Set();
-            data.forEach(participant => {
+            data.forEach((participant, index) => {
                 if (!participant) return; // Skip null/undefined participants
+                console.log(`Participant ${index} - Team field:`, participant.Team);
                 const teamClasses = getAllTeamClasses(participant.Team);
                 teamClasses.forEach(teamClass => teams.add(teamClass));
             });
             
+            console.log('Unique teams found:', Array.from(teams));
+            
             // Create legend items
             legendItems.innerHTML = '';
             
-            // Add "Show All" button as first item
+            // Add "Show All" button as first item (active by default)
             const showAllItem = document.createElement('div');
-            showAllItem.className = 'legend-item';
+            showAllItem.className = 'legend-item active';
             showAllItem.id = 'clear-team-filter';
             showAllItem.innerHTML = `
                 <div class="legend-color" style="background: #ddd;"></div>
@@ -1674,8 +1726,10 @@
             legendItems.appendChild(showAllItem);
             
             // Add team filter buttons
+            console.log('Creating team filter buttons for teams:', Array.from(teams));
             teams.forEach(teamClass => {
                 const teamInfo = Object.values(teamColors).find(t => t.class === teamClass) || teamColors.default;
+                console.log(`Creating filter for team: ${teamClass}, info:`, teamInfo);
                 
                 const legendItem = document.createElement('div');
                 legendItem.className = 'legend-item';
@@ -1687,9 +1741,11 @@
                 
                 legendItem.addEventListener('click', () => filterByTeam(teamClass));
                 legendItems.appendChild(legendItem);
+                console.log('Added team filter button:', teamInfo.name);
             });
             
-            teamLegend.style.display = teams.size > 1 ? 'block' : 'none';
+            // Always show team legend if teams are detected (even if only one team)
+            teamLegend.style.display = teams.size > 0 ? 'block' : 'none';
         }
         
         // Filter by team
@@ -1744,7 +1800,6 @@
         
         // Render gallery view
         function renderGalleryView(data) {
-            generateTeamLegend(data);
             renderGalleryCards(data);
         }
         
@@ -2045,9 +2100,10 @@
             renderTableView(filteredData);
             renderGalleryView(filteredData);
             
-            // Update participant count
-            const participantCount = document.getElementById('participant-count');
-            let countText = `${filteredData.length} participant${filteredData.length !== 1 ? 's' : ''}`;
+            // Update results count
+            const resultsCount = document.getElementById('results-count');
+            const totalCount = allParticipantsData ? allParticipantsData.length : 0;
+            let countText = `${filteredData.length} result${filteredData.length !== 1 ? 's' : ''} in ${totalCount} total`;
             
             // Add filter description
             const filters = [];
@@ -2072,7 +2128,7 @@
                 countText += ` (${filters.join(', ')})`;
             }
             
-            participantCount.textContent = countText;
+            resultsCount.textContent = countText;
             
             // Reapply present highlighting
             setTimeout(() => updatePresentHighlighting(), 100);
@@ -2387,6 +2443,7 @@
                         // Use first non-ID column as name
                         const firstColumn = otherColumns[0];
                         nameField = participant[firstColumn.original] || '';
+                        console.log('Name field logic - using column:', firstColumn.cleaned, 'value:', nameField);
                     } else {
                         // Final fallback
                         nameField = 'Unknown';
@@ -2564,9 +2621,19 @@
         }
         
         function exportParticipantsCSV() {
+            console.log('exportParticipantsCSV called');
+            console.log('window.participantsData:', window.participantsData);
+            console.log('allParticipantsData:', allParticipantsData);
+            
             if (!window.participantsData || window.participantsData.length === 0) {
-                alert('No participant data to export');
-                return;
+                // Try using allParticipantsData as fallback
+                if (allParticipantsData && allParticipantsData.length > 0) {
+                    console.log('Using allParticipantsData as fallback');
+                    window.participantsData = allParticipantsData;
+                } else {
+                    alert('No participant data to export');
+                    return;
+                }
             }
             
             // Determine which data to export based on current filter state
@@ -2581,28 +2648,24 @@
             let filename = `meetup-participants-${dateString}.csv`;
             
             // Apply team filter if active
-            const teamFilter = currentTeamFilter;
-            if (teamFilter !== 'all') {
+            if (currentTeamFilter && currentTeamFilter !== 'all') {
                 dataToExport = dataToExport.filter(participant => {
-                    const team = getParticipantTeam(participant);
-                    return team === teamFilter;
+                    const teamClasses = getAllTeamClasses(participant.Team);
+                    return teamClasses.includes(currentTeamFilter);
                 });
-                filename = `meetup-participants-${teamFilter}-${dateString}.csv`;
+                const teamName = teamColors[currentTeamFilter.replace('team-', '')] ? 
+                    teamColors[currentTeamFilter.replace('team-', '')].name : 'filtered';
+                filename = `meetup-participants-${teamName}-${dateString}.csv`;
             }
             
-            // Apply status filter if active
-            const statusFilter = currentStatusFilter;
-            if (statusFilter !== 'all') {
+            // Apply status filter if active (using selectedStatuses)
+            if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
+                const statusList = Array.from(selectedStatuses);
                 dataToExport = dataToExport.filter(participant => {
-                    const status = participant.Response || 'No';
-                    switch(statusFilter) {
-                        case 'attending': return status === 'Yes';
-                        case 'waitlisted': return status === 'Waitlisted';
-                        case 'not-attending': return status === 'No';
-                        default: return true;
-                    }
+                    const status = participant.Status || '';
+                    return statusList.includes(status);
                 });
-                filename = `meetup-participants-${statusFilter}-${dateString}.csv`;
+                filename = `meetup-participants-${statusList.join('-')}-${dateString}.csv`;
             }
             
             // If showing only present participants, export only those
@@ -2621,7 +2684,9 @@
                 return;
             }
             
+            console.log('About to export', dataToExport.length, 'rows');
             const headers = Object.keys(dataToExport[0]);
+            console.log('Headers:', headers);
             
             // Create CSV content
             let csvContent = headers.join(',') + '\n';
@@ -2635,6 +2700,7 @@
             });
             
             // Download CSV
+            console.log('Creating CSV download with filename:', filename);
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
@@ -2642,8 +2708,10 @@
             link.setAttribute('download', filename);
             link.style.visibility = 'hidden';
             document.body.appendChild(link);
+            console.log('Triggering download...');
             link.click();
             document.body.removeChild(link);
+            console.log('CSV export completed');
         }
 
         getParticipantsButton.addEventListener('click', getMeetupParticipants);
@@ -3205,6 +3273,105 @@
         document.getElementById('revert-raw-data').addEventListener('click', revertRawData);
         document.getElementById('raw-data-close').addEventListener('click', closeRawData);
         
+        // Hide UI elements when changing to a new list
+        function hideListDisplayElements() {
+            // Hide team legend panel
+            const teamLegend = document.getElementById('team-legend');
+            if (teamLegend) {
+                teamLegend.style.display = 'none';
+            }
+            
+            // Hide view controls
+            const viewControls = document.querySelector('.view-controls');
+            if (viewControls) {
+                viewControls.style.display = 'none';
+            }
+            
+            // Hide table view and other views
+            const tableView = document.getElementById('table-view');
+            const columnView = document.getElementById('column-view');
+            const galleryView = document.getElementById('gallery-view');
+            
+            if (tableView) tableView.style.display = 'none';
+            if (columnView) columnView.style.display = 'none';
+            if (galleryView) galleryView.style.display = 'none';
+            
+            console.log('List display elements hidden');
+        }
+        
+        // Show UI elements when new list loads successfully
+        function showListDisplayElements() {
+            // Show view controls
+            const viewControls = document.querySelector('.view-controls');
+            if (viewControls) {
+                viewControls.style.display = 'flex';
+            }
+            
+            // Show the current view based on currentView setting
+            const tableView = document.getElementById('table-view');
+            const columnView = document.getElementById('column-view');
+            const galleryView = document.getElementById('gallery-view');
+            
+            // Hide all views first
+            if (tableView) tableView.style.display = 'none';
+            if (columnView) columnView.style.display = 'none';
+            if (galleryView) galleryView.style.display = 'none';
+            
+            // Show the current view
+            if (currentView === 'table' && tableView) {
+                tableView.style.display = 'block';
+            } else if (currentView === 'gallery' && galleryView) {
+                galleryView.style.display = 'block';
+            } else if (columnView) {
+                // Default to column view
+                columnView.style.display = 'block';
+            }
+            
+            // Team legend will be shown by generateTeamLegend if there's a Team column
+            
+            console.log('List display elements shown');
+        }
+        
+        // Update menu visibility based on current list
+        function updateMenuVisibility() {
+            const listParam = getURLHashParam('list');
+            const allFeedsToggle = document.getElementById('list-feeds-toggle');
+            
+            if (allFeedsToggle) {
+                // Hide "All Feeds" option when already viewing all feeds
+                if (listParam === 'all' || fileSelect.value === 'all') {
+                    allFeedsToggle.style.display = 'none';
+                } else {
+                    allFeedsToggle.style.display = 'block';
+                }
+            }
+        }
+        
+        // Clear all filters when changing lists
+        function clearAllFilters() {
+            // Clear team filter
+            currentTeamFilter = null;
+            localStorage.removeItem('participantsTeamFilter');
+            
+            // Clear status filter - reset to "All"
+            selectedStatuses.clear();
+            selectedStatuses.add('All');
+            localStorage.setItem('participantsStatusFilter', JSON.stringify(['All']));
+            
+            // Clear present participants filter
+            showOnlyPresent = false;
+            localStorage.setItem('showOnlyPresent', 'false');
+            const presentInput = document.getElementById('present');
+            if (presentInput) {
+                presentInput.value = '';
+            }
+            
+            // Reset team legend flag to allow regeneration
+            initialTeamLegendGenerated = false;
+            
+            console.log('All filters cleared for new list selection');
+        }
+        
         // File selection handling functions
         function handleFileDropdownChange() {
             const value = fileSelect.value;
@@ -3212,9 +3379,19 @@
             // Clear previous results
             participantsResult.innerHTML = '';
             statusMessages.innerHTML = '';
+            document.getElementById('loadStatus').style.display = 'none';
+            
+            // Clear all filters when selecting a new list
+            clearAllFilters();
+            
+            // Hide UI elements when changing to a new list
+            hideListDisplayElements();
             
             // Update the participant list title
             updateParticipantListTitle();
+            
+            // Update menu visibility
+            updateMenuVisibility();
             
             if (value === 'custom') {
                 // Show custom file upload section
@@ -3406,15 +3583,16 @@
             isFullscreen = !isFullscreen;
             localStorage.setItem('isFullscreen', JSON.stringify(isFullscreen));
             
-            const card = document.getElementById('participants-table-card');
             const fullscreenText = document.getElementById('fullscreen-text');
             
             if (isFullscreen) {
-                card.classList.add('fullscreen-mode');
+                // Apply fullscreen to the body/container to include file selection
+                document.body.classList.add('fullscreen-mode');
                 fullscreenText.textContent = 'Exit Fullscreen';
-                document.body.style.overflow = 'hidden';
+                // Allow scrolling in fullscreen mode
+                document.body.style.overflow = 'auto';
             } else {
-                card.classList.remove('fullscreen-mode');
+                document.body.classList.remove('fullscreen-mode');
                 fullscreenText.textContent = 'View Fullscreen';
                 document.body.style.overflow = 'auto';
             }
@@ -3556,10 +3734,15 @@
                     
                     // Display the feeds data using the existing display system
                     currentData = feedsData;
+                    // Reset team legend flag for new data
+                    initialTeamLegendGenerated = false;
                     displayParticipantsTable(feedsData, 'All Available Feeds');
                     
                     // Update the page title
                     document.title = 'All Available Feeds - MemberCommons';
+                    
+                    // Show UI elements after successful feeds load
+                    showListDisplayElements();
                     
                     // Update URL hash to list=all
                     updateListHashParam('all');
@@ -3580,23 +3763,23 @@
         }
 
         function toggleSelectList() {
-            const panel = document.getElementById('file-selection-panel');
+            const fileSelectContainer = document.querySelector('#fileSelect').parentElement.parentElement;
             const selectListText = document.getElementById('select-list-text');
             
-            if (!panel) {
-                console.error('file-selection-panel element not found!');
+            if (!fileSelectContainer) {
+                console.error('File selection container not found!');
                 return;
             }
             
             // Use getComputedStyle to get the actual display value
-            const computedStyle = window.getComputedStyle(panel);
+            const computedStyle = window.getComputedStyle(fileSelectContainer);
             const isVisible = computedStyle.display !== 'none';
             
             if (isVisible) {
-                panel.style.display = 'none';
+                fileSelectContainer.style.display = 'none';
                 selectListText.textContent = 'Select List';
             } else {
-                panel.style.display = 'block';
+                fileSelectContainer.style.display = 'block';
                 selectListText.textContent = 'Hide List';
             }
             
@@ -3629,13 +3812,12 @@
         }
         
         function restoreLayoutState() {
-            const card = document.getElementById('participants-table-card');
             const fullscreenText = document.getElementById('fullscreen-text');
             const condensedText = document.getElementById('condensed-text');
             
             // Restore fullscreen state
             if (isFullscreen) {
-                card.classList.add('fullscreen-mode');
+                document.body.classList.add('fullscreen-mode');
                 fullscreenText.textContent = 'Exit Fullscreen';
                 document.body.style.overflow = 'hidden';
             } else {
@@ -3643,6 +3825,7 @@
             }
             
             // Restore condensed state
+            const card = document.getElementById('participants-table-card');
             if (isCondensed) {
                 card.classList.add('condensed-mode');
                 condensedText.textContent = 'Expand Layout';
@@ -3673,6 +3856,12 @@
             window.addEventListener('hashchange', function() {
                 const listParam = getURLHashParam('list');
                 
+                // Hide UI elements when list hash changes
+                if (listParam && listParam !== fileSelect.value) {
+                    hideListDisplayElements();
+                    clearAllFilters();
+                }
+                
                 // Update dropdown selection if it doesn't match current value
                 if (listParam && listParam !== fileSelect.value) {
                     // Check if the option exists in the dropdown
@@ -3690,10 +3879,15 @@
                     }
                 } else if (listParam === 'all' && fileSelect.value !== 'all') {
                     // Special case: URL has list=all but dropdown is not set to "All Lists"
+                    hideListDisplayElements();
+                    clearAllFilters();
                     fileSelect.value = 'all';
                     selectedFile = 'all';
                     showAllFeeds();
                 }
+                
+                // Update menu visibility after any list changes
+                updateMenuVisibility();
             });
             
             // Listen for URL changes to handle display mode changes
@@ -3719,10 +3913,12 @@
                 }
             }
             
+            // Set initial menu visibility state
+            updateMenuVisibility();
+            
             // Add event listeners for 3-dot menu
             document.getElementById('menu-toggle').addEventListener('click', toggleMenu);
             
-            document.getElementById('select-list-toggle').addEventListener('click', toggleSelectList);
             document.getElementById('list-feeds-toggle').addEventListener('click', showAllFeeds);
             
             document.getElementById('fullscreen-toggle').addEventListener('click', toggleFullscreen);
