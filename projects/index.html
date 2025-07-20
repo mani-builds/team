@@ -1452,9 +1452,9 @@
             
             // Render will be handled by applyAllFilters after setTimeout
             
-            // Apply saved sort preferences
+            // Apply saved sort preferences (without re-rendering, setTimeout will handle rendering)
             if (currentSortColumn) {
-                applySortToData();
+                applySortToData(false);
             }
             
             // Update status button text
@@ -1848,7 +1848,7 @@
             document.getElementById('sort-dropdown').style.display = 'none';
         }
         
-        function applySortToData() {
+        function applySortToData(shouldRerender = true) {
             let sortedData = [...allParticipantsData];
             
             if (currentSortColumn === 'Rows') {
@@ -1879,8 +1879,10 @@
             // Update global data
             allParticipantsData = sortedData;
             
-            // Re-render all views with current filters applied
-            applyAllFilters();
+            // Re-render all views with current filters applied (only if requested)
+            if (shouldRerender) {
+                applyAllFilters();
+            }
         }
         
         function toggleSortDropdown() {
