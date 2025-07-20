@@ -51,6 +51,211 @@ class ProjectsManager {
         });
     }
 
+    // Flatten nested JSON structures and extract all fields
+    flattenObject(obj, prefix = '') {
+        const flattened = {};
+        
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                const value = obj[key];
+                const newKey = prefix ? `${prefix}.${key}` : key;
+                
+                if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                    // Recursively flatten nested objects
+                    Object.assign(flattened, this.flattenObject(value, newKey));
+                } else {
+                    // Keep the value as is
+                    flattened[newKey] = value;
+                }
+            }
+        }
+        
+        return flattened;
+    }
+    
+    // Find project_description in nested structures
+    findProjectDescription(project) {
+        const flattened = this.flattenObject(project);
+        
+        // Look for project_description in various locations
+        const candidates = [
+            'project_description',
+            'projectDescription', 
+            'description.project',
+            'project.description',
+            'data.project_description',
+            'content.project_description',
+            'details.project_description'
+        ];
+        
+        for (const candidate of candidates) {
+            if (flattened[candidate] !== undefined && flattened[candidate] !== null && flattened[candidate] !== '') {
+                return flattened[candidate];
+            }
+        }
+        
+        // Also check direct nested access
+        if (project.project_description) return project.project_description;
+        if (project.projectDescription) return project.projectDescription;
+        if (project.description && project.description.project) return project.description.project;
+        if (project.project && project.project.description) return project.project.description;
+        if (project.data && project.data.project_description) return project.data.project_description;
+        if (project.content && project.content.project_description) return project.content.project_description;
+        if (project.details && project.details.project_description) return project.details.project_description;
+        
+        return null;
+    }
+
+    // Detect and return common prefix from all column names
+    detectCommonPrefix(columns) {
+        if (columns.length === 0) return '';
+        
+        // Find the shortest column name to limit prefix length
+        const minLength = Math.min(...columns.map(col => col.length));
+        if (minLength === 0) return '';
+        
+        let commonPrefix = '';
+        
+        // Check each character position
+        for (let i = 0; i < minLength; i++) {
+            const char = columns[0][i];
+            
+            // Check if all columns have the same character at this position
+            const allMatch = columns.every(col => col[i] === char);
+            
+            if (allMatch) {
+                commonPrefix += char;
+            } else {
+                break;
+            }
+        }
+        
+        // Only return prefix if it ends with an underscore or is substantial
+        // and all columns would still have meaningful names after removal
+        if (commonPrefix.length > 2 && 
+            (commonPrefix.endsWith('_') || commonPrefix.length >= 4)) {
+            
+            // Verify all columns would have meaningful names after prefix removal
+            const wouldBeValid = columns.every(col => {
+                const remaining = col.substring(commonPrefix.length);
+                return remaining.length > 0 && remaining !== '_';
+            });
+            
+            if (wouldBeValid) {
+                return commonPrefix;
+            }
+        }
+        
+        return '';
+    }
+
+    // Preprocess API data to normalize column names and ordering
+    preprocessProjectData(projects) {
+        if (!Array.isArray(projects)) {
+            return projects;
+        }
+        
+        return projects.map(project => {
+            // Create a new object to maintain original data
+            const processed = {};
+            
+            // Step 1: Flatten nested structures to get all available fields
+            const flatProject = this.flattenObject(project);
+            
+            // Step 2: Detect and remove common prefix from all columns
+            const allColumns = Object.keys(flatProject);
+            const commonPrefix = this.detectCommonPrefix(allColumns);
+            
+            // Create a mapping of original to cleaned column names
+            const columnMapping = {};
+            allColumns.forEach(col => {
+                let cleanedName = col;
+                if (commonPrefix && col.startsWith(commonPrefix)) {
+                    cleanedName = col.substring(commonPrefix.length);
+                    // Ensure the cleaned name doesn't start with underscore
+                    if (cleanedName.startsWith('_')) {
+                        cleanedName = cleanedName.substring(1);
+                    }
+                }
+                columnMapping[col] = cleanedName;
+            });
+            
+            // Step 3: Identify ID columns and add them first (using cleaned names)
+            const idColumns = [];
+            const otherColumns = [];
+            
+            Object.entries(columnMapping).forEach(([originalKey, cleanedKey]) => {
+                if (cleanedKey === 'id' || cleanedKey.endsWith('_id') || cleanedKey.endsWith('ID') || cleanedKey === 'ID') {
+                    idColumns.push({ original: originalKey, cleaned: cleanedKey });
+                } else {
+                    otherColumns.push({ original: originalKey, cleaned: cleanedKey });
+                }
+            });
+            
+            // Sort ID columns (id first, then others alphabetically)
+            idColumns.sort((a, b) => {
+                if (a.cleaned === 'id') return -1;
+                if (b.cleaned === 'id') return 1;
+                return a.cleaned.localeCompare(b.cleaned);
+            });
+            
+            // Step 4: Add ID columns first
+            idColumns.forEach(({ original, cleaned }) => {
+                processed[cleaned] = flatProject[original];
+            });
+            
+            // Step 5: Handle title column creation and positioning
+            let titleValue = null;
+            let titleColumnAdded = false;
+            
+            // First check for existing title (in cleaned names)
+            const titleColumn = otherColumns.find(({ cleaned }) => cleaned === 'title');
+            if (titleColumn && flatProject[titleColumn.original] !== undefined && 
+                flatProject[titleColumn.original] !== null && flatProject[titleColumn.original] !== '') {
+                titleValue = flatProject[titleColumn.original];
+                processed.title = titleValue;
+                titleColumnAdded = true;
+                // Remove from otherColumns to avoid duplication
+                const index = otherColumns.indexOf(titleColumn);
+                if (index > -1) {
+                    otherColumns.splice(index, 1);
+                }
+            } else {
+                // Look for project_description in nested structures (original project object)
+                titleValue = this.findProjectDescription(project);
+                if (titleValue !== null) {
+                    processed.title = titleValue;
+                    titleColumnAdded = true;
+                }
+            }
+            
+            // Step 6: Remove all project_description variants from otherColumns
+            const projectDescriptionKeys = otherColumns.filter(({ cleaned, original }) => 
+                cleaned === 'project_description' ||
+                cleaned === 'projectDescription' ||
+                cleaned === 'description' ||
+                cleaned.includes('project_description') ||
+                cleaned.includes('projectDescription') ||
+                original === 'project_description' ||
+                original === 'projectDescription'
+            );
+            
+            projectDescriptionKeys.forEach(item => {
+                const index = otherColumns.indexOf(item);
+                if (index > -1) {
+                    otherColumns.splice(index, 1);
+                }
+            });
+            
+            // Step 7: Add remaining columns with cleaned names
+            otherColumns.forEach(({ original, cleaned }) => {
+                processed[cleaned] = flatProject[original];
+            });
+            
+            return processed;
+        });
+    }
+
     // Load projects from API or show placeholders
     async loadProjects() {
         try {
@@ -58,7 +263,8 @@ class ProjectsManager {
             if (response.error) {
                 this.loadPlaceholderData();
             } else {
-                this.projects = response.data;
+                // Preprocess the data to normalize column names and ordering
+                this.projects = this.preprocessProjectData(response.data);
                 this.renderProjects();
             }
         } catch (error) {

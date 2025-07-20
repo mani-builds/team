@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Coding Meetup Integration - MemberCommons</title>
+    <title>List Display</title>
     <link rel="icon" type="image/x-icon" href="../img/logo/neighborhood/favicon.png">
     <link rel="stylesheet" href="../css/common.css">
     <link rel="stylesheet" href="../css/shared-styles.css">
@@ -535,6 +535,24 @@
             font-weight: 600 !important;
         }
         
+        /* Raw Data Control */
+        .raw-data-control {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+        
+        .raw-data-control textarea {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            white-space: pre;
+            overflow-wrap: normal;
+            overflow-x: auto;
+        }
+        
         /* View Controls */
         .view-controls {
             display: flex;
@@ -919,6 +937,49 @@
                 flex-direction: column;
             }
         }
+        
+        /* Loading and error states */
+        .loading-state, .error-state {
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        
+        .error-state {
+            color: #dc2626;
+        }
+        
+        /* Clickable meta list items */
+        .participant-card[style*="cursor: pointer"]:hover,
+        .gallery-card[style*="cursor: pointer"]:hover,
+        .participants-table tr[style*="cursor: pointer"]:hover {
+            background-color: var(--bg-tertiary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            transition: all 0.2s ease;
+        }
+        
+        .participants-table tr[style*="cursor: pointer"]:hover {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+        }
+        
+        /* Raw Data Editor Close Button */
+        #raw-data-close {
+            transition: all 0.2s ease;
+            border-radius: var(--radius-sm);
+            min-width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #raw-data-close:hover {
+            background-color: var(--bg-tertiary);
+            border-color: var(--border-medium);
+            color: var(--text-primary);
+        }
     </style>
 </head>
 <body>
@@ -937,14 +998,14 @@
             </p>
         </div>
 
-        <div class="card" id="file-selection-panel" style="display: none;">
+        <div class="card" id="file-selection-panel">
             <h2 class="card-title">Select a List</h2>
             <p style="color: var(--text-secondary); margin-bottom: 16px;">
                 Choose a data source for the participant list.
             </p>
             <div class="form-group">
                 <div class="input-button-group">
-                    <select id="fileSelect" class="form-control" style="width: auto; min-width: 200px; max-width: 100%;">
+                    <select id="fileSelect" class="form-control" style="width: auto; min-width: 200px; max-width: calc(100% - 32px); flex: none;">
                         <option value="modelteam" data-url="https://docs.google.com/spreadsheets/d/e/2PACX-1vRh5-bIR4hC1f9H3NtDCNT19hZXnqz8WRrBwTuLGnZiA5PWhFILUv2nS2FKE2TZ4dZ-RnJkZwHx1t2Y/pub?gid=1054734503&single=true&output=csv">Model Team (Default)</option>
                         <option value="custom">Choose File...</option>
                     </select>
@@ -983,21 +1044,30 @@
                         ⋯
                     </button>
                     <div class="menu-dropdown" id="menu-dropdown">
-                        <div class="menu-item" id="select-list-toggle">
-                            <span>Select List</span>
-                        </div>
                         <div class="menu-item" id="fullscreen-toggle">
                             <span id="fullscreen-text">View Fullscreen</span>
                         </div>
                         <div class="menu-item" id="condensed-toggle">
                             <span id="condensed-text">Condense Layout</span>
                         </div>
+                        <div class="menu-item" id="raw-data-toggle">
+                            <span id="raw-data-text">View Raw Data</span>
+                        </div>
+                        <div class="menu-item" id="export-csv-menu">
+                            <span>Export CSV</span>
+                        </div>
+                        <div class="menu-item" id="select-list-toggle">
+                            <span id="select-list-text">Hide List</span>
+                        </div>
+                        <div class="menu-item" id="list-feeds-toggle">
+                            <span>List of all Feeds</span>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <!-- Present Participants Control -->
-            <div class="present-control">
+            <div class="present-control" id="present-control">
                 <label class="form-label">Present Participants</label>
                 <div class="present-input-group">
                     <input type="text" id="present" class="form-control" placeholder="Enter names separated by commas (e.g., Loren, Ivy, Gary)...">
@@ -1007,6 +1077,26 @@
                     </button>
                 </div>
                 <small class="form-help">Type names and press comma or enter to highlight. Click "Present" to show only marked participants.</small>
+            </div>
+            
+            <!-- Raw Data Editor -->
+            <div class="raw-data-control" id="raw-data-control" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label class="form-label" style="margin-bottom: 0;">Raw Data Editor</label>
+                    <button class="btn" id="raw-data-close" style="padding: 4px 8px; font-size: 16px; line-height: 1; background: none; border: 1px solid var(--border-light); color: var(--text-secondary);" title="Close Raw Data Editor">×</button>
+                </div>
+                <div class="form-group" style="margin-bottom: 12px;">
+                    <label class="form-label" style="font-size: 12px; margin-bottom: 4px;">Data Source</label>
+                    <input type="text" id="raw-data-source" class="form-control" readonly style="font-size: 11px; background-color: var(--bg-tertiary); color: var(--text-secondary);" placeholder="Data source path will appear here...">
+                </div>
+                <div class="form-group">
+                    <textarea id="raw-data-editor" class="form-control" rows="10" placeholder="Raw JSON data will appear here..."></textarea>
+                    <div style="margin-top: 8px;">
+                        <button class="btn btn-primary" id="apply-raw-data">Display Changes</button>
+                        <button class="btn btn-secondary" id="revert-raw-data">Revert</button>
+                    </div>
+                    <small class="form-help">Edit the JSON data and click "Display Changes" to update the participant list. Click "Revert" to restore original data.</small>
+                </div>
             </div>
             
             <!-- View Toggle Controls -->
@@ -1035,9 +1125,6 @@
                 </div>
                 <div class="table-info">
                     <span id="participant-count" style="margin-right:10px">0 participants</span>
-                    <button class="btn btn-secondary" id="export-csv">
-                        Export CSV
-                    </button>
                 </div>
             </div>
             
@@ -1299,7 +1386,7 @@
         // Note: parseCSV function is now available from js/list.js
         
         // Current view mode and filtering
-        let currentView = localStorage.getItem('participantsViewMode') || 'column';
+        let currentView = getURLHashParam('display') || localStorage.getItem('participantsViewMode') || 'column';
         let currentTeamFilter = localStorage.getItem('participantsTeamFilter') || null;
         
         // File selection state
@@ -1342,25 +1429,28 @@
         function displayParticipantsTable(data) {
             if (!data || data.length === 0) return;
             
+            // Preprocess data to clean column names and normalize structure
+            const preprocessedData = preprocessParticipantData(data);
+            
             const tableCard = document.getElementById('participants-table-card');
             const participantCount = document.getElementById('participant-count');
             
             // Update participant count
-            participantCount.textContent = `${data.length} participant${data.length !== 1 ? 's' : ''}`;
+            participantCount.textContent = `${preprocessedData.length} participant${preprocessedData.length !== 1 ? 's' : ''}`;
             
-            // Store data globally
-            window.participantsData = data;
-            allParticipantsData = data;
-            originalDataOrder = [...data]; // Store original order
+            // Store preprocessed data globally
+            window.participantsData = preprocessedData;
+            allParticipantsData = preprocessedData;
+            originalDataOrder = [...preprocessedData]; // Store original order
             
             // Load present participants from storage and apply highlighting
             loadPresentParticipants();
             updatePresentHighlighting();
             
-            // Render all views
-            renderColumnView(data);
-            renderTableView(data);
-            renderGalleryView(data);
+            // Update present participants panel visibility
+            updatePresentParticipantsVisibility();
+            
+            // Render will be handled by applyAllFilters after setTimeout
             
             // Apply saved sort preferences
             if (currentSortColumn) {
@@ -1394,13 +1484,25 @@
                 return;
             }
             
+            const isMetaList = getURLHashParam('list') === 'all';
+            
             data.forEach(participant => {
                 if (!participant) return; // Skip null/undefined participants
                 const card = document.createElement('div');
                 card.className = 'participant-card';
-                card.dataset.participantName = participant.Name || 'Unknown';
                 
-                const name = participant.Name || 'Unknown';
+                const name = getParticipantName(participant);
+                card.dataset.participantName = name;
+                
+                // Add clickable functionality for meta list
+                if (isMetaList && participant.Feed) {
+                    card.style.cursor = 'pointer';
+                    card.title = `Click to view data from: ${participant.Title || participant.Feed}`;
+                    card.addEventListener('click', () => {
+                        updateHashParam('list', participant.Feed);
+                        updateParticipantListTitle(participant.Title || participant.Feed);
+                    });
+                }
                 const team = participant.Team || 'Not specified';
                 const projects = participant.Projects || 'No projects listed';
                 const status = participant.Status || 'Unknown';
@@ -1464,10 +1566,23 @@
             
             // Create table body
             tableBody.innerHTML = '';
+            const isMetaList = getURLHashParam('list') === 'all';
+            
             data.forEach(row => {
                 if (!row) return; // Skip null/undefined rows
                 const tr = document.createElement('tr');
-                tr.dataset.participantName = row.Name || 'Unknown';
+                tr.dataset.participantName = getParticipantName(row);
+                
+                // Add clickable functionality for meta list
+                if (isMetaList && row.Feed) {
+                    tr.style.cursor = 'pointer';
+                    tr.title = `Click to view data from: ${row.Title || row.Feed}`;
+                    tr.addEventListener('click', () => {
+                        updateHashParam('list', row.Feed);
+                        updateParticipantListTitle(row.Title || row.Feed);
+                    });
+                }
+                
                 headers.forEach(header => {
                     const td = document.createElement('td');
                     td.textContent = row[header] || '';
@@ -1644,14 +1759,26 @@
                 return;
             }
             
+            const isMetaList = getURLHashParam('list') === 'all';
+            
             data.forEach(participant => {
                 if (!participant) return; // Skip null/undefined participants
                 const card = document.createElement('div');
                 const teamClass = getTeamClass(participant.Team);
                 card.className = `gallery-card ${teamClass}`;
-                card.dataset.participantName = participant.Name || 'Unknown';
                 
-                const name = participant.Name || 'Unknown';
+                const name = getParticipantName(participant);
+                card.dataset.participantName = name;
+                
+                // Add clickable functionality for meta list
+                if (isMetaList && participant.Feed) {
+                    card.style.cursor = 'pointer';
+                    card.title = `Click to view data from: ${participant.Title || participant.Feed}`;
+                    card.addEventListener('click', () => {
+                        updateHashParam('list', participant.Feed);
+                        updateParticipantListTitle(participant.Title || participant.Feed);
+                    });
+                }
                 const location = participant.Location || 'Location TBD';
                 const status = participant.Status || 'Status TBD';
                 
@@ -1878,6 +2005,11 @@
         }
         
         function applyAllFilters() {
+            if (!allParticipantsData || allParticipantsData.length === 0) {
+                console.warn('applyAllFilters called but allParticipantsData is empty or undefined');
+                return;
+            }
+            
             let filteredData = [...allParticipantsData];
             
             // Apply status filter
@@ -1899,7 +2031,7 @@
             // Apply present participants filter if active
             if (showOnlyPresent) {
                 filteredData = filteredData.filter(participant => {
-                    const name = participant.Name || 'Unknown';
+                    const name = getParticipantName(participant);
                     return Array.from(presentParticipants).some(presentName => 
                         presentName.toLowerCase() === name.toLowerCase()
                     );
@@ -1909,7 +2041,7 @@
             // Render filtered data in all views
             renderColumnView(filteredData);
             renderTableView(filteredData);
-            renderGalleryCards(filteredData);
+            renderGalleryView(filteredData);
             
             // Update participant count
             const participantCount = document.getElementById('participant-count');
@@ -1950,6 +2082,9 @@
             
             // Save view preference to localStorage
             localStorage.setItem('participantsViewMode', viewType);
+            
+            // Update URL hash parameter
+            updateHashParam('display', viewType);
             
             // Hide all views
             document.getElementById('column-view').style.display = 'none';
@@ -2004,6 +2139,9 @@
             const presentList = Array.from(presentParticipants).join(', ');
             localStorage.setItem('presentParticipants', presentList);
             // Don't overwrite the input field value to preserve user's typing
+            
+            // Update visibility since we now have stored present participants
+            updatePresentParticipantsVisibility();
         }
         
         function updatePresentCount() {
@@ -2076,11 +2214,354 @@
                 toggleText.textContent = 'Present';
             }
         }
-
-        getParticipantsButton.addEventListener('click', getMeetupParticipants);
         
-        // Export CSV functionality
-        document.getElementById('export-csv').addEventListener('click', function() {
+        function shouldShowPresentParticipants() {
+            // Check if URL contains #list=team or any variant with "team"
+            const urlParams = new URLSearchParams(window.location.search);
+            const listParam = urlParams.get('list');
+            const hashParams = window.location.hash.substring(1); // Remove #
+            const hasTeamInUrl = (listParam && listParam.toLowerCase().includes('team')) ||
+                                hashParams.toLowerCase().includes('list=team') ||
+                                hashParams.toLowerCase().includes('list=modelteam');
+            
+            // Check if there are already stored present participants
+            const storedPresent = localStorage.getItem('presentParticipants');
+            const hasStoredPresent = storedPresent && storedPresent.trim() !== '';
+            
+            return hasTeamInUrl || hasStoredPresent;
+        }
+        
+        function updatePresentParticipantsVisibility() {
+            const presentControl = document.getElementById('present-control');
+            if (presentControl) {
+                if (shouldShowPresentParticipants()) {
+                    presentControl.style.display = 'block';
+                } else {
+                    presentControl.style.display = 'none';
+                }
+            }
+        }
+        
+        // Data preprocessing functions for column name normalization
+        function detectCommonPrefix(columns) {
+            if (columns.length === 0) return '';
+            
+            // Find the shortest column name to limit prefix length
+            const minLength = Math.min(...columns.map(col => col.length));
+            if (minLength === 0) return '';
+            
+            let commonPrefix = '';
+            
+            // Check each character position
+            for (let i = 0; i < minLength; i++) {
+                const char = columns[0][i];
+                
+                // Check if all columns have the same character at this position
+                const allMatch = columns.every(col => col[i] === char);
+                
+                if (allMatch) {
+                    commonPrefix += char;
+                } else {
+                    break;
+                }
+            }
+            
+            // Only return prefix if it ends with an underscore or is substantial
+            // and all columns would still have meaningful names after removal
+            if (commonPrefix.length > 2 && 
+                (commonPrefix.endsWith('_') || commonPrefix.length >= 4)) {
+                
+                // Verify all columns would have meaningful names after prefix removal
+                const wouldBeValid = columns.every(col => {
+                    const remaining = col.substring(commonPrefix.length);
+                    return remaining.length > 0 && remaining !== '_';
+                });
+                
+                if (wouldBeValid) {
+                    return commonPrefix;
+                }
+            }
+            
+            return '';
+        }
+        
+        function preprocessParticipantData(participants) {
+            if (!Array.isArray(participants) || participants.length === 0) {
+                return participants;
+            }
+            
+            return participants.map(participant => {
+                // Create a new object to maintain original data
+                const processed = {};
+                
+                // Step 1: Get all column names
+                const allColumns = Object.keys(participant);
+                const commonPrefix = detectCommonPrefix(allColumns);
+                
+                // Step 2: Create a mapping of original to cleaned column names
+                const columnMapping = {};
+                allColumns.forEach(col => {
+                    let cleanedName = col;
+                    if (commonPrefix && col.startsWith(commonPrefix)) {
+                        cleanedName = col.substring(commonPrefix.length);
+                        // Ensure the cleaned name doesn't start with underscore
+                        if (cleanedName.startsWith('_')) {
+                            cleanedName = cleanedName.substring(1);
+                        }
+                    }
+                    columnMapping[col] = cleanedName;
+                });
+                
+                // Step 3: Identify ID columns and add them first (using cleaned names)
+                const idColumns = [];
+                const otherColumns = [];
+                
+                Object.entries(columnMapping).forEach(([originalKey, cleanedKey]) => {
+                    if (cleanedKey === 'id' || cleanedKey.endsWith('_id') || cleanedKey.endsWith('ID') || cleanedKey === 'ID') {
+                        idColumns.push({ original: originalKey, cleaned: cleanedKey });
+                    } else {
+                        otherColumns.push({ original: originalKey, cleaned: cleanedKey });
+                    }
+                });
+                
+                // Sort ID columns (id first, then others alphabetically)
+                idColumns.sort((a, b) => {
+                    if (a.cleaned === 'id') return -1;
+                    if (b.cleaned === 'id') return 1;
+                    return a.cleaned.localeCompare(b.cleaned);
+                });
+                
+                // Step 4: Add ID columns first
+                idColumns.forEach(({ original, cleaned }) => {
+                    processed[cleaned] = participant[original];
+                });
+                
+                // Step 5: Handle description -> title conversion
+                const descriptionColumn = otherColumns.find(({ cleaned, original }) => 
+                    cleaned === 'description' || 
+                    original === 'project_description' ||
+                    cleaned === 'project_description'
+                );
+                
+                if (descriptionColumn && participant[descriptionColumn.original] !== undefined && 
+                    participant[descriptionColumn.original] !== null && participant[descriptionColumn.original] !== '') {
+                    processed.title = participant[descriptionColumn.original];
+                    // Remove from otherColumns to avoid duplication
+                    const index = otherColumns.indexOf(descriptionColumn);
+                    if (index > -1) {
+                        otherColumns.splice(index, 1);
+                    }
+                } else {
+                    // Check for existing title
+                    const titleColumn = otherColumns.find(({ cleaned }) => cleaned === 'title');
+                    if (titleColumn && participant[titleColumn.original] !== undefined && 
+                        participant[titleColumn.original] !== null && participant[titleColumn.original] !== '') {
+                        processed.title = participant[titleColumn.original];
+                        // Remove from otherColumns to avoid duplication
+                        const index = otherColumns.indexOf(titleColumn);
+                        if (index > -1) {
+                            otherColumns.splice(index, 1);
+                        }
+                    }
+                }
+                
+                // Step 6: Add Name column only if no existing name field is found
+                // Check if there's already a name column in the data
+                const existingNameColumn = otherColumns.find(({ cleaned }) => 
+                    cleaned === 'name' || 
+                    cleaned === 'participant_name' ||
+                    cleaned === 'full_name' ||
+                    cleaned === 'display_name'
+                );
+                
+                // Only add a Name column if no existing name column is found
+                if (!existingNameColumn) {
+                    let nameField = null;
+                    
+                    if (processed.title && processed.title !== '') {
+                        // Use title field as name
+                        nameField = processed.title;
+                    } else if (otherColumns.length > 0) {
+                        // Use first non-ID column as name
+                        const firstColumn = otherColumns[0];
+                        nameField = participant[firstColumn.original] || '';
+                    } else {
+                        // Final fallback
+                        nameField = 'Unknown';
+                    }
+                    
+                    // Add as "Name" column (not "displayName")
+                    processed.Name = nameField;
+                }
+                
+                // Step 7: Add remaining columns with cleaned names
+                otherColumns.forEach(({ original, cleaned }) => {
+                    processed[cleaned] = participant[original];
+                });
+                
+                return processed;
+            });
+        }
+        
+        function getParticipantName(participant) {
+            // Helper function to get the appropriate name field from a participant object
+            // Checks for various name field variations and returns the value
+            if (!participant || typeof participant !== 'object') {
+                return 'Unknown';
+            }
+            
+            const nameFields = ['Name', 'name', 'participant_name', 'full_name', 'display_name', 'displayName'];
+            
+            for (const field of nameFields) {
+                if (participant[field] !== undefined && participant[field] !== null && participant[field] !== '') {
+                    return participant[field];
+                }
+            }
+            
+            return 'Unknown';
+        }
+        
+        // Raw data functionality
+        let originalRawData = null;
+        let rawDataVisible = false;
+        
+        function toggleRawData() {
+            rawDataVisible = !rawDataVisible;
+            const rawDataControl = document.getElementById('raw-data-control');
+            const rawDataEditor = document.getElementById('raw-data-editor');
+            const rawDataText = document.getElementById('raw-data-text');
+            const rawDataSource = document.getElementById('raw-data-source');
+            
+            if (rawDataVisible) {
+                // Show raw data editor
+                rawDataControl.style.display = 'block';
+                rawDataText.textContent = 'Hide Raw Data';
+                
+                // Store original data and populate editor
+                originalRawData = JSON.parse(JSON.stringify(participantsData));
+                rawDataEditor.value = JSON.stringify(participantsData, null, 2);
+                
+                // Populate data source field
+                const currentSource = getCurrentDataSource();
+                rawDataSource.value = currentSource;
+            } else {
+                // Hide raw data editor
+                rawDataControl.style.display = 'none';
+                rawDataText.textContent = 'View Raw Data';
+            }
+            
+            // Close menu
+            document.getElementById('menu-toggle').classList.remove('active');
+            document.getElementById('menu-dropdown').classList.remove('active');
+        }
+        
+        function getCurrentDataSource() {
+            // Get current data source based on selection and hash parameters
+            const listParam = getURLHashParam('list');
+            
+            if (listParam === 'all') {
+                return 'Meta-list: All Available Feeds';
+            } else if (selectedFile === 'all') {
+                return 'Meta-list: All Available Feeds';
+            } else if (selectedFile && selectedFile.startsWith('http')) {
+                return selectedFile;
+            } else if (selectedFile && selectedFile.startsWith('custom_')) {
+                return `Custom file: ${selectedFile.replace('custom_', '')}`;
+            } else {
+                // Try to get URL from selected dropdown option
+                const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+                const dataUrl = selectedOption?.getAttribute('data-url');
+                
+                if (dataUrl && dataUrl !== 'all') {
+                    return dataUrl;
+                } else {
+                    return selectedOption?.textContent || 'Unknown data source';
+                }
+            }
+        }
+        
+        function applyRawDataChanges() {
+            const rawDataEditor = document.getElementById('raw-data-editor');
+            
+            try {
+                // Parse the edited JSON
+                const editedData = JSON.parse(rawDataEditor.value);
+                
+                // Validate that it's an array
+                if (!Array.isArray(editedData)) {
+                    throw new Error('Data must be an array of participants');
+                }
+                
+                // Update the global participants data
+                participantsData = editedData;
+                
+                // Apply all filters and refresh the display
+                applyAllFilters();
+                
+                // Show success message
+                showStatusMessage('Raw data changes applied successfully', 'success');
+                
+            } catch (error) {
+                // Show error message
+                showStatusMessage('Error parsing JSON: ' + error.message, 'error');
+                console.error('Raw data parsing error:', error);
+            }
+        }
+        
+        function revertRawData() {
+            const rawDataEditor = document.getElementById('raw-data-editor');
+            
+            if (originalRawData) {
+                // Restore original data
+                participantsData = JSON.parse(JSON.stringify(originalRawData));
+                rawDataEditor.value = JSON.stringify(originalRawData, null, 2);
+                
+                // Apply all filters and refresh the display
+                applyAllFilters();
+                
+                // Show success message
+                showStatusMessage('Raw data reverted to original', 'info');
+            }
+        }
+        
+        function closeRawData() {
+            // Close the raw data editor if it's open
+            if (rawDataVisible) {
+                toggleRawData();
+            }
+        }
+        
+        function showStatusMessage(message, type = 'info') {
+            // Create or update status message element
+            let statusEl = document.getElementById('raw-data-status');
+            if (!statusEl) {
+                statusEl = document.createElement('div');
+                statusEl.id = 'raw-data-status';
+                statusEl.className = 'status-message';
+                document.getElementById('raw-data-control').appendChild(statusEl);
+            }
+            
+            // Set message and type
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.style.display = 'block';
+            
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                statusEl.style.display = 'none';
+            }, 3000);
+        }
+        
+        function exportCSVFromMenu() {
+            // Close menu first
+            document.getElementById('menu-toggle').classList.remove('active');
+            document.getElementById('menu-dropdown').classList.remove('active');
+            
+            // Call the existing export CSV functionality
+            exportParticipantsCSV();
+        }
+        
+        function exportParticipantsCSV() {
             if (!window.participantsData || window.participantsData.length === 0) {
                 alert('No participant data to export');
                 return;
@@ -2097,10 +2578,35 @@
             
             let filename = `meetup-participants-${dateString}.csv`;
             
+            // Apply team filter if active
+            const teamFilter = currentTeamFilter;
+            if (teamFilter !== 'all') {
+                dataToExport = dataToExport.filter(participant => {
+                    const team = getParticipantTeam(participant);
+                    return team === teamFilter;
+                });
+                filename = `meetup-participants-${teamFilter}-${dateString}.csv`;
+            }
+            
+            // Apply status filter if active
+            const statusFilter = currentStatusFilter;
+            if (statusFilter !== 'all') {
+                dataToExport = dataToExport.filter(participant => {
+                    const status = participant.Response || 'No';
+                    switch(statusFilter) {
+                        case 'attending': return status === 'Yes';
+                        case 'waitlisted': return status === 'Waitlisted';
+                        case 'not-attending': return status === 'No';
+                        default: return true;
+                    }
+                });
+                filename = `meetup-participants-${statusFilter}-${dateString}.csv`;
+            }
+            
             // If showing only present participants, export only those
             if (showOnlyPresent) {
-                dataToExport = window.participantsData.filter(participant => {
-                    const name = participant.Name || 'Unknown';
+                dataToExport = dataToExport.filter(participant => {
+                    const name = getParticipantName(participant);
                     return Array.from(presentParticipants).some(presentName => 
                         presentName.toLowerCase() === name.toLowerCase()
                     );
@@ -2109,7 +2615,7 @@
             }
             
             if (dataToExport.length === 0) {
-                alert('No participants to export');
+                alert('No participants match the current filters');
                 return;
             }
             
@@ -2136,7 +2642,9 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        });
+        }
+
+        getParticipantsButton.addEventListener('click', getMeetupParticipants);
         
         // Google Project Setup Functions
         let PROJECT_ID = '';
@@ -2690,6 +3198,11 @@
         
         document.getElementById('present-toggle').addEventListener('click', togglePresentFilter);
         
+        // Raw data event listeners
+        document.getElementById('apply-raw-data').addEventListener('click', applyRawDataChanges);
+        document.getElementById('revert-raw-data').addEventListener('click', revertRawData);
+        document.getElementById('raw-data-close').addEventListener('click', closeRawData);
+        
         // File selection handling functions
         function handleFileDropdownChange() {
             const value = fileSelect.value;
@@ -2717,16 +3230,25 @@
                 // Hide custom file upload and use predefined file
                 customFileSection.style.display = 'none';
                 
-                // Get the selected option to check for data attributes
-                const selectedOption = fileSelect.options[fileSelect.selectedIndex];
-                const dataUrl = selectedOption.getAttribute('data-url');
-                
-                if (dataUrl) {
-                    selectedFile = dataUrl;
-                    console.log(`Selected option: ${selectedOption.textContent} (${value}) - URL: ${dataUrl}`);
+                // Check if "All Lists" option is selected
+                if (value === 'all') {
+                    selectedFile = 'all';
+                    console.log('Selected option: All Lists - showing meta list');
                     
-                    // Auto-refresh the list when selection changes
-                    getMeetupParticipants();
+                    // Show all feeds meta list
+                    showAllFeeds();
+                } else {
+                    // Get the selected option to check for data attributes
+                    const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+                    const dataUrl = selectedOption.getAttribute('data-url');
+                    
+                    if (dataUrl) {
+                        selectedFile = dataUrl;
+                        console.log(`Selected option: ${selectedOption.textContent} (${value}) - URL: ${dataUrl}`);
+                        
+                        // Auto-refresh the list when selection changes
+                        getMeetupParticipants();
+                    }
                 }
             }
             
@@ -2737,16 +3259,21 @@
             }
         }
         
-        function updateParticipantListTitle() {
-            const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+        function updateParticipantListTitle(customTitle = null) {
             const participantListTitle = document.getElementById('participants-list-title');
             
-            if (selectedOption && selectedOption.textContent && selectedOption.value !== 'custom') {
-                // Use the title from the selected option
-                participantListTitle.textContent = `📊 ${selectedOption.textContent}`;
+            if (customTitle) {
+                // Use custom title provided
+                participantListTitle.textContent = `📊 ${customTitle}`;
             } else {
-                // Default title
-                participantListTitle.textContent = '📊 Participants List';
+                const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+                if (selectedOption && selectedOption.textContent && selectedOption.value !== 'custom') {
+                    // Use the title from the selected option
+                    participantListTitle.textContent = `📊 ${selectedOption.textContent}`;
+                } else {
+                    // Default title
+                    participantListTitle.textContent = '📊 Participants List';
+                }
             }
         }
         
@@ -2792,22 +3319,37 @@
             customFileSection.style.display = 'none';
         }
         
-        function updateListHashParam(listValue) {
+        function updateHashParam(paramName, paramValue) {
             const urlParams = new URLSearchParams(window.location.hash.substring(1));
-            if (listValue) {
-                urlParams.set('list', listValue);
+            if (paramValue) {
+                urlParams.set(paramName, paramValue);
             } else {
-                urlParams.delete('list');
+                urlParams.delete(paramName);
             }
             
             const newHash = urlParams.toString();
             window.location.hash = newHash ? `#${newHash}` : '';
         }
+
+        function updateListHashParam(listValue) {
+            updateHashParam('list', listValue);
+        }
         
         async function initializeFileSelection() {
             // Use shared function for Google Sheet loading and initialization
             const selectedOption = await initializeFileSelectionWithGoogleSheet(fileSelect, 'list', STORAGE_KEY);
-            selectedFile = selectedOption.getAttribute('data-url') || selectedOption.value;
+            
+            // Add "All Lists" option after dynamic options are loaded
+            addAllListsOption();
+            
+            // Check if list=all is in hash parameter and select "All Lists" option
+            const listParam = getURLHashParam('list');
+            if (listParam === 'all') {
+                fileSelect.value = 'all';
+                selectedFile = 'all';
+            } else {
+                selectedFile = selectedOption.getAttribute('data-url') || selectedOption.value;
+            }
             
             // Update the participant list title with the selected option
             updateParticipantListTitle();
@@ -2820,6 +3362,21 @@
             fileDisplay.addEventListener('click', () => {
                 fileInput.click();
             });
+        }
+        
+        function addAllListsOption() {
+            // Check if "All Lists" option already exists
+            const existingAllOption = Array.from(fileSelect.options).find(option => option.value === 'all');
+            if (existingAllOption) return;
+            
+            // Add "All Lists" option at the top (first position)
+            const allListsOption = document.createElement('option');
+            allListsOption.value = 'all';
+            allListsOption.textContent = 'All Lists';
+            allListsOption.setAttribute('data-url', 'all');
+            
+            // Insert as the first option
+            fileSelect.insertBefore(allListsOption, fileSelect.firstChild);
         }
         
         // Restore saved view state
@@ -2885,9 +3442,144 @@
             document.getElementById('menu-toggle').classList.remove('active');
         }
         
+        function parseCSVRobust(csvText) {
+            // Robust CSV parser that handles quoted fields with newlines, escaped quotes, and proper field separation
+            // This prevents line returns within quoted field values from being treated as new rows
+            const rows = [];
+            let current = '';
+            let inQuotes = false;
+            let currentRow = [];
+            let currentField = '';
+            
+            for (let i = 0; i < csvText.length; i++) {
+                const char = csvText[i];
+                const nextChar = csvText[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        // Handle escaped quotes ("" inside quoted field)
+                        currentField += '"';
+                        i++; // Skip next quote
+                    } else {
+                        // Toggle quote state
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    // End of field
+                    currentRow.push(currentField.trim());
+                    currentField = '';
+                } else if ((char === '\n' || char === '\r\n') && !inQuotes) {
+                    // End of row (only if not inside quotes)
+                    currentRow.push(currentField.trim());
+                    if (currentRow.length > 0 && currentRow.some(field => field !== '')) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentField = '';
+                    
+                    // Skip \r if we're at \r\n
+                    if (char === '\r' && nextChar === '\n') {
+                        i++;
+                    }
+                } else if (char === '\r' && !inQuotes) {
+                    // Handle standalone \r as row separator
+                    currentRow.push(currentField.trim());
+                    if (currentRow.length > 0 && currentRow.some(field => field !== '')) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentField = '';
+                } else {
+                    // Regular character or newline inside quotes
+                    currentField += char;
+                }
+            }
+            
+            // Handle last field and row
+            if (currentField !== '' || currentRow.length > 0) {
+                currentRow.push(currentField.trim());
+                if (currentRow.length > 0 && currentRow.some(field => field !== '')) {
+                    rows.push(currentRow);
+                }
+            }
+            
+            return rows;
+        }
+
+        function showAllFeeds() {
+            // Load and display the meta-list Google Sheet with all feeds
+            const masterSheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxfv7lxikjrmro3EJYGE_134vm5HdDszZKt4uKswHhsNJ_-afSaG9RoA4oeNV656r4mTuG3wTu38pM/pub?output=csv';
+            
+            // Clear current data and show loading state
+            const tableContainer = document.getElementById('participants-table-container');
+            if (tableContainer) {
+                tableContainer.innerHTML = '<div class="loading-state">Loading feeds list...</div>';
+            }
+            
+            // Load the master sheet data
+            fetch(masterSheetUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(csvText => {
+                    // Check if we got HTML instead of CSV (redirect or error)
+                    if (csvText.trim().toLowerCase().startsWith('<html')) {
+                        throw new Error('Received HTML instead of CSV data');
+                    }
+                    
+                    // Parse CSV data with robust parser that handles newlines in quoted fields
+                    const rows = parseCSVRobust(csvText);
+                    if (rows.length === 0) {
+                        throw new Error('No data found in CSV');
+                    }
+                    
+                    // First row contains headers
+                    const headers = rows[0];
+                    const feedsData = [];
+                    
+                    // Parse data rows
+                    for (let i = 1; i < rows.length; i++) {
+                        const values = rows[i];
+                        if (values.length > 0) {
+                            const feedEntry = {};
+                            headers.forEach((header, index) => {
+                                feedEntry[header] = values[index] || '';
+                            });
+                            feedsData.push(feedEntry);
+                        }
+                    }
+                    
+                    // Display the feeds data using the existing display system
+                    currentData = feedsData;
+                    displayParticipantsTable(feedsData, 'All Available Feeds');
+                    
+                    // Update the page title
+                    document.title = 'All Available Feeds - MemberCommons';
+                    
+                    // Update URL hash to list=all
+                    updateListHashParam('all');
+                    
+                    // Close menu
+                    document.getElementById('menu-dropdown').style.display = 'none';
+                    document.getElementById('menu-toggle').classList.remove('active');
+                })
+                .catch(error => {
+                    console.error('Error loading feeds list:', error);
+                    if (tableContainer) {
+                        tableContainer.innerHTML = '<div class="error-state">Error loading feeds list. Please try again.<br><small>Error: ' + error.message + '</small></div>';
+                    }
+                    
+                    // Update URL hash to list=all even on error to maintain state
+                    updateListHashParam('all');
+                });
+        }
+
         function toggleSelectList() {
             const panel = document.getElementById('file-selection-panel');
-            const selectListToggle = document.getElementById('select-list-toggle');
+            const selectListText = document.getElementById('select-list-text');
             
             if (!panel) {
                 console.error('file-selection-panel element not found!');
@@ -2900,10 +3592,10 @@
             
             if (isVisible) {
                 panel.style.display = 'none';
-                selectListToggle.querySelector('span').textContent = 'Select List';
+                selectListText.textContent = 'Select List';
             } else {
                 panel.style.display = 'block';
-                selectListToggle.querySelector('span').textContent = 'Hide List Select';
+                selectListText.textContent = 'Hide List';
             }
             
             // Close menu
@@ -2969,22 +3661,72 @@
             // Initialize condensed view buttons
             updateCondensedViewButtons();
             
+            // Check and update present participants panel visibility on page load
+            updatePresentParticipantsVisibility();
+            
+            // Listen for URL changes to update visibility
+            window.addEventListener('hashchange', updatePresentParticipantsVisibility);
+            
+            // Listen for URL changes to handle list parameter changes
+            window.addEventListener('hashchange', function() {
+                const listParam = getURLHashParam('list');
+                
+                // Update dropdown selection if it doesn't match current value
+                if (listParam && listParam !== fileSelect.value) {
+                    // Check if the option exists in the dropdown
+                    const targetOption = Array.from(fileSelect.options).find(option => option.value === listParam);
+                    if (targetOption) {
+                        fileSelect.value = listParam;
+                        selectedFile = targetOption.getAttribute('data-url') || listParam;
+                        
+                        // Load the corresponding data
+                        if (listParam === 'all') {
+                            showAllFeeds();
+                        } else {
+                            getMeetupParticipants();
+                        }
+                    }
+                } else if (listParam === 'all' && fileSelect.value !== 'all') {
+                    // Special case: URL has list=all but dropdown is not set to "All Lists"
+                    fileSelect.value = 'all';
+                    selectedFile = 'all';
+                    showAllFeeds();
+                }
+            });
+            
+            // Listen for URL changes to handle display mode changes
+            window.addEventListener('hashchange', function() {
+                const displayParam = getURLHashParam('display');
+                if (displayParam && ['column', 'table', 'gallery'].includes(displayParam) && displayParam !== currentView) {
+                    switchView(displayParam);
+                }
+            });
+            
             // Initialize file selection
             await initializeFileSelection();
             
-            // Auto-load data if default option is selected
-            const selectedOption = fileSelect.options[fileSelect.selectedIndex];
-            if (selectedOption && selectedOption.getAttribute('data-url')) {
-                getMeetupParticipants();
+            // Check for list=all in URL hash to auto-load meta list
+            const listParam = getURLHashParam('list');
+            if (listParam === 'all') {
+                showAllFeeds();
+            } else {
+                // Auto-load data if default option is selected
+                const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+                if (selectedOption && selectedOption.getAttribute('data-url')) {
+                    getMeetupParticipants();
+                }
             }
             
             // Add event listeners for 3-dot menu
             document.getElementById('menu-toggle').addEventListener('click', toggleMenu);
             
             document.getElementById('select-list-toggle').addEventListener('click', toggleSelectList);
+            document.getElementById('list-feeds-toggle').addEventListener('click', showAllFeeds);
             
             document.getElementById('fullscreen-toggle').addEventListener('click', toggleFullscreen);
             document.getElementById('condensed-toggle').addEventListener('click', toggleCondensed);
+            document.getElementById('raw-data-toggle').addEventListener('click', toggleRawData);
+            document.getElementById('export-csv-menu').addEventListener('click', exportCSVFromMenu);
             
             // Add event listeners for condensed view controls
             document.getElementById('filters-toggle').addEventListener('click', toggleFiltersDropdown);
