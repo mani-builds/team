@@ -50,7 +50,7 @@ impl Config {
                     .parse()
                     .unwrap_or(8081),
                 excel_file_path: std::env::var("EXCEL_FILE_PATH")
-                    .unwrap_or_else(|_| "C:\\Users\\yashg\\Model Earth\\membercommons\\preferences\\projects\\DFC-ActiveProjects.xlsx".to_string()),
+                    .unwrap_or_else(|_| r"C:\Users\yashg\Model Earth\membercommons\preferences\projects\DFC-ActiveProjects.xlsx".to_string()),
             })
         }
     }
@@ -2000,62 +2000,115 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
                             .route("/democracylab", web::post().to(import::import_democracylab_projects))
                     )
                     .service(
-                        web::scope("/admin")
-                            .route("/restart", web::post().to(restart_server))
+                        web::scope("/claude")
+                            .route("/usage/cli", web::get().to(get_claude_usage_cli))
+                            .route("/usage/website", web::get().to(get_claude_usage_website))
+                    )
+                    .service(
+                        web::scope("/gemini")
+                            .route("/usage/cli", web::get().to(get_gemini_usage_cli))
+                            .route("/usage/website", web::get().to(get_gemini_usage_website))
                     )
                     .service(
                         web::scope("/config")
                             .route("/env", web::get().to(get_env_config))
-                            .route("/save-env", web::post().to(save_env_config))
-                            .route("/create-env", web::post().to(create_env_config))
-                            .route("/gemini", web::get().to(google::test_gemini_config))
-                            .route("/database/{connection_name}", web::get().to(test_database_connection))
+                            .route("/env", web::post().to(save_env_config))
+                            .route("/env/create", web::post().to(create_env_config))
+                            .route("/restart", web::post().to(restart_server))
                     )
                     .service(
-                        web::scope("/gemini")
-                            .route("/analyze", web::post().to(google::analyze_with_gemini))
+                        web::scope("/proxy")
+                            .route("/csv", web::post().to(fetch_csv))
+                            .route("/external", web::post().to(proxy_external_request))
                     )
                     .service(
-                        web::scope("/claude")
-                            .route("/analyze", web::post().to(analyze_with_claude_cli))
+                        web::scope("/recommendations")
+                            .route("", web::post().to(get_recommendations_handler))
                     )
-                    .route("/recommendations", web::post().to(get_recommendations_handler))
-                    .service(
-                        web::scope("/google")
-                            .route("/meetup/participants", web::post().to(google::get_meetup_participants))
-                            .route("/fetch-csv", web::post().to(fetch_csv))
-                    )
-                    .route("/proxy", web::post().to(proxy_external_request))
             )
-            // Add health check route at root level as well
-            .route("/health", web::get().to(health_check))
     })
     .bind((server_host, server_port))?
     .run()
     .await?;
-    
+
     Ok(())
 }
 
-#[tokio::main]
+// Mock handlers for Claude and Gemini usage
+async fn get_claude_usage_cli() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok().json(json!({
+        "success": true,
+        "usage": {
+            "session_tokens_used": 1234,
+            "session_limit": 50000,
+            "monthly_tokens_used": 123456,
+            "monthly_limit": 1000000
+        }
+    })))
+}
+
+async fn get_claude_usage_website() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok().json(json!({
+        "success": true,
+        "usage": {
+            "session_tokens_used": 5678,
+            "session_limit": 50000,
+            "monthly_tokens_used": 234567,
+            "monthly_limit": 1000000
+        }
+    })))
+}
+
+async fn get_gemini_usage_cli() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok().json(json!({
+        "success": true,
+        "usage": {
+            "session_tokens_used": 4321,
+            "session_limit": 100000,
+            "monthly_tokens_used": 654321,
+            "monthly_limit": 1000000
+        }
+    })))
+}
+
+async fn get_gemini_usage_website() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok().json(json!({
+        "success": true,
+        "usage": {
+            "session_tokens_used": 8765,
+            "session_limit": 100000,
+            "monthly_tokens_used": 765432,
+            "monthly_limit": 1000000
+        }
+    })))
+}
+
+#[actix_web::main]
 async fn main() -> anyhow::Result<()> {
-    env_logger::init();
-    
-    let cli = Cli::parse();
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
     let config = Config::from_env()?;
     
-    match cli.command {
-        Commands::Serve => {
-            run_api_server(config).await?;
+    // Check for CLI commands
+    let cli = Cli::try_parse();
+    match cli {
+        Ok(cli) => {
+            match cli.command {
+                Commands::Serve => {
+                    run_api_server(config).await?;
+                }
+                Commands::InitDb => {
+                    println!("Initializing database...");
+                    let pool = PgPoolOptions::new()
+                        .connect(&config.database_url)
+                        .await
+                        .context("Failed to connect to database for init")?;
+                    init_database(&pool).await?;
+                }
+            }
         }
-        Commands::InitDb => {
-            let pool = PgPoolOptions::new()
-                .max_connections(5)
-                .connect(&config.database_url)
-                .await
-                .context("Failed to connect to database")?;
-            
-            init_database(&pool).await?;
+        Err(_) => {
+            // Default to serve if no command is provided
+            run_api_server(config).await?;
         }
     }
     

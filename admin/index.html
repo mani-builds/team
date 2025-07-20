@@ -241,6 +241,33 @@
             text-decoration: underline;
         }
 
+        .tab-header {
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+        }
+
+        .tab-link {
+            padding: 12px 24px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-link.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+
+        .tab-content {
+            display: none;
+            padding-top: 16px;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 0 16px;
@@ -392,56 +419,92 @@
             </div>
 
             <!-- API Usage Monitor -->
-            <div class="admin-card" id="claude-usage-card">
+            <div class="admin-card" id="api-usage-card">
                 <div class="admin-card-header">
-                    <div class="admin-card-header-content">
-                        <div class="admin-card-icon" style="background: linear-gradient(45deg, #FF6B35, #F7931E); color: white;">
-                            <i data-feather="activity"></i>
-                        </div>
-                        <div>
-                            <h3>API Usage Monitor</h3>
-                            <span class="status-badge active">Live</span>
-                        </div>
+                    <div class="admin-card-icon" style="background: linear-gradient(45deg, #FF6B35, #4285F4); color: white;">
+                        <i data-feather="activity"></i>
+                    </div>
+                    <div>
+                        <h3>API Usage Monitor</h3>
+                        <span class="status-badge active">Live</span>
                     </div>
                 </div>
                 <p>Monitor your API usage across both terminal CLI and website integrations with real-time quota tracking.</p>
                 
-                <div class="usage-sections" style="margin-top: 16px;">
-                    <!-- CLI Usage Section -->
-                    <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-                        <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
-                            <i data-feather="terminal" style="width: 16px; height: 16px; margin-right: 8px;"></i>
-                            Terminal CLI Usage
-                        </h4>
-                        <div class="usage-stats" id="cli-usage-stats">
-                            <div style="color: var(--text-secondary); font-size: 13px;">Click "Check Usage" to load current statistics</div>
-                        </div>
+                <div class="tabs" style="margin-top: 16px;">
+                    <div class="tab-header">
+                        <button class="tab-link active" onclick="openTab(event, 'Claude')">Claude</button>
+                        <button class="tab-link" onclick="openTab(event, 'Gemini')">Gemini</button>
                     </div>
-                    
-                    <!-- Website Usage Section -->
-                    <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-                        <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
-                            <i data-feather="globe" style="width: 16px; height: 16px; margin-right: 8px;"></i>
-                            Website API Usage
-                        </h4>
-                        <div class="usage-stats" id="website-usage-stats">
-                            <div style="color: var(--text-secondary); font-size: 13px;">Click "Check Usage" to load current statistics</div>
+
+                    <!-- Claude Tab Content -->
+                    <div id="Claude" class="tab-content" style="display: block;">
+                        <div class="usage-sections" style="margin-top: 16px;">
+                            <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
+                                    <i data-feather="terminal" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                                    Terminal CLI Usage
+                                </h4>
+                                <div class="usage-stats" id="cli-usage-stats-claude">
+                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
+                                </div>
+                            </div>
+                            <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
+                                    <i data-feather="globe" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                                    Website API Usage
+                                </h4>
+                                <div class="usage-stats" id="website-usage-stats-claude">
+                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
+                                </div>
+                            </div>
                         </div>
+                        <div class="usage-controls" style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                            <button class="btn btn-primary" id="check-claude-usage-btn" onclick="checkUsage('claude')" style="padding: 8px 16px; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px;">
+                                <i data-feather="refresh-cw" style="width: 16px; height: 16px; margin-right: 4px;"></i>
+                                Check Usage
+                            </button>
+                            <a href="server/" class="btn btn-secondary" id="get-connected-claude-btn" style="padding: 8px 16px; background: #EF4444; color: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; font-size: 14px; text-decoration: none;">
+                                Get Connected
+                            </a>
+                        </div>
+                        <div id="usage-status-claude" style="margin-top: 12px; padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px; display: none;"></div>
+                    </div>
+
+                    <!-- Gemini Tab Content -->
+                    <div id="Gemini" class="tab-content" style="display: none;">
+                        <div class="usage-sections" style="margin-top: 16px;">
+                            <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
+                                    <i data-feather="terminal" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                                    Terminal CLI Usage
+                                </h4>
+                                <div class="usage-stats" id="cli-usage-stats-gemini">
+                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
+                                </div>
+                            </div>
+                            <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
+                                    <i data-feather="globe" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                                    Website API Usage
+                                </h4>
+                                <div class="usage-stats" id="website-usage-stats-gemini">
+                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="usage-controls" style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                            <button class="btn btn-primary" id="check-gemini-usage-btn" onclick="checkUsage('gemini')" style="padding: 8px 16px; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px;">
+                                <i data-feather="refresh-cw" style="width: 16px; height: 16px; margin-right: 4px;"></i>
+                                Check Usage
+                            </button>
+                            <a href="server/" class="btn btn-secondary" id="get-connected-gemini-btn" style="padding: 8px 16px; background: #EF4444; color: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; font-size: 14px; text-decoration: none;">
+                                Get Connected
+                            </a>
+                        </div>
+                        <div id="usage-status-gemini" style="margin-top: 12px; padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px; display: none;"></div>
                     </div>
                 </div>
-                
-                <div class="usage-controls" style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                    <button class="btn btn-primary" id="check-usage-btn" onclick="checkClaudeUsage()" style="padding: 8px 16px; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; font-size: 14px;">
-                        <i data-feather="refresh-cw" style="width: 16px; height: 16px; margin-right: 4px;"></i>
-                        Check Usage
-                    </button>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <label style="font-size: 13px; color: var(--text-secondary);">Billing day:</label>
-                        <input type="number" id="billing-day-input" min="1" max="31" style="width: 50px; padding: 4px 8px; border: 1px solid var(--border-light); border-radius: 4px; font-size: 13px;" placeholder="15" onchange="setBillingDay()">
-                    </div>
-                </div>
-                
-                <div id="usage-status" style="margin-top: 12px; padding: 8px 12px; border-radius: var(--radius-md); font-size: 13px; display: none;"></div>
             </div>
 
         </div>
@@ -476,6 +539,21 @@
     <script>
         // Initialize Feather Icons
         feather.replace();
+
+        function openTab(evt, tabName) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tab-link");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+            feather.replace();
+        }
 
         // Add some interactivity
         document.querySelectorAll('.admin-card').forEach(card => {
@@ -532,230 +610,89 @@
             }
         }
 
-        // Claude API Usage Monitoring Functions
-        async function checkClaudeUsage() {
-            const button = document.getElementById('check-usage-btn');
-            const status = document.getElementById('usage-status');
-            const cliStats = document.getElementById('cli-usage-stats');
-            const websiteStats = document.getElementById('website-usage-stats');
-            
-            // Show loading state
+        async function checkUsage(apiType) {
+            const button = document.getElementById(`check-${apiType}-usage-btn`);
+            const getConnectedButton = document.getElementById(`get-connected-${apiType}-btn`);
+            const status = document.getElementById(`usage-status-${apiType}`);
+            const cliStats = document.getElementById(`cli-usage-stats-${apiType}`);
+            const websiteStats = document.getElementById(`website-usage-stats-${apiType}`);
+            let dataDisplayed = false;
+
             button.disabled = true;
             button.innerHTML = '<i data-feather="loader" style="width: 16px; height: 16px; margin-right: 4px; animation: spin 1s linear infinite;"></i>Checking...';
+            feather.replace();
             status.style.display = 'block';
             status.className = 'info';
             status.style.background = 'rgba(59, 130, 246, 0.1)';
             status.style.color = 'var(--accent-blue)';
-            status.textContent = 'Fetching usage data from Claude API...';
-            
+            status.textContent = `Fetching usage data from ${apiType.charAt(0).toUpperCase() + apiType.slice(1)} API...`;
+
             try {
-                // Check CLI usage via backend endpoint
-                const cliResponse = await fetch('http://localhost:8081/api/claude/usage/cli');
-                const websiteResponse = await fetch('http://localhost:8081/api/claude/usage/website');
-                
-                let cliData = null;
-                let websiteData = null;
-                
-                if (cliResponse.ok) {
-                    cliData = await cliResponse.json();
-                }
-                
-                if (websiteResponse.ok) {
-                    websiteData = await websiteResponse.json();
-                }
-                
-                // Update CLI usage display
-                if (cliData && cliData.success) {
-                    cliStats.innerHTML = formatUsageData(cliData.usage, 'CLI');
-                } else {
-                    cliStats.innerHTML = `
-                        <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
-                            <strong>Manual Check Available:</strong><br>
-                            Run <code style="background: var(--bg-secondary); padding: 2px 4px; border-radius: 3px; font-family: monospace;">claude --usage</code> in terminal<br>
-                            <small style="color: var(--text-muted);">Shows tokens used today and monthly limits</small>
-                        </div>
-                    `;
-                }
-                
-                // Update website usage display - try to get real usage data
-                if (websiteData && websiteData.success) {
-                    websiteStats.innerHTML = formatUsageData(websiteData.usage, 'Website');
-                } else {
-                    // Try to get real Claude API usage data
-                    try {
-                        const realUsageData = await fetchClaudeAPIUsage();
-                        websiteStats.innerHTML = formatUsageData(realUsageData, 'Website');
-                    } catch (usageError) {
-                        websiteStats.innerHTML = `
-                            <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
-                                <strong>Loading usage data...</strong><br>
-                                <small style="color: var(--text-muted);">Fetching current session stats from Claude API</small>
-                            </div>
-                        `;
+                const [cliResponse, websiteResponse] = await Promise.all([
+                    fetch(`http://localhost:8081/api/${apiType}/usage/cli`).catch(e => e),
+                    fetch(`http://localhost:8081/api/${apiType}/usage/website`).catch(e => e)
+                ]);
+
+                if (cliResponse instanceof Response && cliResponse.ok) {
+                    const cliData = await cliResponse.json();
+                    if (cliData.success) {
+                        cliStats.innerHTML = formatUsageData(cliData.usage, 'CLI', apiType);
+                        dataDisplayed = true;
+                    } else {
+                        cliStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
                     }
+                } else {
+                     cliStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
                 }
-                
-                
-                status.style.background = 'rgba(16, 185, 129, 0.1)';
-                status.style.color = 'var(--accent-green)';
-                status.textContent = '✓ Usage data updated successfully';
-                
+
+                if (websiteResponse instanceof Response && websiteResponse.ok) {
+                    const websiteData = await websiteResponse.json();
+                    if (websiteData.success) {
+                        websiteStats.innerHTML = formatUsageData(websiteData.usage, 'Website', apiType);
+                        getConnectedButton.style.display = 'none';
+                        dataDisplayed = true;
+                    } else {
+                        websiteStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
+                        getConnectedButton.style.display = 'inline-flex';
+                    }
+                } else {
+                    websiteStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
+                    getConnectedButton.style.display = 'inline-flex';
+                }
+
+                if (dataDisplayed) {
+                    status.style.background = 'rgba(16, 185, 129, 0.1)';
+                    status.style.color = 'var(--accent-green)';
+                    status.textContent = '✓ Usage data updated successfully';
+                } else {
+                    status.style.background = 'rgba(239, 68, 68, 0.1)';
+                    status.style.color = '#EF4444';
+                    status.textContent = '⚠ Could not retrieve usage data. Please check connection.';
+                }
+
             } catch (error) {
-                console.error('Error fetching Claude usage:', error);
-                
-                // Show manual alternative instructions
-                cliStats.innerHTML = `
-                    <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
-                        <strong>Manual Check Available:</strong><br>
-                        Run <code style="background: var(--bg-secondary); padding: 2px 4px; border-radius: 3px; font-family: monospace;">claude --usage</code> in terminal<br>
-                        <small style="color: var(--text-muted);">Shows tokens used today and monthly limits</small>
-                    </div>
-                `;
-                
-                // Try to get real Claude API usage even in error state
-                try {
-                    const realUsageData = await fetchClaudeAPIUsage();
-                    websiteStats.innerHTML = formatUsageData(realUsageData, 'Website');
-                } catch (usageError) {
-                    websiteStats.innerHTML = `
-                        <div style="color: var(--text-secondary); font-size: 13px; line-height: 1.5;">
-                            <strong>Unable to fetch usage data</strong><br>
-                            <small style="color: var(--text-muted);">Claude API usage endpoint not accessible</small>
-                        </div>
-                    `;
-                }
-                
+                console.error(`Error fetching ${apiType} usage:`, error);
+                cliStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
+                websiteStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
+                getConnectedButton.style.display = 'inline-flex';
                 status.style.background = 'rgba(239, 68, 68, 0.1)';
                 status.style.color = '#EF4444';
                 status.textContent = '⚠ Backend API not available. See manual options above.';
             } finally {
-                // Reset button
                 button.disabled = false;
                 button.innerHTML = '<i data-feather="refresh-cw" style="width: 16px; height: 16px; margin-right: 4px;"></i>Check Usage';
                 feather.replace();
-                
-                // Hide status after 5 seconds
                 setTimeout(() => {
                     status.style.display = 'none';
                 }, 5000);
             }
         }
         
-        // Function to fetch real Claude API usage data
-        async function fetchClaudeAPIUsage() {
-            // Try multiple endpoints to get Claude usage data
-            const endpoints = [
-                'https://api.anthropic.com/v1/usage',
-                'https://api.anthropic.com/v1/account/usage',
-                'http://localhost:8081/api/claude/usage/direct'
-            ];
+        function formatUsageData(usage, source, apiType) {
+            if (!usage) return `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
             
-            for (const endpoint of endpoints) {
-                try {
-                    const response = await fetch(endpoint, {
-                        headers: {
-                            'Accept': 'application/json',
-                            'Content-Type': 'application/json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        return data;
-                    }
-                } catch (error) {
-                    console.log(`Failed to fetch from ${endpoint}:`, error.message);
-                }
-            }
-            
-            // If all endpoints fail, return mock data based on current session
-            return {
-                session_tokens_used: Math.floor(Math.random() * 15000) + 5000,
-                session_limit: 50000,
-                session_reset_time: new Date(Date.now() + (4 * 60 * 60 * 1000)), // 4 hours from now
-                monthly_tokens_used: Math.floor(Math.random() * 200000) + 100000,
-                monthly_limit: 1000000,
-                timeout_active: Math.random() > 0.7, // 30% chance of timeout
-                timeout_ends_at: new Date(Date.now() + (15 * 60 * 1000)), // 15 minutes from now
-                billing_cycle_start: null, // Will be detected from API or localStorage
-                billing_cycle_end: null
-            };
-        }
-        
-        // Function to detect billing cycle end date
-        function detectBillingCycleEnd(usage) {
-            const now = new Date();
-            const monthNames = ["January", "February", "March", "April", "May", "June", 
-                              "July", "August", "September", "October", "November", "December"];
-            
-            // Method 1: Check if API provides billing cycle info
-            if (usage.billing_cycle_end) {
-                const cycleEnd = new Date(usage.billing_cycle_end);
-                const month = monthNames[cycleEnd.getMonth()];
-                const day = cycleEnd.getDate();
-                return `Cycle ends: ${month} ${day}`;
-            }
-            
-            // Method 2: Check localStorage for saved billing date
-            const savedBillingDate = localStorage.getItem('claude_billing_cycle_day');
-            if (savedBillingDate) {
-                const billingDay = parseInt(savedBillingDate);
-                const currentMonth = now.getMonth();
-                const currentYear = now.getFullYear();
-                
-                // Calculate next billing date
-                let nextBillingDate = new Date(currentYear, currentMonth, billingDay);
-                if (nextBillingDate <= now) {
-                    nextBillingDate = new Date(currentYear, currentMonth + 1, billingDay);
-                }
-                
-                const month = monthNames[nextBillingDate.getMonth()];
-                const day = nextBillingDate.getDate();
-                return `Cycle ends: ${month} ${day}`;
-            }
-            
-            // Method 3: Try to detect from usage patterns
-            if (usage.monthly_tokens_used !== undefined) {
-                const usagePercent = (usage.monthly_tokens_used / (usage.monthly_limit || 1000000)) * 100;
-                
-                // If usage is very low, might be near cycle start
-                if (usagePercent < 10) {
-                    const possibleStartDay = now.getDate() - Math.floor(usagePercent / 5);
-                    if (possibleStartDay > 0 && possibleStartDay <= 31) {
-                        // Store detected date for future use
-                        localStorage.setItem('claude_billing_cycle_day', possibleStartDay.toString());
-                        
-                        let nextBillingDate = new Date(now.getFullYear(), now.getMonth() + 1, possibleStartDay);
-                        const month = monthNames[nextBillingDate.getMonth()];
-                        const day = nextBillingDate.getDate();
-                        return `Cycle ends: ${month} ${day} (detected)`;
-                    }
-                }
-            }
-            
-            // Method 4: Check for common billing dates (1st, 15th, last day)
-            const today = now.getDate();
-            const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-            
-            // If we're in the first half of month, likely billing on 1st
-            if (today <= 15) {
-                const nextFirst = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-                const month = monthNames[nextFirst.getMonth()];
-                return `Cycle ends: ${month} 1 (estimated)`;
-            }
-            
-            // If we're in second half, might be mid-month billing
-            const nextFifteenth = new Date(now.getFullYear(), now.getMonth() + 1, 15);
-            const month = monthNames[nextFifteenth.getMonth()];
-            return `Cycle ends: ${month} 15 (estimated)`;
-        }
-        
-        function formatUsageData(usage, source) {
-            if (!usage) return `<div style="color: var(--text-secondary);">No data available</div>`;
-            
-            // Handle both old format (daily/monthly) and new format (session-based)
             const sessionUsed = usage.session_tokens_used || usage.daily_tokens_used || 0;
-            const sessionLimit = usage.session_limit || usage.daily_limit || 50000;
+            const sessionLimit = usage.session_limit || (apiType === 'gemini' ? 100000 : 50000);
             const monthlyUsed = usage.monthly_tokens_used || 0;
             const monthlyLimit = usage.monthly_limit || 1000000;
             
@@ -764,34 +701,8 @@
             
             const tokensRemaining = sessionLimit - sessionUsed;
             
-            let sessionInfo = '';
-            if (usage.session_reset_time) {
-                const resetTime = new Date(usage.session_reset_time);
-                const timeUntilReset = resetTime - new Date();
-                const hoursUntilReset = Math.floor(timeUntilReset / (1000 * 60 * 60));
-                const minutesUntilReset = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60));
-                sessionInfo = `<div style="color: var(--text-muted); font-size: 12px; margin-bottom: 8px;">
-                    Session resets in: ${hoursUntilReset}h ${minutesUntilReset}m
-                </div>`;
-            }
-            
-            let timeoutInfo = '';
-            if (usage.timeout_active && usage.timeout_ends_at) {
-                const timeoutEnd = new Date(usage.timeout_ends_at);
-                const timeUntilEnd = timeoutEnd - new Date();
-                const minutesLeft = Math.floor(timeUntilEnd / (1000 * 60));
-                timeoutInfo = `<div style="color: #EF4444; font-size: 12px; margin-bottom: 8px; padding: 4px 8px; background: rgba(239, 68, 68, 0.1); border-radius: 4px;">
-                    ⚠ Timeout active - ends in ${minutesLeft} minutes
-                </div>`;
-            }
-            
-            // Detect billing cycle end date
-            const billingEndInfo = detectBillingCycleEnd(usage);
-            
             return `
                 <div style="font-size: 13px; line-height: 1.4;">
-                    ${timeoutInfo}
-                    ${sessionInfo}
                     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                         <span style="color: var(--text-primary); font-weight: 500;">Current Session:</span>
                         <span style="color: ${sessionPercent > 80 ? '#EF4444' : sessionPercent > 60 ? '#F59E0B' : 'var(--accent-green)'};">
@@ -817,36 +728,9 @@
                     
                     <div style="color: var(--text-secondary); font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
                         <span>Last updated: ${new Date().toLocaleTimeString()}</span>
-                        <span>${billingEndInfo}</span>
                     </div>
                 </div>
             `;
-        }
-        
-        function setBillingDay() {
-            const input = document.getElementById('billing-day-input');
-            const day = parseInt(input.value);
-            
-            if (day >= 1 && day <= 31) {
-                localStorage.setItem('claude_billing_cycle_day', day.toString());
-                
-                // Update the status message
-                const status = document.getElementById('usage-status');
-                status.style.display = 'block';
-                status.style.background = 'rgba(16, 185, 129, 0.1)';
-                status.style.color = 'var(--accent-green)';
-                status.textContent = `✓ Billing cycle day set to ${day}. Click "Check Usage" to see updated cycle end date.`;
-                
-                // Clear the input
-                input.value = '';
-                
-                // Hide status after 3 seconds
-                setTimeout(() => {
-                    status.style.display = 'none';
-                }, 3000);
-            } else {
-                alert('Please enter a valid day between 1 and 31.');
-            }
         }
         
         // Add CSS for spinning animation
