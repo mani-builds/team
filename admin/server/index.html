@@ -30,7 +30,7 @@
                 Configure Your Server
                 <!-- Google Gemini Insights -->
             </h1>
-            <p><a href="../import-data.html">Our Data Import Page</a> let's you send a dataset to Claude and Gemini for analysis when <a href="../">running the site locally</a>.<br><br>
+            <p><a href="../import-data.html">Our Data Import Page</a> let's you send a dataset to Claude and Gemini for analysis when <a href="../">running the site locally</a>.<br>
 
             <a href="https://github.com/modelearth/team/">Fork the MemberCommons Repo</a> and contribut to <a href="../../projects/#list=modelteam">Model Team Integrations</a></p>
         </div>
@@ -49,7 +49,7 @@
                     <div id="os-info" style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;"></div>
                 </div>
                 <div>
-                    <span style="font-weight: 500; margin-right: 12px;">CLI Already Installed:</span>
+                    <span style="font-weight: 500; margin-right: 12px;">CLI already installed:</span>
                     <div style="display: inline-flex; gap: 16px;">
                         <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
                             <input type="checkbox" id="claude-code-cli" style="margin: 0;">
@@ -60,21 +60,23 @@
                             <span>Gemini CLI</span>
                         </label>
                     </div>
-                    <div id="claude-install-text" style="display: none; margin-top: 12px; font-size: 14px; color: var(--text-secondary);">
-                        In the <span id="repo-name-install">team</span> folder, install <a href="https://nodejs.org/en/download" target="_blank" style="color: var(--accent-blue); text-decoration: none;">NodeJS 18+</a>, then install Claude Code CLI:
-                        <pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; margin: 8px 0 0 0; display: inline-block;"><code>npm install -g @anthropic-ai/claude-code</code></pre>
-                    </div>
                 </div>
             </div>
             <div id="cli-commands" style="display: none; margin-top: 16px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
                 <div id="cli-instructions" style="margin-bottom: 16px;">
-                    Launch a terminal in your "<span id="repo-name">team</span>" repo and run your Command Line Interface (CLI) in a virtual environment.
+                    When the topic of your vibing changes, starting a fresh terminal can help reduce tokens.<br>Right-click on your "<span id="repo-name">team</span>" repo and run a virtual environment with Clade Code CLI.
                 </div>
                 <div id="claude-code-commands" style="display: none;">
                     <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Claude Code CLI Installation:</h4>
                     <pre style="background: var(--bg-primary); padding: 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; line-height: 1.4; margin: 0; overflow-x: auto;"><code>python3 -m venv env
 source env/bin/activate
 npx @anthropic-ai/claude-code</code></pre>
+                    <div id="claude-install-text" style="display: none; margin-top: 12px; font-size: 14px; color: var(--text-secondary);">
+
+                        If you haven't install Clade yet, the above should walk you through the following command.<br>
+                        Or you might have to install <a href="https://nodejs.org/en/download" target="_blank" style="color: var(--accent-blue); text-decoration: none;">NodeJS 18+</a>, then Claude Code CLI with:<br>
+                        <pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; margin: 8px 0 0 0; display: inline-block;"><code>npm install -g @anthropic-ai/claude-code</code></pre>
+                    </div>
                 </div>
                 <div id="gemini-commands" style="display: none;">
                     <h4 style="margin: 16px 0 8px 0; color: var(--text-primary);">Gemini CLI Installation:</h4>
@@ -1065,7 +1067,6 @@ Ready: AI features are available`;
             
             // Update the repo name in the instructions
             repoNameSpan.textContent = repoName;
-            repoNameInstall.textContent = repoName;
             
             let detectedOS = '';
             let osDetails = '';
@@ -1194,7 +1195,8 @@ Ready: AI features are available`;
                 }
                 
                 // Show/hide the commands container
-                if (claudeCodeChecked || geminiChecked) {
+                // Show CLI commands if either checkbox is checked OR if neither is checked (when install text shows)
+                if (claudeCodeChecked || geminiChecked || (!claudeCodeChecked && !geminiChecked)) {
                     cliCommands.style.display = 'block';
                 } else {
                     cliCommands.style.display = 'none';
@@ -1202,7 +1204,8 @@ Ready: AI features are available`;
                 }
                 
                 // Update Claude Code CLI commands based on OS
-                if (claudeCodeChecked) {
+                // Show Claude Code commands if checkbox is checked OR if neither checkbox is checked
+                if (claudeCodeChecked || (!claudeCodeChecked && !geminiChecked)) {
                     claudeCodeCommands.style.display = 'block';
                     const claudeCodeCommandsContent = claudeCodeCommands.querySelector('pre code');
                     
