@@ -1484,14 +1484,102 @@
                 });
                 
                 if (!loadResult.data || loadResult.data.length === 0) {
-                    throw new Error(`No data found in the source\n\nPath attempted: ${meetupLink}`);
+                    const errorMessage = `No data found in the source\n\nPath attempted: ${meetupLink}`;
+                    
+                    // Show error in status messages
+                    participantsResult.innerHTML = `<div class="error-message"><h4>No Data Found</h4><p>${errorMessage}</p></div>`;
+                    document.getElementById('loadStatus').style.display = 'block';
+                    
+                    // Populate Raw Data Editor with the load result
+                    const rawDataEditor = document.getElementById('raw-data-editor');
+                    const rawDataSource = document.getElementById('raw-data-source');
+                    
+                    if (rawDataEditor) {
+                        rawDataEditor.value = JSON.stringify(loadResult, null, 2);
+                    }
+                    
+                    if (rawDataSource) {
+                        rawDataSource.value = meetupLink;
+                    }
+                    
+                    // Show Raw Data Editor panel
+                    const rawDataControl = document.getElementById('raw-data-control');
+                    if (rawDataControl) {
+                        rawDataControl.style.display = 'block';
+                        
+                        // Update toggle text
+                        const rawDataText = document.getElementById('raw-data-text');
+                        if (rawDataText) {
+                            rawDataText.textContent = 'Hide Raw Data';
+                        }
+                        
+                        // Set rawDataVisible flag
+                        if (typeof rawDataVisible !== 'undefined') {
+                            rawDataVisible = true;
+                        }
+                    }
+                    
+                    // Show the table card so the 3-dot menu remains accessible
+                    document.getElementById('participants-table-card').style.display = 'block';
+                    
+                    // Show upload fallback
+                    const uploadFallback = document.getElementById('upload-fallback');
+                    if (uploadFallback) {
+                        uploadFallback.style.display = 'block';
+                    }
+                    
+                    return; // Exit the function instead of throwing
                 }
                 
                 // Filter out any null/undefined rows
                 const validData = loadResult.data.filter(row => row && typeof row === 'object');
                 
                 if (validData.length === 0) {
-                    throw new Error(`No valid data found in the source\n\nPath attempted: ${meetupLink}`);
+                    const errorMessage = `No valid data found in the source\n\nPath attempted: ${meetupLink}`;
+                    
+                    // Show error in status messages
+                    participantsResult.innerHTML = `<div class="error-message"><h4>No Valid Data Found</h4><p>${errorMessage}</p></div>`;
+                    document.getElementById('loadStatus').style.display = 'block';
+                    
+                    // Populate Raw Data Editor with the load result
+                    const rawDataEditor = document.getElementById('raw-data-editor');
+                    const rawDataSource = document.getElementById('raw-data-source');
+                    
+                    if (rawDataEditor) {
+                        rawDataEditor.value = JSON.stringify(loadResult, null, 2);
+                    }
+                    
+                    if (rawDataSource) {
+                        rawDataSource.value = meetupLink;
+                    }
+                    
+                    // Show Raw Data Editor panel
+                    const rawDataControl = document.getElementById('raw-data-control');
+                    if (rawDataControl) {
+                        rawDataControl.style.display = 'block';
+                        
+                        // Update toggle text
+                        const rawDataText = document.getElementById('raw-data-text');
+                        if (rawDataText) {
+                            rawDataText.textContent = 'Hide Raw Data';
+                        }
+                        
+                        // Set rawDataVisible flag
+                        if (typeof rawDataVisible !== 'undefined') {
+                            rawDataVisible = true;
+                        }
+                    }
+                    
+                    // Show the table card so the 3-dot menu remains accessible
+                    document.getElementById('participants-table-card').style.display = 'block';
+                    
+                    // Show upload fallback
+                    const uploadFallback = document.getElementById('upload-fallback');
+                    if (uploadFallback) {
+                        uploadFallback.style.display = 'block';
+                    }
+                    
+                    return; // Exit the function instead of throwing
                 }
                 
                 // Reset team legend flag for new data
@@ -1543,9 +1631,8 @@
                 // Show the table card so the 3-dot menu remains accessible
                 document.getElementById('participants-table-card').style.display = 'block';
                 
-                // Always show upload fallback when automatic fetch fails
+                // Log error for debugging
                 console.log('Showing upload fallback due to error:', error.message);
-                document.getElementById('upload-fallback').style.display = 'block';
             } finally {
                 getParticipantsButton.disabled = false;
                 participantsSpinner.style.display = 'none';

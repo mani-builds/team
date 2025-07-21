@@ -965,22 +965,104 @@ async function loadUnifiedData(url, options = {}) {
                 const keys = Object.keys(response);
                 console.log('Response keys:', keys);
                 
-                for (const key of keys) {
-                    if (Array.isArray(response[key])) {
-                        console.log(`Found array at key: ${key}, length: ${response[key].length}`);
-                        processedData = response[key];
-                        break;
+                // First, check if this looks like a single data object that should be wrapped
+                // (e.g., USDA food item with fdcId, description, etc.)
+                const hasMainDataKeys = keys.some(key => 
+                    ['id', 'fdcId', 'description', 'name', 'title', 'email', 'username'].includes(key) ||
+                    (key.toLowerCase().includes('id') && typeof response[key] === 'number') ||
+                    (key.toLowerCase().includes('name') && typeof response[key] === 'string') ||
+                    (key.toLowerCase().includes('description') && typeof response[key] === 'string')
+                );
+                
+                if (hasMainDataKeys) {
+                    console.log('Found single data object with main identifier keys, wrapping in array for processing');
+                    processedData = [response];
+                } else {
+                    // Look for arrays in the response - prioritize non-empty arrays
+                    let foundArrays = [];
+                    for (const key of keys) {
+                        if (Array.isArray(response[key])) {
+                            foundArrays.push({
+                                key: key,
+                                length: response[key].length,
+                                data: response[key]
+                            });
+                        }
+                    }
+                    
+                    // Sort by length (prioritize non-empty arrays)
+                    foundArrays.sort((a, b) => b.length - a.length);
+                    
+                    if (foundArrays.length > 0) {
+                        const bestArray = foundArrays[0];
+                        console.log(`Found array at key: ${bestArray.key}, length: ${bestArray.length}`);
+                        processedData = bestArray.data;
+                    }
+                }
+                
+                // If still no array found but this looks like a valid single data object, wrap it in an array
+                if (!processedData && keys.length > 0) {
+                    // Check if this looks like a data object (has meaningful keys, not just error/status)
+                    const hasDataKeys = keys.some(key => 
+                        key.toLowerCase() !== 'error' && 
+                        key.toLowerCase() !== 'status' && 
+                        key.toLowerCase() !== 'message' &&
+                        response[key] !== null && 
+                        response[key] !== undefined
+                    );
+                    
+                    if (hasDataKeys) {
+                        console.log('Found single data object, wrapping in array for processing');
+                        processedData = [response];
                     }
                 }
             }
             
             if (!Array.isArray(processedData)) {
                 console.error('Unable to find data array in response:', response);
-                const error = new Error(`Invalid data format received from API. Response type: ${typeof response}, keys: ${response && typeof response === 'object' ? Object.keys(response).join(', ') : 'none'}\n\nPath attempted: ${url}`);
-                // Attach the raw response to the error for debugging purposes
-                error.rawResponse = response;
-                error.requestUrl = url;
-                throw error;
+                const errorMessage = `Invalid data format received from API. Response type: ${typeof response}, keys: ${response && typeof response === 'object' ? Object.keys(response).join(', ') : 'none'}`;
+                
+                // Show error in status messages instead of throwing
+                showMessage(`${errorMessage}\n\nPath attempted: ${url}`, 'error');
+                
+                // Populate Raw Data Editor with the error response
+                const rawDataEditor = document.getElementById('raw-data-editor');
+                const rawDataSource = document.getElementById('raw-data-source');
+                
+                if (rawDataEditor) {
+                    rawDataEditor.value = JSON.stringify(response, null, 2);
+                }
+                
+                if (rawDataSource) {
+                    rawDataSource.value = url;
+                }
+                
+                // Show Raw Data Editor panel if it exists and isn't already visible
+                const rawDataControl = document.getElementById('raw-data-control');
+                if (rawDataControl && rawDataControl.style.display === 'none') {
+                    rawDataControl.style.display = 'block';
+                    
+                    // Update toggle text if available
+                    const rawDataText = document.getElementById('raw-data-text');
+                    if (rawDataText) {
+                        rawDataText.textContent = 'Hide Raw Data';
+                    }
+                    
+                    // Set rawDataVisible flag if it exists in global scope
+                    if (typeof window !== 'undefined' && 'rawDataVisible' in window) {
+                        window.rawDataVisible = true;
+                    }
+                }
+                
+                // Return an empty data structure to prevent further errors
+                return {
+                    data: [],
+                    format: 'error',
+                    total_records: 0,
+                    source: 'error_response',
+                    error: errorMessage,
+                    rawResponse: response
+                };
             }
             
             // Check if this might be an array of arrays (like CSV data in JSON format)
