@@ -421,7 +421,7 @@
             <!-- API Usage Monitor -->
             <div class="admin-card" id="api-usage-card">
                 <div class="admin-card-header">
-                    <div class="admin-card-icon" style="background: linear-gradient(45deg, #FF6B35, #4285F4); color: white;">
+                    <div class="admin-card-icon" style="background: linear-gradient(45deg, #CC5500, #E67300); color: white;">
                         <i data-feather="activity"></i>
                     </div>
                     <div>
@@ -446,7 +446,6 @@
                                     Terminal CLI Usage
                                 </h4>
                                 <div class="usage-stats" id="cli-usage-stats-claude">
-                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
                                 </div>
                             </div>
                             <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
@@ -455,7 +454,6 @@
                                     Website API Usage
                                 </h4>
                                 <div class="usage-stats" id="website-usage-stats-claude">
-                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
                                 </div>
                             </div>
                         </div>
@@ -464,7 +462,7 @@
                                 <i data-feather="refresh-cw" style="width: 16px; height: 16px; margin-right: 4px;"></i>
                                 Check Usage
                             </button>
-                            <a href="server/" class="btn btn-secondary" id="get-connected-claude-btn" style="padding: 8px 16px; background: #EF4444; color: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; font-size: 14px; text-decoration: none;">
+                            <a href="server/" class="btn btn-secondary" id="get-connected-claude-btn" style="padding: 8px 16px; background: linear-gradient(45deg, #CC5500, #E67300); color: white; border: 1px solid #CC5500; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; text-decoration: none; display: none;">
                                 Get Connected
                             </a>
                         </div>
@@ -480,7 +478,6 @@
                                     Terminal CLI Usage
                                 </h4>
                                 <div class="usage-stats" id="cli-usage-stats-gemini">
-                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
                                 </div>
                             </div>
                             <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
@@ -489,7 +486,6 @@
                                     Website API Usage
                                 </h4>
                                 <div class="usage-stats" id="website-usage-stats-gemini">
-                                    <div style="color: #EF4444; font-size: 13px;">Not connected</div>
                                 </div>
                             </div>
                         </div>
@@ -498,7 +494,7 @@
                                 <i data-feather="refresh-cw" style="width: 16px; height: 16px; margin-right: 4px;"></i>
                                 Check Usage
                             </button>
-                            <a href="server/" class="btn btn-secondary" id="get-connected-gemini-btn" style="padding: 8px 16px; background: #EF4444; color: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); cursor: pointer; font-size: 14px; text-decoration: none;">
+                            <a href="server/" class="btn btn-secondary" id="get-connected-gemini-btn" style="padding: 8px 16px; background: linear-gradient(45deg, #CC5500, #E67300); color: white; border: 1px solid #CC5500; border-radius: var(--radius-md); cursor: pointer; font-size: 14px; text-decoration: none; display: none;">
                                 Get Connected
                             </a>
                         </div>
@@ -649,14 +645,18 @@
                     const websiteData = await websiteResponse.json();
                     if (websiteData.success) {
                         websiteStats.innerHTML = formatUsageData(websiteData.usage, 'Website', apiType);
-                        getConnectedButton.style.display = 'none';
                         dataDisplayed = true;
                     } else {
                         websiteStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
-                        getConnectedButton.style.display = 'inline-flex';
                     }
                 } else {
                     websiteStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
+                }
+
+                // Show/hide Get Connected button based on whether any data was displayed
+                if (dataDisplayed) {
+                    getConnectedButton.style.display = 'none';
+                } else {
                     getConnectedButton.style.display = 'inline-flex';
                 }
 
@@ -691,6 +691,73 @@
         function formatUsageData(usage, source, apiType) {
             if (!usage) return `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
             
+            // Check if this is a connection status response
+            if (usage.connection_status === "connected") {
+                return `
+                    <div style="font-size: 13px; line-height: 1.4;">
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <span style="color: var(--accent-green); margin-right: 8px;">✓</span>
+                            <span style="color: var(--text-primary); font-weight: 500;">Claude CLI Connected</span>
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+                            ${usage.note || "Connected and working properly"}
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 11px;">
+                            Usage data is not available through the CLI interface. Check the web interface or API documentation for usage tracking.
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 12px; margin-top: 8px;">
+                            Last checked: ${new Date().toLocaleTimeString()}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Handle real Claude CLI usage data format
+            if (usage.input_tokens !== undefined || usage.output_tokens !== undefined) {
+                const inputTokens = (usage.input_tokens || 0) + (usage.cache_creation_input_tokens || 0) + (usage.cache_read_input_tokens || 0);
+                const outputTokens = usage.output_tokens || 0;
+                const totalTokens = inputTokens + outputTokens;
+                const serviceTier = usage.service_tier || "standard";
+                
+                return `
+                    <div style="font-size: 13px; line-height: 1.4;">
+                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                            <span style="color: var(--accent-green); margin-right: 8px;">✓</span>
+                            <span style="color: var(--text-primary); font-weight: 500;">Claude CLI Connected</span>
+                        </div>
+                        
+                        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: var(--text-primary); font-weight: 500;">Input Tokens:</span>
+                                <span style="color: var(--text-primary);">${inputTokens.toLocaleString()}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span style="color: var(--text-primary); font-weight: 500;">Output Tokens:</span>
+                                <span style="color: var(--text-primary);">${outputTokens.toLocaleString()}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; padding-top: 6px; border-top: 1px solid var(--border-light);">
+                                <span style="color: var(--text-primary); font-weight: 600;">Total Tokens:</span>
+                                <span style="color: var(--accent-blue); font-weight: 600;">${totalTokens.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        
+                        ${usage.cache_creation_input_tokens || usage.cache_read_input_tokens ? `
+                        <div style="margin-bottom: 12px;">
+                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Cache Usage:</div>
+                            ${usage.cache_creation_input_tokens ? `<div style="color: var(--text-muted); font-size: 11px;">Cache creation: ${usage.cache_creation_input_tokens.toLocaleString()} tokens</div>` : ''}
+                            ${usage.cache_read_input_tokens ? `<div style="color: var(--text-muted); font-size: 11px;">Cache read: ${usage.cache_read_input_tokens.toLocaleString()} tokens</div>` : ''}
+                        </div>
+                        ` : ''}
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--text-secondary); font-size: 12px;">Service: ${serviceTier}</span>
+                            <span style="color: var(--text-secondary); font-size: 12px;">Last updated: ${new Date().toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Handle legacy usage data format (fallback)
             const sessionUsed = usage.session_tokens_used || usage.daily_tokens_used || 0;
             const sessionLimit = usage.session_limit || (apiType === 'gemini' ? 100000 : 50000);
             const monthlyUsed = usage.monthly_tokens_used || 0;

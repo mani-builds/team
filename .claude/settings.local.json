@@ -12,7 +12,10 @@
       "Bash(find:*)",
       "Bash(cargo check:*)",
       "Bash(cargo:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(claude doctor)",
+      "Bash(claude config)",
+      "Bash(claude config list)"
     ],
     "deny": []
   }

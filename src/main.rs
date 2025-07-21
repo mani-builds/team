@@ -2034,52 +2034,118 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-// Mock handlers for Claude and Gemini usage
-async fn get_claude_usage_cli() -> Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(json!({
-        "success": true,
-        "usage": {
-            "session_tokens_used": 1234,
-            "session_limit": 50000,
-            "monthly_tokens_used": 123456,
-            "monthly_limit": 1000000
+// Function to get real Claude CLI usage data
+async fn get_claude_cli_usage() -> anyhow::Result<serde_json::Value> {
+    use std::process::Command;
+    
+    println!("Testing Claude CLI connection...");
+    
+    // Test Claude CLI connection with a simple command
+    let output = Command::new("claude")
+        .arg("--print")
+        .arg("--output-format")
+        .arg("json")
+        .arg("What is 1+1?")
+        .output()
+        .context("Failed to execute claude command. Make sure Claude CLI is installed and accessible.")?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Claude CLI test command failed: {}", stderr));
+    }
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout_str = stdout.trim();
+    
+    if stdout_str.is_empty() {
+        return Err(anyhow::anyhow!("Claude CLI returned empty response"));
+    }
+    
+    // Try to parse the JSON response to verify Claude CLI is working
+    if let Ok(json_data) = serde_json::from_str::<serde_json::Value>(stdout_str) {
+        // Extract usage information if available
+        if let Some(usage) = json_data.get("usage") {
+            println!("Found usage data in Claude CLI response: {:?}", usage);
+            return Ok(usage.clone());
         }
-    })))
+        
+        // If no usage field, create a mock usage based on the successful connection
+        println!("Claude CLI is working, but no usage data available. Creating estimated usage.");
+        
+        // Since we can't get real usage data, return a status indicating connection is working
+        // but usage data is not available
+        let usage_data = json!({
+            "connection_status": "connected",
+            "session_tokens_used": "unknown",
+            "session_limit": "unknown", 
+            "monthly_tokens_used": "unknown",
+            "monthly_limit": "unknown",
+            "note": "Claude CLI is connected and working, but usage data is not available through the CLI"
+        });
+        
+        println!("Claude CLI connection verified, returning status: {:?}", usage_data);
+        return Ok(usage_data);
+    }
+    
+    // If JSON parsing fails, Claude CLI might not be working properly
+    return Err(anyhow::anyhow!("Claude CLI response could not be parsed as JSON: {}", stdout_str))
+}
+
+// Helper function to extract numbers from usage text lines
+fn extract_number_from_usage_line(line: &str) -> Option<u32> {
+    // Look for patterns like "1,234", "1234", or numbers followed by "tokens"
+    use regex::Regex;
+    
+    // Try to find the first number in the line (removing commas)
+    if let Ok(re) = Regex::new(r"(\d{1,3}(?:,\d{3})*|\d+)") {
+        if let Some(captures) = re.find(line) {
+            let number_str = captures.as_str().replace(",", "");
+            return number_str.parse::<u32>().ok();
+        }
+    }
+    
+    None
+}
+
+// Handlers for Claude usage - get real data from Claude CLI
+async fn get_claude_usage_cli() -> Result<HttpResponse> {
+    match get_claude_cli_usage().await {
+        Ok(usage_data) => Ok(HttpResponse::Ok().json(json!({
+            "success": true,
+            "usage": usage_data
+        }))),
+        Err(e) => Ok(HttpResponse::Ok().json(json!({
+            "success": false,
+            "error": format!("Failed to get Claude CLI usage: {}", e)
+        })))
+    }
 }
 
 async fn get_claude_usage_website() -> Result<HttpResponse> {
-    Ok(HttpResponse::Ok().json(json!({
-        "success": true,
-        "usage": {
-            "session_tokens_used": 5678,
-            "session_limit": 50000,
-            "monthly_tokens_used": 234567,
-            "monthly_limit": 1000000
-        }
-    })))
+    // For website usage, we'll use the same CLI command since that's what's available
+    match get_claude_cli_usage().await {
+        Ok(usage_data) => Ok(HttpResponse::Ok().json(json!({
+            "success": true,
+            "usage": usage_data
+        }))),
+        Err(e) => Ok(HttpResponse::Ok().json(json!({
+            "success": false,
+            "error": format!("Failed to get Claude usage: {}", e)
+        })))
+    }
 }
 
 async fn get_gemini_usage_cli() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(json!({
-        "success": true,
-        "usage": {
-            "session_tokens_used": 4321,
-            "session_limit": 100000,
-            "monthly_tokens_used": 654321,
-            "monthly_limit": 1000000
-        }
+        "success": false,
+        "error": "Gemini CLI not connected or not available"
     })))
 }
 
 async fn get_gemini_usage_website() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(json!({
-        "success": true,
-        "usage": {
-            "session_tokens_used": 8765,
-            "session_limit": 100000,
-            "monthly_tokens_used": 765432,
-            "monthly_limit": 1000000
-        }
+        "success": false,
+        "error": "Gemini website API not configured"
     })))
 }
 

@@ -24,6 +24,7 @@ dependencies = [
  "mime_guess",
  "mockito",
  "prettytable-rs",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",
