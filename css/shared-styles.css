@@ -5,24 +5,46 @@ pre {
     line-height: 1.25em;
 }
 
-pre code {
-    background-color: #eee;
-    padding: 15px;
-    border-left: 4px solid #137AD1;
-    display: block;
-    unicode-bidi: embed;
-    font-family: monospace;
-    font-size: 14px;
-    border-radius: 6px;
+/* Documentation and code formatting */
+pre {
+  line-height: 1.25em;
+  overflow-x: auto;
+  max-width: 100%;
+  /* Ensure the pre container scrolls and doesn't expand parent */
+  width: 100%;
+  box-sizing: border-box;
 }
 
-code {
-    background-color: #eee;
-    padding: 2px 5px;
-    font-family: monospace;
-    font-size: 14px;
-    border-radius: 3px;
+pre code {
+  background-color: #eee;
+  padding: 15px;
+  border-left: 4px solid #137AD1;
+  display: block;
+  unicode-bidi: embed;
+  font-family: monospace;
+  font-size: 14px;
+  border-radius: 6px;
+
+  /* Responsive properties */
+  overflow-x: auto;
+  max-width: 100%;
+  white-space: pre;
+  word-wrap: normal;
+  /* Key addition - ensure it doesn't expand beyond container */
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
+
+/* Also ensure the readme content container doesn't overflow */
+.readme-content {
+  overflow-x: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+
+
 
 /* Documentation content styling */
 .readme-content h1,

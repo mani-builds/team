@@ -7,10 +7,10 @@
 
 To use the Coding Meetup Integration with the MemberCommons backend, you'll need to provide the following credentials in your `.env` file:
 
-- `GOOGLE_PRIVATE_KEY_ID`
-- `GOOGLE_PRIVATE_KEY`
-- `GOOGLE_CLIENT_EMAIL`
-- `GOOGLE_CLIENT_ID`
+- GOOGLE_PRIVATE_KEY_ID
+- GOOGLE_PRIVATE_KEY
+- GOOGLE_CLIENT_EMAIL
+- GOOGLE_CLIENT_ID
 
 ## Pulling Participants from a Google Meetup into a Google Sheet
 
@@ -30,7 +30,7 @@ Create a new Google Sheet where the participant list will be stored. Name it som
 
 Copy and paste the following code into the script editor, replacing the existing `myFunction` code:
 
-```javascript
+```//javascript
 function getMeetupParticipants() {
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   const calendarId = 'primary'; // Or the ID of the calendar with the Meetup event
@@ -57,7 +57,6 @@ function getMeetupParticipants() {
   // For this example, we'll just log the event details.
   sheet.appendRow([new Date(), event.getTitle(), meetupLink]);
 }
-
 function onOpen() {
   SpreadsheetApp.getUi()
       .createMenu('Meetup')

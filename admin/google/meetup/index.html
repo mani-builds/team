@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="../../../img/logo/neighborhood/favicon.png">
+    <title>Google Meetup Integration - MemberCommons</title>
+
+    <link rel="stylesheet" href="../../../css/common.css">
+    <link rel="stylesheet" href="../../../css/shared-styles.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    
+    <!-- Standalone Navigation -->
+    <link rel="stylesheet" href="../../../css/standalone-nav.css">
+    <script src="../../../js/standalone-nav.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #F9FAFB;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F3F4F6;
+            --text-primary: #1A1A1A;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --accent-green: #10B981;
+            --accent-blue: #3B82F6;
+            --accent-orange: #F59E0B;
+            --accent-purple: #8B5CF6;
+            --border-light: #E5E7EB;
+            --border-medium: #D1D5DB;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-light);
+        }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-form {
+            margin-bottom: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            font-size: 0.875rem;
+        }
+
+        .form-control {
+            padding: 8px 12px;
+            border: 1px solid var(--border-medium);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-help {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .config-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            border: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s ease-in-out;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #2563EB;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-medium);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--border-light);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .setup-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background-color: var(--accent-blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            font-size: 0.875rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .status-message {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .status-message.success {
+            background-color: #D1FAE5;
+            border: 1px solid #A7F3D0;
+            color: #065F46;
+        }
+
+        .status-message.error {
+            background-color: #FEE2E2;
+            border: 1px solid #FECACA;
+            color: #991B1B;
+        }
+
+        .status-message.info {
+            background-color: #DBEAFE;
+            border: 1px solid #BFDBFE;
+            color: #1E40AF;
+        }
+
+        .loading-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        
+        /* Large screens (desktops) */
+        @media (min-width: 1201px) {
+            .container {
+                padding: 0 40px;
+            }
+        }
+        
+        /* Medium screens (tablets) */
+        @media (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+                margin: 15px auto;
+                padding: 0 15px;
+            }
+            
+            .card {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .card-title {
+                font-size: 1.375rem;
+            }
+        }
+        
+        /* Small screens (mobile) */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px auto;
+                padding: 0 10px;
+            }
+            
+            .card {
+                padding: 16px;
+                margin-bottom: 16px;
+                border-radius: 8px;
+            }
+            
+            .card-title {
+                font-size: 1.25rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .config-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .config-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .setup-steps {
+                gap: 12px;
+            }
+            
+            .step-item {
+                flex-direction: column;
+                gap: 12px;
+                padding: 12px;
+            }
+            
+            .step-number {
+                align-self: flex-start;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .button-group .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .breadcrumb {
+                font-size: 0.875rem;
+                margin-bottom: 8px;
+            }
+            
+            .breadcrumb[style*="float:right"] {
+                float: none !important;
+                text-align: left;
+                margin-top: 4px;
+            }
+        }
+        
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 8px;
+                margin: 8px auto;
+            }
+            
+            .card {
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+            
+            .card-title {
+                font-size: 1.125rem;
+            }
+            
+            .form-control {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+            
+            .btn {
+                padding: 10px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .step-item {
+                padding: 8px;
+            }
+            
+            .setup-steps {
+                gap: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="breadcrumb" style="float:right">
+            
+        </div>
+        <div class="breadcrumb">
+            <a href="../../../admin/">← Admin Dashboard</a> - <a href="../../../projects/#list=modelteam">Coding Meetup Team</a>
+        </div>
+        <div style="clear:both"></div>
+
+        <div class="card">
+            <h2 class="card-title">🚀 Setup Google Project</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 16px;">
+                Configure and create your Google Cloud project for Coding Meetup Integration.
+            </p>
+            
+            <div class="config-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Project ID</label>
+                        <input type="text" id="project-id" class="form-control" placeholder="e.g., my-meetup-project">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Google Account Email</label>
+                        <input type="email" id="user-email" class="form-control" placeholder="your.email@gmail.com">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Organization ID (Optional)</label>
+                        <input type="text" id="org-id" class="form-control" placeholder="e.g., 123456789012">
+                        <small class="form-help">Leave blank for personal projects</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Billing Account ID (Optional)</label>
+                        <input type="text" id="billing-id" class="form-control" placeholder="e.g., 01234A-567890-BCDEF1">
+                        <small class="form-help">Required for API-enabled projects</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Service Account Key (JSON)</label>
+                    <textarea id="service-key" class="form-control" rows="4" placeholder="Paste your service account JSON key here for automated project creation">
+                    </textarea>
+                    <small class="form-help">Required for creating projects via API. Should have Cloud Resource Manager Admin role.</small>
+                </div>
+                <div class="config-actions">
+                    <button class="btn btn-secondary" id="load-config" onclick="loadConfiguration()">
+                        <i data-feather="refresh-cw"></i>
+                        Load from .env
+                    </button>
+                    <button class="btn btn-primary" id="save-config" onclick="saveConfiguration()">
+                        <i data-feather="save"></i>
+                        Save to .env
+                    </button>
+                </div>
+                <div id="config-status" class="status-message"></div>
+            </div>
+            
+            <div class="setup-steps">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Create Google Cloud Project</h4>
+                        <p>Create the "[project name]" project in Google Cloud Console or via API</p>
+                        <div class="button-group">
+                            <button class="btn btn-secondary" id="create-project-manual" onclick="createGoogleProjectManual()">
+                                <i data-feather="external-link"></i>
+                                Via Google Page
+                            </button>
+                            <button class="btn btn-primary" id="create-project-api" onclick="createGoogleProjectAPI()">
+                                <i data-feather="zap"></i>
+                                Create via API
+                            </button>
+                        </div>
+                        <div id="project-status" class="status-message"></div>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Enable Required APIs</h4>
+                        <p>Enable Google Sheets API and Google Meet API for the project</p>
+                        <button class="btn btn-secondary" id="enable-apis" onclick="enableAPIs()" disabled>
+                            <i data-feather="settings"></i>
+                            Enable APIs
+                        </button>
+                        <div id="apis-status" class="status-message"></div>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Create Service Account</h4>
+                        <p>Create service account for automated access to Google services</p>
+                        <button class="btn btn-secondary" id="create-service" onclick="createServiceAccount()" disabled>
+                            <i data-feather="key"></i>
+                            Create Service Account
+                        </button>
+                        <div id="service-status" class="status-message"></div>
+                    </div>
+                </div>
+                
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>Download Credentials</h4>
+                        <p>Download JSON credentials file for authentication</p>
+                        <button class="btn btn-secondary" id="download-creds" onclick="downloadCredentials()" disabled>
+                            <i data-feather="download"></i>
+                            Download Credentials
+                        </button>
+                        <div id="creds-status" class="status-message"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 class="card-title">📖 Coding Meetup Integration Guide</h2>
+            <div id="readmeDiv" class="readme-content">
+                <p style="color: var(--text-secondary); font-style: italic;">
+                    Loading README.md...
+                </p>
+            </div>
+        </div>
+
+        <a href="../../../projects/#list=modelteam">Coding Meetup Integration</a>
+
+    </div>
+
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        const GEMINI_API_BASE = 'http://localhost:8081/api';
+
+        // Google Project Setup Functions
+        let PROJECT_ID = '';
+        let USER_EMAIL = '';
+        
+        // Load configuration from .env file
+        async function loadConfiguration() {
+            const btn = document.getElementById('load-config');
+            const status = document.getElementById('config-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Loading...';
+            
+            try {
+                const response = await fetch(`${GEMINI_API_BASE}/config/env`);
+                const data = await response.json();
+                
+                // Update form fields if values exist in .env
+                if (data.google_project_id) {
+                    document.getElementById('project-id').value = data.google_project_id;
+                    PROJECT_ID = data.google_project_id;
+                    updateProjectNameInText(data.google_project_id);
+                }
+                
+                if (data.google_user_email) {
+                    document.getElementById('user-email').value = data.google_user_email;
+                    USER_EMAIL = data.google_user_email;
+                }
+                
+                if (data.google_org_id) {
+                    document.getElementById('org-id').value = data.google_org_id;
+                }
+                
+                if (data.google_billing_id) {
+                    document.getElementById('billing-id').value = data.google_billing_id;
+                }
+                
+                if (data.google_service_key) {
+                    document.getElementById('service-key').value = data.google_service_key;
+                }
+                
+                status.className = 'status-message success';
+                status.style.display = 'block';
+                status.innerHTML = '<i data-feather="check-circle"></i> Configuration loaded from .env file';
+                
+                // Change button text to indicate reload functionality and mark as successful
+                btn.innerHTML = '<i data-feather="refresh-cw"></i> Reload from .env';
+                btn.setAttribute('data-loaded', 'true');
+                
+                // Update feather icons
+                if (window.feather) feather.replace();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                let errorMessage = 'Error loading configuration: ';
+                if (error.message === 'Failed to fetch') {
+                    errorMessage = 'Backend API not available (fetch failed). To view requested data, run locally using the commands on our Admin Page.';
+                } else {
+                    errorMessage += error.message + '. To view requested data, run locally using the commands on our Admin Page.';
+                }
+                status.innerHTML = '<span style="color: var(--accent-red);">' + errorMessage + ' <a href="../../../admin" style="color: var(--accent-blue); text-decoration: underline;">Link to: /admin</a></span>';
+                
+                // Reset button text on error
+                btn.innerHTML = '<i data-feather="refresh-cw"></i> Load from .env';
+                btn.removeAttribute('data-loaded');
+            } finally {
+                btn.disabled = false;
+                
+                // Only reset button text if it wasn't successfully loaded
+                if (!btn.hasAttribute('data-loaded')) {
+                    btn.innerHTML = '<i data-feather="refresh-cw"></i> Load from .env';
+                }
+                
+                if (window.feather) feather.replace();
+            }
+        }
+        
+        // Save configuration to .env file
+        async function saveConfiguration() {
+            const btn = document.getElementById('save-config');
+            const status = document.getElementById('config-status');
+            const projectId = document.getElementById('project-id').value.trim();
+            const userEmail = document.getElementById('user-email').value.trim();
+            
+            if (!projectId || !userEmail) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please fill in both Project ID and Email fields';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Saving...';
+            
+            try {
+                const response = await fetch(`${GEMINI_API_BASE}/config/save-env`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        google_project_id: projectId,
+                        google_user_email: userEmail,
+                        google_org_id: document.getElementById('org-id').value.trim() || null,
+                        google_billing_id: document.getElementById('billing-id').value.trim() || null,
+                        google_service_key: document.getElementById('service-key').value.trim() || null
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update global variables
+                    PROJECT_ID = projectId;
+                    USER_EMAIL = userEmail;
+                    
+                    status.className = 'status-message success';
+                    status.style.display = 'block';
+                    status.innerHTML = '<i data-feather="check-circle"></i> Configuration saved to .env file';
+                } else {
+                    throw new Error(data.error || 'Failed to save configuration');
+                }
+                
+                // Update feather icons
+                if (window.feather) feather.replace();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                let errorMessage = 'Error saving configuration: ';
+                if (error.message === 'Failed to fetch') {
+                    errorMessage = 'Backend API not available (fetch failed). To view requested data, run locally using the commands on our Admin Page.';
+                } else {
+                    errorMessage += error.message + '. To view requested data, run locally using the commands on our Admin Page.';
+                }
+                status.innerHTML = '<span style="color: var(--accent-red);">' + errorMessage + ' <a href="../../../admin" style="color: var(--accent-blue); text-decoration: underline;">Link to: /admin</a></span>';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="save"></i> Save to .env';
+                if (window.feather) feather.replace();
+            }
+        }
+        
+        // Update PROJECT_ID and USER_EMAIL when form fields change
+        document.getElementById('project-id').addEventListener('input', function() {
+            PROJECT_ID = this.value.trim();
+            updateProjectNameInText(PROJECT_ID);
+        });
+        
+        document.getElementById('user-email').addEventListener('input', function() {
+            USER_EMAIL = this.value.trim();
+        });
+        
+        // Function to update project name in all text content
+        function updateProjectNameInText(projectName) {
+            const displayName = projectName || '[project name]';
+            
+            // Find all elements that contain project name references
+            const elementsToUpdate = [
+                // Status messages and instructions
+                ...document.querySelectorAll('.status-message'),
+                ...document.querySelectorAll('.step-content p'),
+                ...document.querySelectorAll('.step-content h4')
+            ];
+            
+            elementsToUpdate.forEach(element => {
+                if (element.innerHTML) {
+                    // Replace various patterns of project name references
+                    element.innerHTML = element.innerHTML
+                        .replace(/\[project id\]/g, displayName);
+                }
+            });
+        }
+        
+        // Manual project creation via Google Cloud Console
+        async function createGoogleProjectManual() {
+            const btn = document.getElementById('create-project-manual');
+            const status = document.getElementById('project-status');
+            
+            if (!PROJECT_ID) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please enter a Project ID first';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Opening...';
+            
+            try {
+                // Open Google Cloud Console in new tab for manual project creation
+                const projectUrl = `https://console.cloud.google.com/projectcreate?previousPage=%2Fwelcome&project=${PROJECT_ID}`;
+                window.open(projectUrl, '_blank');
+                
+                // Show instructions
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Manual Step Required:</strong><br>
+                    1. A new tab opened to Google Cloud Console<br>
+                    2. Set project name to: <strong>${PROJECT_ID || '[project name]'}</strong><br>
+                    3. Use billing account for: <strong>${USER_EMAIL}</strong><br>
+                    4. Click "Create" button<br>
+                    5. Return here and click "Project Created" when done
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> Project Created';
+                btn.onclick = () => confirmProjectCreated();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="external-link"></i> Via Google Page';
+            }
+        }
+        
+        // API-based project creation
+        async function createGoogleProjectAPI() {
+            const btn = document.getElementById('create-project-api');
+            const status = document.getElementById('project-status');
+            const serviceKey = document.getElementById('service-key').value.trim();
+            
+            if (!PROJECT_ID) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please enter a Project ID first';
+                return;
+            }
+            
+            if (!serviceKey) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Please provide a Service Account Key for API access';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Creating...';
+            
+            try {
+                const response = await fetch(`${GEMINI_API_BASE}/google/create-project`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        project_id: PROJECT_ID,
+                        user_email: USER_EMAIL,
+                        org_id: document.getElementById('org-id').value.trim() || null,
+                        billing_id: document.getElementById('billing-id').value.trim() || null,
+                        service_key: serviceKey
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    status.className = 'status-message success';
+                    status.style.display = 'block';
+                    status.innerHTML = `
+                        <i data-feather="check-circle"></i> <strong>Project Created Successfully!</strong><br>
+                        Project ID: <strong>${PROJECT_ID}</strong><br>
+                        ${data.message || 'Ready to proceed to next step.'}
+                    `;
+                    
+                    btn.innerHTML = '<i data-feather="check"></i> Completed';
+                    btn.disabled = true;
+                    
+                    // Enable next step
+                    document.getElementById('enable-apis').disabled = false;
+                    
+                } else {
+                    throw new Error(data.error || 'Failed to create project');
+                }
+                
+                // Update feather icons
+                if (window.feather) feather.replace();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>API Creation Failed:</strong><br>
+                    ${error.message}<br><br>
+                    <strong>Troubleshooting:</strong><br>
+                    • Ensure service account has Cloud Resource Manager Admin role<br>
+                    • Check that the JSON key is valid<br>
+                    • Verify organization/billing permissions if using those fields
+                `;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="zap"></i> Create via API';
+                if (window.feather) feather.replace();
+            }
+        }
+        
+        function confirmProjectCreated() {
+            const btnManual = document.getElementById('create-project-manual');
+            const status = document.getElementById('project-status');
+            const enableBtn = document.getElementById('enable-apis');
+            
+            status.className = 'status-message success';
+            status.innerHTML = '<i data-feather="check-circle"></i> Project created successfully!';
+            
+            btnManual.disabled = true;
+            btnManual.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Also disable API button since project is created
+            const btnAPI = document.getElementById('create-project-api');
+            btnAPI.disabled = true;
+            btnAPI.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Enable next step
+            enableBtn.disabled = false;
+        }
+        
+        async function enableAPIs() {
+            const btn = document.getElementById('enable-apis');
+            const status = document.getElementById('apis-status');
+            const serviceBtn = document.getElementById('create-service');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Enabling...';
+            
+            try {
+                // Open APIs & Services page
+                const apisUrl = `https://console.cloud.google.com/apis/dashboard?project=${PROJECT_ID}`;
+                window.open(apisUrl, '_blank');
+                
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Enable these APIs:</strong><br>
+                    1. Google Sheets API<br>
+                    2. Google Meet API<br>
+                    3. Google Calendar API (optional)<br>
+                    <br>Click "APIs Enabled" when complete.
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> APIs Enabled';
+                btn.onclick = () => confirmAPIsEnabled();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="settings"></i> Enable APIs';
+            }
+        }
+        
+        function confirmAPIsEnabled() {
+            const btn = document.getElementById('enable-apis');
+            const status = document.getElementById('apis-status');
+            const serviceBtn = document.getElementById('create-service');
+            
+            status.className = 'status-message success';
+            status.innerHTML = '<i data-feather="check-circle"></i> APIs enabled successfully!';
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Enable next step
+            serviceBtn.disabled = false;
+        }
+        
+        async function createServiceAccount() {
+            const btn = document.getElementById('create-service');
+            const status = document.getElementById('service-status');
+            const credsBtn = document.getElementById('download-creds');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Creating...';
+            
+            try {
+                // Open Service Accounts page
+                const serviceUrl = `https://console.cloud.google.com/iam-admin/serviceaccounts?project=${PROJECT_ID}`;
+                window.open(serviceUrl, '_blank');
+                
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Create Service Account:</strong><br>
+                    1. Click "+ CREATE SERVICE ACCOUNT"<br>
+                    2. Name: <strong>${PROJECT_ID || '[project name]'}-service</strong><br>
+                    3. Description: <strong>Service account for ${PROJECT_ID || '[project name]'} integration</strong><br>
+                    4. Grant "Editor" role<br>
+                    5. Click "Service Account Created" when done
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> Service Account Created';
+                btn.onclick = () => confirmServiceAccountCreated();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="key"></i> Create Service Account';
+            }
+        }
+        
+        function confirmServiceAccountCreated() {
+            const btn = document.getElementById('create-service');
+            const status = document.getElementById('service-status');
+            const credsBtn = document.getElementById('download-creds');
+            
+            status.className = 'status-message success';
+            status.innerHTML = '<i data-feather="check-circle"></i> Service account created successfully!';
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i data-feather="check"></i> Completed';
+            
+            // Enable next step
+            credsBtn.disabled = false;
+        }
+        
+        async function downloadCredentials() {
+            const btn = document.getElementById('download-creds');
+            const status = document.getElementById('creds-status');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Preparing...';
+            
+            try {
+                // Open Service Accounts page
+                const serviceUrl = `https://console.cloud.google.com/iam-admin/serviceaccounts?project=${PROJECT_ID}`;
+                window.open(serviceUrl, '_blank');
+                
+                status.className = 'status-message info';
+                status.style.display = 'block';
+                status.innerHTML = `
+                    <strong>Download Credentials:</strong><br>
+                    1. Click on the service account you created<br>
+                    2. Go to "Keys" tab<br>
+                    3. Click "ADD KEY" → "Create new key"<br>
+                    4. Select "JSON" format<br>
+                    5. Save as <strong>${PROJECT_ID || '[project name]'}-credentials.json</strong><br>
+                    6. Click "Credentials Downloaded" when done
+                `;
+                
+                btn.innerHTML = '<i data-feather="check"></i> Credentials Downloaded';
+                btn.onclick = () => confirmCredentialsDownloaded();
+                
+            } catch (error) {
+                status.className = 'status-message error';
+                status.style.display = 'block';
+                status.textContent = 'Error: ' + error.message;
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i data-feather="download"></i> Download Credentials';
+            }
+        }
+        
+        function confirmCredentialsDownloaded() {
+            const btn = document.getElementById('download-creds');
+            const status = document.getElementById('creds-status');
+            
+            status.className = 'status-message success';
+            status.style.display = 'block';
+            status.innerHTML = `
+                <i data-feather="check-circle"></i> <strong>Setup Complete!</strong><br>
+                Your Google project is ready. Store the credentials file securely.<br>
+                <strong>Next:</strong> Configure the credentials in your application.
+            `;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i data-feather="check"></i> Completed';
+        }
+
+        // Load README.md content
+        async function loadReadme() {
+            const readmeDiv = document.getElementById('readmeDiv');
+            
+            try {
+                const response = await fetch('./README.md');
+                if (!response.ok) {
+                    throw new Error('README.md not found');
+                }
+                
+                const markdown = await response.text();
+                
+                // Enhanced markdown to HTML conversion that preserves code blocks
+                let html = markdown;
+                
+                // First, extract and preserve code blocks
+                const codeBlocks = [];
+                let codeBlockIndex = 0;
+                html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
+                    const placeholder = `__CODEBLOCK_${codeBlockIndex}__`;
+                    codeBlocks[codeBlockIndex] = `<pre><code>${code}</code></pre>`;
+                    codeBlockIndex++;
+                    return placeholder;
+                });
+                
+                // Process everything else (avoiding code blocks)
+                html = html
+                    // Handle headers
+                    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                    // Handle lists
+                    .replace(/^\* (.*$)/gm, '<ul><li>$1</li></ul>')
+                    .replace(/^\d+\. (.*$)/gm, '<ol><li>$1</li></ol>')
+                    // Handle inline code
+                    .replace(/`([^`]+)`/g, '<code>$1</code>')
+                    // Handle bold and italic
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    // Handle paragraphs
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/\n/g, '<br>');
+                
+                // Restore code blocks
+                codeBlocks.forEach((codeBlock, index) => {
+                    html = html.replace(`__CODEBLOCK_${index}__`, codeBlock);
+                });
+                
+                // Fix list tags
+                html = html.replace(/<\/ul>\s*<ul>/g, '').replace(/<\/ol>\s*<ol>/g, '');
+                
+                // Clean up line breaks around pre tags
+                html = html.replace(/<br>\s*<pre>/g, '<pre>').replace(/<\/pre>\s*<br>/g, '</pre>');
+                
+                // Wrap in paragraphs (but avoid wrapping pre and header tags)
+                if (!html.startsWith('<h') && !html.startsWith('<ul') && !html.startsWith('<ol') && !html.startsWith('<pre')) {
+                    html = '<p>' + html + '</p>';
+                }
+                
+                readmeDiv.innerHTML = html;
+                
+            } catch (error) {
+                readmeDiv.innerHTML = `
+                    <p style="color: var(--text-muted); font-style: italic;">
+                        Could not load README.md file. Error: ${error.message}
+                    </p>
+                `;
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize feather icons
+            feather.replace();
+            
+            // Load configuration automatically
+            loadConfiguration();
+            
+            // Load README content
+            loadReadme();
+        });
+    </script>
+</body>
+</html>
