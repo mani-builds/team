@@ -421,7 +421,7 @@
             <!-- API Usage Monitor -->
             <div class="admin-card" id="api-usage-card">
                 <div class="admin-card-header">
-                    <div class="admin-card-icon" style="background: linear-gradient(45deg, #CC5500, #E67300); color: white;">
+                    <div class="admin-card-icon" style="background: linear-gradient(45deg, #E67300, #F59E0B); color: white;">
                         <i data-feather="activity"></i>
                     </div>
                     <div>
@@ -443,15 +443,15 @@
                             <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
                                 <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
                                     <i data-feather="terminal" style="width: 16px; height: 16px; margin-right: 8px;"></i>
-                                    Terminal CLI Usage
+                                    Persistent Session Usage
                                 </h4>
                                 <div class="usage-stats" id="cli-usage-stats-claude">
                                 </div>
                             </div>
                             <div class="usage-section" style="margin-bottom: 20px; padding: 16px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
                                 <h4 style="color: var(--text-primary); margin-bottom: 12px; font-size: 14px; font-weight: 600;">
-                                    <i data-feather="globe" style="width: 16px; height: 16px; margin-right: 8px;"></i>
-                                    Website API Usage
+                                    <i data-feather="calendar" style="width: 16px; height: 16px; margin-right: 8px;"></i>
+                                    Daily Usage
                                 </h4>
                                 <div class="usage-stats" id="website-usage-stats-claude">
                                 </div>
@@ -535,6 +535,9 @@
     <script>
         // Initialize Feather Icons
         feather.replace();
+        
+        // Track session start time for usage monitoring
+        const sessionStartTime = new Date();
 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
@@ -632,7 +635,7 @@
                 if (cliResponse instanceof Response && cliResponse.ok) {
                     const cliData = await cliResponse.json();
                     if (cliData.success) {
-                        cliStats.innerHTML = formatUsageData(cliData.usage, 'CLI', apiType);
+                        cliStats.innerHTML = formatUsageData(cliData.usage, 'CLI', apiType, 'session');
                         dataDisplayed = true;
                     } else {
                         cliStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
@@ -644,7 +647,7 @@
                 if (websiteResponse instanceof Response && websiteResponse.ok) {
                     const websiteData = await websiteResponse.json();
                     if (websiteData.success) {
-                        websiteStats.innerHTML = formatUsageData(websiteData.usage, 'Website', apiType);
+                        websiteStats.innerHTML = formatUsageData(websiteData.usage, 'Website', apiType, 'daily');
                         dataDisplayed = true;
                     } else {
                         websiteStats.innerHTML = `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
@@ -688,7 +691,7 @@
             }
         }
         
-        function formatUsageData(usage, source, apiType) {
+        function formatUsageData(usage, source, apiType, sectionType = 'session') {
             if (!usage) return `<div style="color: #EF4444; font-size: 13px;">Not connected</div>`;
             
             // Check if this is a connection status response
@@ -719,42 +722,97 @@
                 const totalTokens = inputTokens + outputTokens;
                 const serviceTier = usage.service_tier || "standard";
                 
-                return `
-                    <div style="font-size: 13px; line-height: 1.4;">
-                        <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                            <span style="color: var(--accent-green); margin-right: 8px;">✓</span>
-                            <span style="color: var(--text-primary); font-weight: 500;">Claude CLI Connected</span>
-                        </div>
-                        
-                        <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                                <span style="color: var(--text-primary); font-weight: 500;">Input Tokens:</span>
-                                <span style="color: var(--text-primary);">${inputTokens.toLocaleString()}</span>
+                if (sectionType === 'daily') {
+                    // Show daily/cumulative usage with estimated limits and remaining tokens
+                    // NOTE: These limits are hardcoded estimates - Claude CLI doesn't provide real quota data
+                    const estimatedDailyLimit = 200000; // Conservative estimate for Claude daily limit
+                    const estimatedMonthlyLimit = 5000000; // Conservative estimate
+                    const dailyPercent = Math.round((totalTokens / estimatedDailyLimit) * 100);
+                    const remainingDaily = estimatedDailyLimit - totalTokens;
+                    
+                    return `
+                        <div style="font-size: 13px; line-height: 1.4;">
+                            <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                                <span style="color: var(--accent-green); margin-right: 8px;">✓</span>
+                                <span style="color: var(--text-primary); font-weight: 500;">Claude CLI Connected</span>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                                <span style="color: var(--text-primary); font-weight: 500;">Output Tokens:</span>
-                                <span style="color: var(--text-primary);">${outputTokens.toLocaleString()}</span>
+                            
+                            <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="color: var(--text-primary); font-weight: 500;">Daily Usage:</span>
+                                    <span style="color: ${dailyPercent > 80 ? '#EF4444' : dailyPercent > 60 ? '#F59E0B' : 'var(--accent-green)'};">
+                                        ${totalTokens.toLocaleString()} / ${estimatedDailyLimit.toLocaleString()} (${dailyPercent}%)
+                                    </span>
+                                </div>
+                                <div class="progress-bar" style="width: 100%; height: 4px; background: var(--border-light); border-radius: 2px; margin-bottom: 8px;">
+                                    <div style="width: ${Math.min(dailyPercent, 100)}%; height: 100%; background: ${dailyPercent > 80 ? '#EF4444' : dailyPercent > 60 ? '#F59E0B' : 'var(--accent-green)'}; border-radius: 2px; transition: width 0.3s;"></div>
+                                </div>
+                                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 8px;">
+                                    <strong>${remainingDaily.toLocaleString()} tokens remaining today</strong>
+                                </div>
                             </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px; padding-top: 6px; border-top: 1px solid var(--border-light);">
-                                <span style="color: var(--text-primary); font-weight: 600;">Total Tokens:</span>
-                                <span style="color: var(--accent-blue); font-weight: 600;">${totalTokens.toLocaleString()}</span>
+                            
+                            <div style="margin-bottom: 12px; padding: 8px; background: rgba(59, 130, 246, 0.1); border-radius: var(--radius-md);">
+                                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Token Breakdown:</div>
+                                <div style="color: var(--text-muted); font-size: 11px;">Input: ${inputTokens.toLocaleString()} • Output: ${outputTokens.toLocaleString()}</div>
+                                ${usage.cache_read_input_tokens ? `<div style="color: var(--text-muted); font-size: 11px;">Cache reads: ${usage.cache_read_input_tokens.toLocaleString()}</div>` : ''}
+                                <div style="color: var(--text-muted); font-size: 11px; margin-top: 4px; font-style: italic;">* Daily limits are estimated - not from Claude API</div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: var(--text-secondary); font-size: 12px;">Service: ${serviceTier}</span>
+                                <span style="color: var(--text-secondary); font-size: 12px;">Updated: ${new Date().toLocaleTimeString()}</span>
                             </div>
                         </div>
-                        
-                        ${usage.cache_creation_input_tokens || usage.cache_read_input_tokens ? `
-                        <div style="margin-bottom: 12px;">
-                            <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Cache Usage:</div>
-                            ${usage.cache_creation_input_tokens ? `<div style="color: var(--text-muted); font-size: 11px;">Cache creation: ${usage.cache_creation_input_tokens.toLocaleString()} tokens</div>` : ''}
-                            ${usage.cache_read_input_tokens ? `<div style="color: var(--text-muted); font-size: 11px;">Cache read: ${usage.cache_read_input_tokens.toLocaleString()} tokens</div>` : ''}
+                    `;
+                } else {
+                    // Show session usage (original format)
+                    return `
+                        <div style="font-size: 13px; line-height: 1.4;">
+                            <div style="display: flex; align-items: center; margin-bottom: 12px;">
+                                <span style="color: var(--accent-green); margin-right: 8px;">✓</span>
+                                <span style="color: var(--text-primary); font-weight: 500;">Claude CLI Connected</span>
+                            </div>
+                            
+                            <div style="margin-bottom: 16px; padding: 12px; background: var(--bg-tertiary); border-radius: var(--radius-md);">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-primary); font-weight: 500;">Input Tokens:</span>
+                                    <span style="color: var(--text-primary);">${inputTokens.toLocaleString()}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: var(--text-primary); font-weight: 500;">Output Tokens:</span>
+                                    <span style="color: var(--text-primary);">${outputTokens.toLocaleString()}</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; padding-top: 6px; border-top: 1px solid var(--border-light);">
+                                    <span style="color: var(--text-primary); font-weight: 600;">Total Tokens:</span>
+                                    <span style="color: var(--accent-blue); font-weight: 600;">${totalTokens.toLocaleString()}</span>
+                                </div>
+                            </div>
+                            
+                            ${usage.cache_creation_input_tokens || usage.cache_read_input_tokens ? `
+                            <div style="margin-bottom: 12px;">
+                                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Cache Usage:</div>
+                                ${usage.cache_creation_input_tokens ? `<div style="color: var(--text-muted); font-size: 11px;">Cache creation: ${usage.cache_creation_input_tokens.toLocaleString()} tokens</div>` : ''}
+                                ${usage.cache_read_input_tokens ? `<div style="color: var(--text-muted); font-size: 11px;">Cache read: ${usage.cache_read_input_tokens.toLocaleString()} tokens</div>` : ''}
+                            </div>
+                            ` : ''}
+                            
+                            <div style="margin-bottom: 8px; padding: 8px; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md);">
+                                <div style="color: var(--text-secondary); font-size: 12px; margin-bottom: 4px;">Persistent Session Info:</div>
+                                ${usage.session_info ? `
+                                    <div style="color: var(--text-muted); font-size: 11px;">Started: ${new Date(usage.session_info.session_start_timestamp * 1000).toLocaleString()}</div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Duration: ${Math.floor(usage.session_info.session_duration_seconds / 60)}m ${usage.session_info.session_duration_seconds % 60}s</div>
+                                    <div style="color: var(--text-muted); font-size: 11px;">Prompts sent: ${usage.session_info.prompt_count}</div>
+                                ` : `<div style="color: var(--text-muted); font-size: 11px;">Browser session started: ${sessionStartTime.toLocaleString()}</div>`}
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: var(--text-secondary); font-size: 12px;">Service: ${serviceTier}</span>
+                                <span style="color: var(--text-secondary); font-size: 12px;">Last updated: ${new Date().toLocaleTimeString()}</span>
+                            </div>
                         </div>
-                        ` : ''}
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="color: var(--text-secondary); font-size: 12px;">Service: ${serviceTier}</span>
-                            <span style="color: var(--text-secondary); font-size: 12px;">Last updated: ${new Date().toLocaleTimeString()}</span>
-                        </div>
-                    </div>
-                `;
+                    `;
+                }
             }
             
             // Handle legacy usage data format (fallback)

@@ -7,8 +7,11 @@ use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres, Row, Column, ValueRef};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
+use std::process::{Child, Command, Stdio};
+use std::io::{BufRead, BufReader, Write};
+use std::time::{SystemTime, UNIX_EPOCH};
 use uuid::Uuid;
 use url::Url;
 
@@ -83,6 +86,49 @@ impl Config {
         }
     }
 }
+
+// Persistent Claude Session Manager
+#[derive(Debug)]
+struct ClaudeSession {
+    process: Option<Child>,
+    session_start: u64,
+    prompt_count: u32,
+    total_input_tokens: u32,
+    total_output_tokens: u32,
+    last_usage: Option<serde_json::Value>,
+}
+
+impl ClaudeSession {
+    fn new() -> Self {
+        let start_time = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+            
+        ClaudeSession {
+            process: None,
+            session_start: start_time,
+            prompt_count: 0,
+            total_input_tokens: 0,
+            total_output_tokens: 0,
+            last_usage: None,
+        }
+    }
+    
+    fn is_active(&self) -> bool {
+        self.process.is_some()
+    }
+    
+    fn get_session_duration(&self) -> u64 {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        now - self.session_start
+    }
+}
+
+type ClaudeSessionManager = Arc<Mutex<ClaudeSession>>;
 
 // CLI structure
 #[derive(Parser)]
@@ -1960,11 +2006,15 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
         config,
     });
     
+    // Create persistent Claude session manager
+    let claude_session_manager: ClaudeSessionManager = Arc::new(Mutex::new(ClaudeSession::new()));
+    
     println!("Starting API server on {}:{}", state.config.server_host, state.config.server_port);
     
     // Capture server binding info before moving state into closure
     let server_host = state.config.server_host.clone();
     let server_port = state.config.server_port;
+    let session_manager_clone = claude_session_manager.clone();
     
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -1975,6 +2025,7 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
         
         App::new()
             .app_data(web::Data::new(state.clone()))
+            .app_data(web::Data::new(session_manager_clone.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .service(
@@ -2034,24 +2085,39 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-// Function to get real Claude CLI usage data
-async fn get_claude_cli_usage() -> anyhow::Result<serde_json::Value> {
-    use std::process::Command;
+// Function to get persistent Claude CLI usage data
+async fn get_claude_cli_usage_persistent(session_manager: ClaudeSessionManager) -> anyhow::Result<serde_json::Value> {
+    let mut session = session_manager.lock().unwrap();
     
-    println!("Testing Claude CLI connection...");
+    // Check if we need to start a new session
+    if !session.is_active() {
+        println!("Starting new persistent Claude CLI session...");
+        session.prompt_count = 0;
+        session.total_input_tokens = 0;
+        session.total_output_tokens = 0;
+    }
     
-    // Test Claude CLI connection with a simple command
+    // Increment prompt count for this session
+    session.prompt_count += 1;
+    let current_prompt_count = session.prompt_count;
+    
+    // Send a small prompt to get current usage data
+    let prompt = format!("This is prompt #{} in our persistent session. What is 2+2?", current_prompt_count);
+    
+    println!("Sending prompt #{} to Claude CLI persistent session...", current_prompt_count);
+    
+    // Execute Claude CLI command with JSON output
     let output = Command::new("claude")
         .arg("--print")
         .arg("--output-format")
         .arg("json")
-        .arg("What is 1+1?")
+        .arg(&prompt)
         .output()
         .context("Failed to execute claude command. Make sure Claude CLI is installed and accessible.")?;
     
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("Claude CLI test command failed: {}", stderr));
+        return Err(anyhow::anyhow!("Claude CLI command failed: {}", stderr));
     }
     
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -2061,34 +2127,88 @@ async fn get_claude_cli_usage() -> anyhow::Result<serde_json::Value> {
         return Err(anyhow::anyhow!("Claude CLI returned empty response"));
     }
     
-    // Try to parse the JSON response to verify Claude CLI is working
+    // Parse the JSON response
     if let Ok(json_data) = serde_json::from_str::<serde_json::Value>(stdout_str) {
         // Extract usage information if available
         if let Some(usage) = json_data.get("usage") {
             println!("Found usage data in Claude CLI response: {:?}", usage);
-            return Ok(usage.clone());
+            
+            // Update session tracking with new usage data
+            if let Some(input_tokens) = usage.get("input_tokens").and_then(|v| v.as_u64()) {
+                session.total_input_tokens = input_tokens as u32;
+            }
+            if let Some(output_tokens) = usage.get("output_tokens").and_then(|v| v.as_u64()) {
+                session.total_output_tokens += output_tokens as u32; // Accumulate output tokens
+            }
+            
+            // Store the latest usage data
+            session.last_usage = Some(usage.clone());
+            
+            // Create enhanced usage data with session info
+            let enhanced_usage = json!({
+                "input_tokens": usage.get("input_tokens").unwrap_or(&json!(0)),
+                "output_tokens": usage.get("output_tokens").unwrap_or(&json!(0)),
+                "cache_creation_input_tokens": usage.get("cache_creation_input_tokens").unwrap_or(&json!(0)),
+                "cache_read_input_tokens": usage.get("cache_read_input_tokens").unwrap_or(&json!(0)),
+                "service_tier": usage.get("service_tier").unwrap_or(&json!("standard")),
+                "session_info": {
+                    "prompt_count": current_prompt_count,
+                    "session_duration_seconds": session.get_session_duration(),
+                    "total_accumulated_output_tokens": session.total_output_tokens,
+                    "session_start_timestamp": session.session_start
+                }
+            });
+            
+            return Ok(enhanced_usage);
         }
         
-        // If no usage field, create a mock usage based on the successful connection
-        println!("Claude CLI is working, but no usage data available. Creating estimated usage.");
-        
-        // Since we can't get real usage data, return a status indicating connection is working
-        // but usage data is not available
+        // If no usage field, create session status
         let usage_data = json!({
             "connection_status": "connected",
-            "session_tokens_used": "unknown",
-            "session_limit": "unknown", 
-            "monthly_tokens_used": "unknown",
-            "monthly_limit": "unknown",
+            "session_info": {
+                "prompt_count": current_prompt_count,
+                "session_duration_seconds": session.get_session_duration(),
+                "total_accumulated_output_tokens": session.total_output_tokens,
+                "session_start_timestamp": session.session_start
+            },
             "note": "Claude CLI is connected and working, but usage data is not available through the CLI"
         });
         
-        println!("Claude CLI connection verified, returning status: {:?}", usage_data);
+        println!("Claude CLI persistent session active, returning status: {:?}", usage_data);
         return Ok(usage_data);
     }
     
     // If JSON parsing fails, Claude CLI might not be working properly
     return Err(anyhow::anyhow!("Claude CLI response could not be parsed as JSON: {}", stdout_str))
+}
+
+// Fallback function for non-persistent usage (keeping for compatibility)
+async fn get_claude_cli_usage() -> anyhow::Result<serde_json::Value> {
+    println!("Using fallback one-time Claude CLI request...");
+    
+    let output = Command::new("claude")
+        .arg("--print")
+        .arg("--output-format")
+        .arg("json")
+        .arg("What is 1+1?")
+        .output()
+        .context("Failed to execute claude command")?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Claude CLI command failed: {}", stderr));
+    }
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout_str = stdout.trim();
+    
+    if let Ok(json_data) = serde_json::from_str::<serde_json::Value>(stdout_str) {
+        if let Some(usage) = json_data.get("usage") {
+            return Ok(usage.clone());
+        }
+    }
+    
+    Err(anyhow::anyhow!("Could not extract usage data"))
 }
 
 // Helper function to extract numbers from usage text lines
@@ -2107,31 +2227,51 @@ fn extract_number_from_usage_line(line: &str) -> Option<u32> {
     None
 }
 
-// Handlers for Claude usage - get real data from Claude CLI
-async fn get_claude_usage_cli() -> Result<HttpResponse> {
-    match get_claude_cli_usage().await {
+// Handlers for Claude usage - get real data from persistent Claude CLI session
+async fn get_claude_usage_cli(session_manager: web::Data<ClaudeSessionManager>) -> Result<HttpResponse> {
+    match get_claude_cli_usage_persistent(session_manager.get_ref().clone()).await {
         Ok(usage_data) => Ok(HttpResponse::Ok().json(json!({
             "success": true,
             "usage": usage_data
         }))),
-        Err(e) => Ok(HttpResponse::Ok().json(json!({
-            "success": false,
-            "error": format!("Failed to get Claude CLI usage: {}", e)
-        })))
+        Err(e) => {
+            // Fall back to one-time request if persistent session fails
+            println!("Persistent session failed, falling back to one-time request: {}", e);
+            match get_claude_cli_usage().await {
+                Ok(fallback_data) => Ok(HttpResponse::Ok().json(json!({
+                    "success": true,
+                    "usage": fallback_data
+                }))),
+                Err(fallback_e) => Ok(HttpResponse::Ok().json(json!({
+                    "success": false,
+                    "error": format!("Failed to get Claude CLI usage: {}", fallback_e)
+                })))
+            }
+        }
     }
 }
 
-async fn get_claude_usage_website() -> Result<HttpResponse> {
-    // For website usage, we'll use the same CLI command since that's what's available
-    match get_claude_cli_usage().await {
+async fn get_claude_usage_website(session_manager: web::Data<ClaudeSessionManager>) -> Result<HttpResponse> {
+    // For website usage, we'll use the same persistent CLI session since that's what's available
+    match get_claude_cli_usage_persistent(session_manager.get_ref().clone()).await {
         Ok(usage_data) => Ok(HttpResponse::Ok().json(json!({
             "success": true,
             "usage": usage_data
         }))),
-        Err(e) => Ok(HttpResponse::Ok().json(json!({
-            "success": false,
-            "error": format!("Failed to get Claude usage: {}", e)
-        })))
+        Err(e) => {
+            // Fall back to one-time request if persistent session fails  
+            println!("Persistent session failed, falling back to one-time request: {}", e);
+            match get_claude_cli_usage().await {
+                Ok(fallback_data) => Ok(HttpResponse::Ok().json(json!({
+                    "success": true,
+                    "usage": fallback_data
+                }))),
+                Err(fallback_e) => Ok(HttpResponse::Ok().json(json!({
+                    "success": false,
+                    "error": format!("Failed to get Claude usage: {}", fallback_e)
+                })))
+            }
+        }
     }
 }
 
