@@ -16,6 +16,32 @@
             max-width: 1000px;
             margin: 0 auto;
             padding: 0 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Ensure all elements stay within container bounds */
+        .card, .participants-table-card, .team-legend, .form-group, .input-button-group,
+        .participants-table-container, .sort-dropdown, .status-dropdown {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Ensure form elements stay within bounds */
+        .form-control, .form-row, .config-form {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        /* Responsive table handling */
+        .participants-table-container {
+            overflow-x: auto;
+            width: 100%;
+        }
+        
+        .participants-table {
+            width: 100%;
+            min-width: 0;
         }
         
         .readme-content {
@@ -274,6 +300,37 @@
             color: var(--text-secondary);
         }
         
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .pagination-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-medium);
+            border-radius: 6px;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         /* 3-dot menu styles */
         .menu-container {
             position: relative;
@@ -284,7 +341,7 @@
         .menu-button {
             width: 32px;
             height: 32px;
-            border: 1px solid var(--border-light);
+            border: 1px solid var(--border-medium);
             border-radius: 6px;
             background: var(--bg-tertiary);
             color: var(--text-secondary);
@@ -311,7 +368,7 @@
             top: 100%;
             right: 0;
             background: var(--bg-secondary);
-            border: 1px solid var(--border-light);
+            border: 1px solid var(--border-medium);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-md);
             min-width: 180px;
@@ -610,7 +667,7 @@
         /* Column View (Default) - Using table-list style */
         .participants-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             margin-top: 16px;
         }
@@ -926,7 +983,43 @@
         }
         
         /* Responsive Design */
+        @media (max-width: 1000px) {
+            .participants-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                padding: 0 16px;
+            }
+            
+            .view-controls {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .table-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .config-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+        
         @media (max-width: 768px) {
+            .container {
+                padding: 0 16px;
+            }
+            
             .participants-grid {
                 grid-template-columns: 1fr;
             }
@@ -938,6 +1031,24 @@
             .view-controls {
                 flex-direction: column;
                 align-items: stretch;
+            }
+            
+            .participants-table-container {
+                overflow-x: auto;
+            }
+            
+            .participants-table {
+                min-width: 600px;
+            }
+            
+            .table-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .pagination-controls {
+                align-self: flex-end;
             }
             
             .view-buttons {
@@ -1009,7 +1120,7 @@
             <a href="../admin/">← Admin Dashboard</a>
         </div>
 
-        <div class="header">
+        <div class="header" style="display: none;">
             <h1>
                 <div class="gemini-icon">G</div>
                 Coding Meetup Integration
@@ -1020,10 +1131,9 @@
         </div>
 
         <div style="margin-bottom: 20px;">
-            <div class="input-button-group" id="input-button-group" style="display: flex; align-items: center; justify-content: space-between; padding: 0 32px;">
+            <div class="input-button-group" id="input-button-group" style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; gap: 12px; align-items: center;">
                     <select id="fileSelect" class="form-control" style="width: auto; min-width: 200px; max-width: calc(100% - 32px); flex: none;">
-                        <option value="modelteam" data-url="https://docs.google.com/spreadsheets/d/e/2PACX-1vRh5-bIR4hC1f9H3NtDCNT19hZXnqz8WRrBwTuLGnZiA5PWhFILUv2nS2FKE2TZ4dZ-RnJkZwHx1t2Y/pub?gid=1054734503&single=true&output=csv">Model Team (Default)</option>
                         <option value="custom">Choose File...</option>
                     </select>
                     <button class="btn btn-primary" id="get-participants">
@@ -1049,7 +1159,7 @@
                             <span>Export CSV</span>
                         </div>
                         <div class="menu-item" id="list-feeds-toggle">
-                            <span>All Feeds</span>
+                            <span>All Lists</span>
                         </div>
                     </div>
                 </div>
@@ -1173,6 +1283,10 @@
                 </div>
                 <div class="table-info">
                     <span id="results-count" style="margin-right:10px">0 results</span>
+                    <div class="pagination-controls" style="display: none;">
+                        <button id="prev-page" class="pagination-btn" title="Previous page">‹</button>
+                        <button id="next-page" class="pagination-btn" title="Next page">›</button>
+                    </div>
                 </div>
             </div>
             
@@ -1382,6 +1496,21 @@
                 
                 // Reset team legend flag for new data
                 initialTeamLegendGenerated = false;
+                
+                // Always populate Raw Data Editor when data is successfully fetched
+                const rawDataEditor = document.getElementById('raw-data-editor');
+                const rawDataSource = document.getElementById('raw-data-source');
+                
+                if (rawDataEditor) {
+                    // Use the raw data before preprocessing
+                    originalRawData = JSON.parse(JSON.stringify(loadResult.data));
+                    rawDataEditor.value = JSON.stringify(loadResult.data, null, 2);
+                }
+                
+                if (rawDataSource) {
+                    rawDataSource.value = meetupLink;
+                }
+                
                 displayParticipantsTable(validData);
                 
                 participantsResult.innerHTML = `<div class="success-message">Successfully loaded ${validData.length} records from ${loadResult.format.toUpperCase()} source!</div>`;
@@ -1392,6 +1521,22 @@
 
             } catch (error) {
                 console.error('Full error details:', error);
+                
+                // Always populate Raw Data Editor with error response for debugging
+                const rawDataEditor = document.getElementById('raw-data-editor');
+                const rawDataSource = document.getElementById('raw-data-source');
+                
+                if (rawDataEditor && error.rawResponse) {
+                    // Show the raw error response from the API
+                    originalRawData = JSON.parse(JSON.stringify(error.rawResponse));
+                    rawDataEditor.value = JSON.stringify(error.rawResponse, null, 2);
+                    console.log('Populated Raw Data Editor with error response:', error.rawResponse);
+                }
+                
+                if (rawDataSource && error.requestUrl) {
+                    rawDataSource.value = error.requestUrl;
+                }
+                
                 participantsResult.innerHTML = `<div class="error-message"><h4>Error Loading Data</h4><p>${error.message}</p></div>`;
                 document.getElementById('loadStatus').style.display = 'block';
                 
@@ -1426,6 +1571,11 @@
         // Sort functionality
         let currentSortColumn = localStorage.getItem('participantsSortColumn') || 'Rows';
         let currentSortOrder = localStorage.getItem('participantsSortOrder') || 'asc';
+        
+        // Pagination functionality
+        let currentPage = 1;
+        const recordsPerPage = 500;
+        let totalRecords = 0;
         let originalDataOrder = [];
         
         // Status filtering
@@ -1467,26 +1617,34 @@
             const tableCard = document.getElementById('participants-table-card');
             const resultsCount = document.getElementById('results-count');
             
-            // Update results count (initial load shows all results)
-            resultsCount.textContent = `${preprocessedData.length} result${preprocessedData.length !== 1 ? 's' : ''} in ${preprocessedData.length} total`;
+            // Reset to first page when new data loads
+            currentPage = 1;
+            
+            // Update results count with pagination
+            updateResultsCount(preprocessedData);
             
             // Store preprocessed data globally
             window.participantsData = preprocessedData;
             allParticipantsData = preprocessedData;
             originalDataOrder = [...preprocessedData]; // Store original order
             
-            // Populate Raw Data Editor if it's open when feed loads
+            // Update Raw Data Editor with preprocessed data if it's currently visible
             if (rawDataVisible) {
                 const rawDataEditor = document.getElementById('raw-data-editor');
                 const rawDataSource = document.getElementById('raw-data-source');
                 
-                if (rawDataEditor) {
+                if (rawDataEditor && rawDataEditor.value) {
+                    // Only update if the Raw Data Editor doesn't already have raw data
+                    // (the raw data was already populated in getMeetupParticipants)
+                    console.log('Raw Data Editor already populated with raw data, skipping preprocessed update');
+                } else if (rawDataEditor) {
+                    // Fallback: populate with preprocessed data if raw data wasn't available
                     originalRawData = JSON.parse(JSON.stringify(preprocessedData));
                     rawDataEditor.value = JSON.stringify(preprocessedData, null, 2);
-                }
-                
-                if (rawDataSource) {
-                    rawDataSource.value = getCurrentDataSource();
+                    
+                    if (rawDataSource) {
+                        rawDataSource.value = getCurrentDataSource();
+                    }
                 }
             }
             
@@ -1769,6 +1927,39 @@
             
             // Always show team legend if teams are detected (even if only one team)
             teamLegend.style.display = teams.size > 0 ? 'block' : 'none';
+            
+            // Restore team filter highlighting from storage
+            restoreTeamFilterHighlighting();
+        }
+        
+        // Restore team filter highlighting when recalled from browser storage
+        function restoreTeamFilterHighlighting() {
+            if (currentTeamFilter) {
+                console.log('Restoring team filter highlighting for:', currentTeamFilter);
+                
+                // Clear all active states first
+                document.querySelectorAll('.legend-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Find and highlight the matching team legend item
+                const matchingItem = document.querySelector(`.legend-item[data-team="${currentTeamFilter}"]`);
+                if (matchingItem) {
+                    matchingItem.classList.add('active');
+                    console.log('Team filter highlighting restored for:', currentTeamFilter);
+                } else {
+                    console.log('No matching legend item found for team filter:', currentTeamFilter);
+                }
+            } else {
+                // No team filter active, highlight "Show All"
+                document.querySelectorAll('.legend-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                const showAllItem = document.getElementById('clear-team-filter');
+                if (showAllItem) {
+                    showAllItem.classList.add('active');
+                }
+            }
         }
         
         // Filter by team
@@ -2154,13 +2345,21 @@
                 console.log('⏭️ Skipping present participants filter (not active)');
             }
             
-            // Render filtered data in all views
-            console.log('🎨 Starting render process with', filteredData.length, 'filtered participants');
-            console.log('🔍 Sample of filtered data:', filteredData.slice(0, 3));
+            // Update results count with pagination
+            console.log('📊 Updating results count with pagination...');
+            updateResultsCount(filteredData);
+            
+            // Apply pagination to filtered data
+            const paginatedData = paginateData(filteredData);
+            console.log(`📄 Displaying page ${currentPage} with ${paginatedData.length} records`);
+            
+            // Render paginated data in all views
+            console.log('🎨 Starting render process with', paginatedData.length, 'paginated participants');
+            console.log('🔍 Sample of paginated data:', paginatedData.slice(0, 3));
             
             try {
                 console.log('🏛️ Rendering column view...');
-                renderColumnView(filteredData);
+                renderColumnView(paginatedData);
                 console.log('✅ Column view rendered successfully');
             } catch (error) {
                 console.error('❌ Error rendering column view:', error);
@@ -2169,7 +2368,7 @@
             
             try {
                 console.log('📊 Rendering table view...');
-                renderTableView(filteredData);
+                renderTableView(paginatedData);
                 console.log('✅ Table view rendered successfully');
             } catch (error) {
                 console.error('❌ Error rendering table view:', error);
@@ -2178,50 +2377,11 @@
             
             try {
                 console.log('🖼️ Rendering gallery view...');
-                renderGalleryView(filteredData);
+                renderGalleryView(paginatedData);
                 console.log('✅ Gallery view rendered successfully');
             } catch (error) {
                 console.error('❌ Error rendering gallery view:', error);
                 console.error('Stack trace:', error.stack);
-            }
-            
-            // Update results count
-            console.log('📊 Updating results count...');
-            const resultsCount = document.getElementById('results-count');
-            const totalCount = allParticipantsData ? allParticipantsData.length : 0;
-            let countText = `${filteredData.length} result${filteredData.length !== 1 ? 's' : ''} in ${totalCount} total`;
-            
-            // Add filter description
-            const filters = [];
-            if (showOnlyPresent) {
-                filters.push('present only');
-            }
-            if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
-                const statusList = Array.from(selectedStatuses);
-                if (statusList.length === 1) {
-                    filters.push(statusList[0]);
-                } else {
-                    filters.push(`${statusList.length} statuses`);
-                }
-            }
-            if (currentTeamFilter) {
-                const teamName = teamColors[currentTeamFilter.replace('team-', '')] ? 
-                    teamColors[currentTeamFilter.replace('team-', '')].name : 'filtered team';
-                filters.push(teamName);
-            }
-            
-            if (filters.length > 0) {
-                countText += ` (${filters.join(', ')})`;
-            }
-            
-            console.log('📝 Results count text:', countText);
-            console.log('🎯 Results count element:', resultsCount);
-            
-            if (resultsCount) {
-                resultsCount.textContent = countText;
-                console.log('✅ Results count updated successfully');
-            } else {
-                console.error('❌ Results count element not found!');
             }
             
             // Reapply present highlighting
@@ -3561,6 +3721,24 @@
             }
         }
         
+        // Show/hide header based on list parameter
+        function updateHeaderVisibility() {
+            const listParam = getURLHashParam('list');
+            const header = document.querySelector('.header');
+            
+            if (header) {
+                // Only show header when list=modelteam
+                header.style.display = (listParam === 'modelteam') ? 'block' : 'none';
+                console.log('Header visibility updated:', listParam === 'modelteam' ? 'visible' : 'hidden', 'for list:', listParam);
+            }
+        }
+        
+        // Update both header visibility and title when hash changes
+        function updateUIForHashChange() {
+            updateHeaderVisibility();
+            updateParticipantListTitle();
+        }
+        
         function handleCustomFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -3954,12 +4132,18 @@
             // Check and update present participants panel visibility on page load
             updatePresentParticipantsVisibility();
             
+            // Set initial header visibility based on current hash
+            updateHeaderVisibility();
+            
             // Listen for URL changes to update visibility
             window.addEventListener('hashchange', updatePresentParticipantsVisibility);
             
             // Listen for URL changes to handle list parameter changes
             window.addEventListener('hashchange', function() {
                 const listParam = getURLHashParam('list');
+                
+                // Update UI for hash changes (header visibility and title)
+                updateUIForHashChange();
                 
                 // Hide UI elements when list hash changes
                 if (listParam && listParam !== fileSelect.value) {
@@ -4069,6 +4253,65 @@
                     filtersDropdown.style.display = 'none';
                 }
             });
+        });
+        
+        // Pagination functions
+        function updatePaginationControls() {
+            const totalPages = Math.ceil(totalRecords / recordsPerPage);
+            const paginationControls = document.querySelector('.pagination-controls');
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            
+            if (totalRecords > recordsPerPage) {
+                paginationControls.style.display = 'flex';
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages;
+            } else {
+                paginationControls.style.display = 'none';
+            }
+        }
+        
+        function updateResultsCount(filteredData) {
+            const resultsCount = document.getElementById('results-count');
+            if (!resultsCount) return;
+            
+            totalRecords = filteredData.length;
+            const totalPages = Math.ceil(totalRecords / recordsPerPage);
+            const startRecord = Math.min((currentPage - 1) * recordsPerPage + 1, totalRecords);
+            const endRecord = Math.min(currentPage * recordsPerPage, totalRecords);
+            
+            if (totalRecords === 0) {
+                resultsCount.textContent = '0 results';
+            } else if (totalRecords <= recordsPerPage) {
+                resultsCount.textContent = `${totalRecords} result${totalRecords !== 1 ? 's' : ''} in ${totalRecords} total`;
+            } else {
+                resultsCount.textContent = `${startRecord} to ${endRecord} results in ${totalRecords} total`;
+            }
+            
+            updatePaginationControls();
+        }
+        
+        function paginateData(data) {
+            const startIndex = (currentPage - 1) * recordsPerPage;
+            const endIndex = Math.min(startIndex + recordsPerPage, data.length);
+            return data.slice(startIndex, endIndex);
+        }
+        
+        function goToPage(page) {
+            const totalPages = Math.ceil(totalRecords / recordsPerPage);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                applyAllFilters(); // Re-apply filters and refresh display
+            }
+        }
+        
+        // Add pagination event listeners
+        document.getElementById('prev-page').addEventListener('click', () => {
+            goToPage(currentPage - 1);
+        });
+        
+        document.getElementById('next-page').addEventListener('click', () => {
+            goToPage(currentPage + 1);
         });
     </script>
     
