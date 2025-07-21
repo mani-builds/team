@@ -617,8 +617,8 @@ async function loadGoogleSheetConfig(fileSelect, hashParam = 'feed') {
         const response = await fetch(SHEET_URL);
         const csvText = await response.text();
         
-        // Parse CSV
-        const rows = csvText.split('\n').map(row => row.split(',').map(cell => cell.replace(/"/g, '').trim()));
+        // Parse CSV using robust parser that handles quoted fields
+        const rows = parseCSV(csvText);
         const headers = rows[0];
         
         console.log('CSV headers:', headers);

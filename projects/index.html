@@ -1453,10 +1453,16 @@
         
         // Display participants in all views
         function displayParticipantsTable(data) {
-            if (!data || data.length === 0) return;
+            console.log('displayParticipantsTable called with data:', data);
+            if (!data || data.length === 0) {
+                console.log('displayParticipantsTable: No data provided, returning early');
+                return;
+            }
             
             // Preprocess data to clean column names and normalize structure
+            console.log('displayParticipantsTable: Preprocessing data...');
             const preprocessedData = preprocessParticipantData(data);
+            console.log('displayParticipantsTable: Preprocessed data:', preprocessedData);
             
             const tableCard = document.getElementById('participants-table-card');
             const resultsCount = document.getElementById('results-count');
@@ -1468,6 +1474,21 @@
             window.participantsData = preprocessedData;
             allParticipantsData = preprocessedData;
             originalDataOrder = [...preprocessedData]; // Store original order
+            
+            // Populate Raw Data Editor if it's open when feed loads
+            if (rawDataVisible) {
+                const rawDataEditor = document.getElementById('raw-data-editor');
+                const rawDataSource = document.getElementById('raw-data-source');
+                
+                if (rawDataEditor) {
+                    originalRawData = JSON.parse(JSON.stringify(preprocessedData));
+                    rawDataEditor.value = JSON.stringify(preprocessedData, null, 2);
+                }
+                
+                if (rawDataSource) {
+                    rawDataSource.value = getCurrentDataSource();
+                }
+            }
             
             // Generate team legend only once from the initial full dataset
             if (!initialTeamLegendGenerated) {
@@ -1496,7 +1517,9 @@
             updatePresentToggleUI();
             
             // Apply all saved filters (team + status + present)
+            console.log('displayParticipantsTable: Scheduling applyAllFilters with setTimeout...');
             setTimeout(() => {
+                console.log('displayParticipantsTable: setTimeout callback executing, calling applyAllFilters...');
                 applyAllFilters();
             }, 100);
             
@@ -2062,45 +2085,108 @@
         }
         
         function applyAllFilters() {
+            console.log('🔄 applyAllFilters called');
+            console.log('📊 allParticipantsData:', allParticipantsData);
+            console.log('📏 allParticipantsData length:', allParticipantsData ? allParticipantsData.length : 'undefined');
+            
             if (!allParticipantsData || allParticipantsData.length === 0) {
-                console.warn('applyAllFilters called but allParticipantsData is empty or undefined');
+                console.warn('⚠️ applyAllFilters called but allParticipantsData is empty or undefined');
+                console.log('🔍 Current state - selectedStatuses:', selectedStatuses);
+                console.log('🔍 Current state - currentTeamFilter:', currentTeamFilter);
+                console.log('🔍 Current state - showOnlyPresent:', showOnlyPresent);
                 return;
             }
             
+            console.log('🏁 Starting filter process with', allParticipantsData.length, 'participants');
             let filteredData = [...allParticipantsData];
+            console.log('📋 Initial filteredData length:', filteredData.length);
             
             // Apply status filter
             if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
+                console.log('🔍 Applying status filter. Selected statuses:', Array.from(selectedStatuses));
+                const beforeStatusFilter = filteredData.length;
                 filteredData = filteredData.filter(participant => {
                     const status = participant.Status || 'Unknown';
-                    return selectedStatuses.has(status);
+                    const passes = selectedStatuses.has(status);
+                    if (!passes) {
+                        console.log('❌ Participant filtered out by status:', participant.Name || participant.name, 'Status:', status);
+                    }
+                    return passes;
                 });
+                console.log('📊 Status filter result:', beforeStatusFilter, '→', filteredData.length);
+            } else {
+                console.log('⏭️ Skipping status filter (All selected or no selection)');
             }
             
             // Apply team filter if active
             if (currentTeamFilter) {
+                console.log('🔍 Applying team filter:', currentTeamFilter);
+                const beforeTeamFilter = filteredData.length;
                 filteredData = filteredData.filter(participant => {
                     const participantTeamClasses = getAllTeamClasses(participant.Team);
-                    return participantTeamClasses.includes(currentTeamFilter);
+                    const passes = participantTeamClasses.includes(currentTeamFilter);
+                    if (!passes) {
+                        console.log('❌ Participant filtered out by team:', participant.Name || participant.name, 'Team:', participant.Team, 'Classes:', participantTeamClasses);
+                    }
+                    return passes;
                 });
+                console.log('📊 Team filter result:', beforeTeamFilter, '→', filteredData.length);
+            } else {
+                console.log('⏭️ Skipping team filter (no team selected)');
             }
             
             // Apply present participants filter if active
             if (showOnlyPresent) {
+                console.log('🔍 Applying present participants filter. Present participants:', Array.from(presentParticipants));
+                const beforePresentFilter = filteredData.length;
                 filteredData = filteredData.filter(participant => {
                     const name = getParticipantName(participant);
-                    return Array.from(presentParticipants).some(presentName => 
+                    const passes = Array.from(presentParticipants).some(presentName => 
                         presentName.toLowerCase() === name.toLowerCase()
                     );
+                    if (!passes) {
+                        console.log('❌ Participant filtered out by present status:', name);
+                    }
+                    return passes;
                 });
+                console.log('📊 Present filter result:', beforePresentFilter, '→', filteredData.length);
+            } else {
+                console.log('⏭️ Skipping present participants filter (not active)');
             }
             
             // Render filtered data in all views
-            renderColumnView(filteredData);
-            renderTableView(filteredData);
-            renderGalleryView(filteredData);
+            console.log('🎨 Starting render process with', filteredData.length, 'filtered participants');
+            console.log('🔍 Sample of filtered data:', filteredData.slice(0, 3));
+            
+            try {
+                console.log('🏛️ Rendering column view...');
+                renderColumnView(filteredData);
+                console.log('✅ Column view rendered successfully');
+            } catch (error) {
+                console.error('❌ Error rendering column view:', error);
+                console.error('Stack trace:', error.stack);
+            }
+            
+            try {
+                console.log('📊 Rendering table view...');
+                renderTableView(filteredData);
+                console.log('✅ Table view rendered successfully');
+            } catch (error) {
+                console.error('❌ Error rendering table view:', error);
+                console.error('Stack trace:', error.stack);
+            }
+            
+            try {
+                console.log('🖼️ Rendering gallery view...');
+                renderGalleryView(filteredData);
+                console.log('✅ Gallery view rendered successfully');
+            } catch (error) {
+                console.error('❌ Error rendering gallery view:', error);
+                console.error('Stack trace:', error.stack);
+            }
             
             // Update results count
+            console.log('📊 Updating results count...');
             const resultsCount = document.getElementById('results-count');
             const totalCount = allParticipantsData ? allParticipantsData.length : 0;
             let countText = `${filteredData.length} result${filteredData.length !== 1 ? 's' : ''} in ${totalCount} total`;
@@ -2128,10 +2214,29 @@
                 countText += ` (${filters.join(', ')})`;
             }
             
-            resultsCount.textContent = countText;
+            console.log('📝 Results count text:', countText);
+            console.log('🎯 Results count element:', resultsCount);
+            
+            if (resultsCount) {
+                resultsCount.textContent = countText;
+                console.log('✅ Results count updated successfully');
+            } else {
+                console.error('❌ Results count element not found!');
+            }
             
             // Reapply present highlighting
-            setTimeout(() => updatePresentHighlighting(), 100);
+            console.log('⏰ Scheduling present highlighting update in 100ms...');
+            setTimeout(() => {
+                console.log('🎨 Executing present highlighting update...');
+                try {
+                    updatePresentHighlighting();
+                    console.log('✅ Present highlighting updated successfully');
+                } catch (error) {
+                    console.error('❌ Error updating present highlighting:', error);
+                }
+            }, 100);
+            
+            console.log('🏁 applyAllFilters completed successfully');
         }
         
         // Switch between views
