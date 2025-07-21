@@ -102,12 +102,13 @@ class StandaloneNavigation {
             const repoPath = `/${repoFolderName}/`;
             rootPath = repoPath;
             adminPath = `${repoPath}admin/`;
-            logoPath = basePath ? `${basePath}/img/logo/neighborhood/favicon.png` : './img/logo/neighborhood/favicon.png';
+            logoPath = basePath ? `${basePath}${basePath.endsWith('/') ? '' : '/'}img/logo/neighborhood/favicon.png` : 'img/logo/neighborhood/favicon.png';
+            //alert(logoPath)
         } else {
             // Direct repo serving
             rootPath = basePath ? `${basePath}/` : './';
             adminPath = basePath ? `${basePath}/admin/` : './admin/';
-            logoPath = basePath ? `${basePath}/img/logo/neighborhood/favicon.png` : './img/logo/neighborhood/favicon.png';
+            logoPath = basePath ? `${basePath}${basePath.endsWith('/') ? '' : '/'}img/logo/neighborhood/favicon.png` : 'img/logo/neighborhood/favicon.png';
         }
         
         // Debug logging
@@ -804,7 +805,7 @@ function initializeStandaloneNav() {
     
     // Determine base path based on current location
     const currentPath = window.location.pathname;
-    const pathSegments = currentPath.split('/').filter(segment => segment && segment !== 'index.html');
+    const pathSegments = currentPath.split('/').filter(segment => segment && !segment.endsWith('.html'));
     let basePath = '';
     
     // Extract repo folder name from URL (e.g., 'team' from '/team/admin/page')
