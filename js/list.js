@@ -454,7 +454,7 @@ async function fetchExternalAPI(url, options = {}, forceCorsProxy = false, API_B
     } else {
         // For other domains, try direct fetch first and fallback to Rust backend
         try {
-            showMessage('Attempting direct API access...', 'info');
+            showMessage('Pull list via Javascript.', 'info');
             const response = await fetch(url, options);
             return await response.json();
         } catch (corsError) {

@@ -1338,6 +1338,14 @@
         let selectedFile = null;
         let customFiles = {};
 
+        // Helper function to append messages to statusMessages
+        function appendStatusMessage(message, type = 'info') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+            messageDiv.innerHTML = message;
+            statusMessages.appendChild(messageDiv);
+        }
+
         async function getMeetupParticipants() {
             // Get URL from selected dropdown option
             const selectedOption = fileSelect.options[fileSelect.selectedIndex];
@@ -1345,14 +1353,13 @@
             const isCors = selectedOption.getAttribute('data-cors') === 'true';
             
             if (!meetupLink) {
-                participantsResult.innerHTML = '<div class="error-message">Please select a valid data source.</div>';
+                appendStatusMessage('Please select a valid data source.', 'error');
                 return;
             }
 
             try {
                 getParticipantsButton.disabled = true;
                 participantsSpinner.style.display = 'inline-block';
-                participantsResult.innerHTML = '';
                 
                 // Hide table initially
                 document.getElementById('participants-table-card').style.display = 'none';
@@ -1368,7 +1375,7 @@
                     const errorMessage = `No data found in the source\n\nPath attempted: ${meetupLink}`;
                     
                     // Show error in status messages
-                    participantsResult.innerHTML = `<div class="error-message"><h4>No Data Found</h4><p>${errorMessage}</p></div>`;
+                    appendStatusMessage(`<h4>No Data Found</h4><p>${errorMessage}</p>`, 'error');
                     document.getElementById('loadStatus').style.display = 'block';
                     
                     // Populate Raw Data Editor with the load result
@@ -1419,7 +1426,7 @@
                     const errorMessage = `No valid data found in the source\n\nPath attempted: ${meetupLink}`;
                     
                     // Show error in status messages
-                    participantsResult.innerHTML = `<div class="error-message"><h4>No Valid Data Found</h4><p>${errorMessage}</p></div>`;
+                    appendStatusMessage(`<h4>No Valid Data Found</h4><p>${errorMessage}</p>`, 'error');
                     document.getElementById('loadStatus').style.display = 'block';
                     
                     // Populate Raw Data Editor with the load result
@@ -1482,7 +1489,7 @@
                 
                 displayParticipantsTable(validData);
                 
-                participantsResult.innerHTML = `<div class="success-message">Successfully loaded ${validData.length} records from ${loadResult.format.toUpperCase()} source!</div>`;
+                appendStatusMessage(`Successfully loaded ${validData.length} records from ${loadResult.format.toUpperCase()} source!`, 'success');
                 document.getElementById('loadStatus').style.display = 'block';
                 
                 // Show UI elements after successful data load
@@ -1506,7 +1513,7 @@
                     rawDataSource.value = error.requestUrl;
                 }
                 
-                participantsResult.innerHTML = `<div class="error-message"><h4>Error Loading Data</h4><p>${error.message}</p></div>`;
+                appendStatusMessage(`<h4>Error Loading Data</h4><p>${error.message}</p>`, 'error');
                 document.getElementById('loadStatus').style.display = 'block';
                 
                 // Show the table card so the 3-dot menu remains accessible
@@ -3136,7 +3143,6 @@
             const value = fileSelect.value;
             
             // Clear previous results
-            participantsResult.innerHTML = '';
             statusMessages.innerHTML = '';
             document.getElementById('loadStatus').style.display = 'none';
             
@@ -3199,20 +3205,27 @@
         
         function updateParticipantListTitle(customTitle = null) {
             const participantListTitle = document.getElementById('participants-list-title');
+            let titleText;
             
             if (customTitle) {
                 // Use custom title provided
+                titleText = customTitle;
                 participantListTitle.textContent = `📊 ${customTitle}`;
             } else {
                 const selectedOption = fileSelect.options[fileSelect.selectedIndex];
                 if (selectedOption && selectedOption.textContent && selectedOption.value !== 'custom') {
                     // Use the title from the selected option
+                    titleText = selectedOption.textContent;
                     participantListTitle.textContent = `📊 ${selectedOption.textContent}`;
                 } else {
                     // Default title
+                    titleText = 'Participants List';
                     participantListTitle.textContent = '📊 Participants List';
                 }
             }
+            
+            // Update browser title
+            document.title = titleText;
         }
         
         // Show/hide header based on list parameter
@@ -3516,7 +3529,7 @@
                     displayParticipantsTable(feedsData, 'All Available Feeds');
                     
                     // Update the page title
-                    document.title = 'All Available Feeds - MemberCommons';
+                    //document.title = 'All Available Feeds - MemberCommons';
                     
                     // Show UI elements after successful feeds load
                     showListDisplayElements();
