@@ -466,8 +466,18 @@ async function fetchExternalAPI(url, options = {}, forceCorsProxy = false, API_B
     
     // Use Rust backend proxy
     try {
+        // Alert the path about to be sent when using CORS proxy
+        /*
+        if (forceCorsProxy) {
+            alert('CORS Proxy - Sending Request:\n\nOriginal URL: ' + url + '\nAPI_BASE: ' + API_BASE + '\nProxy Endpoint: ' + `${API_BASE}/proxy/external` + '\nRequest Body: ' + JSON.stringify({
+                url: url,
+                method: options.method || 'GET',
+                headers: options.headers || {}
+            }, null, 2));
+        }
+        */
         // Use Rust backend to fetch the external URL
-        const proxyResponse = await fetch(`${API_BASE}/proxy`, {
+        const proxyResponse = await fetch(`${API_BASE}/proxy/external`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -479,14 +489,45 @@ async function fetchExternalAPI(url, options = {}, forceCorsProxy = false, API_B
             })
         });
 
-        if (!proxyResponse.ok) {
-            throw new Error(`Proxy request failed: ${proxyResponse.status} ${proxyResponse.statusText}`);
+        // Alert the response when using CORS proxy (before checking status)
+        let proxyResult;
+        if (forceCorsProxy) {
+            const responseText = await proxyResponse.text();
+            
+            // Check for common backend connection issues
+            if (proxyResponse.status === 404) {
+                consol.log('CORS Proxy - 404 ERROR:\n\nPath: ' + url + '\nProxy Endpoint: ' + `${API_BASE}/proxy/external` + 
+                      '\nStatus: ' + proxyResponse.status + ' ' + proxyResponse.statusText + 
+                      '\n\nLIKELY ISSUE: Rust backend not running on ' + API_BASE + 
+                      '\nSOLUTION: Start the Rust server with: cargo run serve' +
+                      '\n\nResponse: ' + responseText.substring(0, 500));
+            } else {
+                /*
+                alert('CORS Proxy - Response Received:\n\nPath: ' + url + '\nStatus: ' + proxyResponse.status + ' ' + proxyResponse.statusText + 
+                      '\nResponse: ' + responseText.substring(0, 1000) + 
+                      (responseText.length > 1000 ? '\n\n[Response truncated - showing first 1000 characters]' : ''));
+                */
+            }
+            
+            // Parse the response text as JSON
+            proxyResult = JSON.parse(responseText);
+        } else {
+            if (!proxyResponse.ok) {
+                throw new Error(`Proxy request failed: ${proxyResponse.status} ${proxyResponse.statusText}`);
+            }
+            proxyResult = await proxyResponse.json();
         }
-
-        const proxyResult = await proxyResponse.json();
         
         if (proxyResult.success) {
             showMessage('Successfully fetched data via Rust backend proxy', 'success');
+            
+            // Alert the loaded data when using CORS proxy
+            /*
+            if (forceCorsProxy) {
+                alert('CORS Data Loaded:\n\n' + JSON.stringify(proxyResult.data, null, 2).substring(0, 1000) + 
+                      (JSON.stringify(proxyResult.data, null, 2).length > 1000 ? '\n\n[Data truncated - showing first 1000 characters]' : ''));
+            }
+            */
             
             // Check if the response might be RSS/XML
             if (typeof proxyResult.data === 'string' && 
@@ -517,7 +558,11 @@ async function fetchExternalAPI(url, options = {}, forceCorsProxy = false, API_B
         }
     } catch (proxyError) {
         console.error('Rust backend proxy failed:', proxyError.message);
-        showMessage('Both direct access and proxy failed. Using fallback data...', 'warning');
+        if (forceCorsProxy) {
+            showMessage('CORS proxy failed. Using fallback data...', 'warning');
+        } else {
+            showMessage('Both direct access and proxy failed. Using fallback data...', 'warning');
+        }
         
         // Return mock data structure for DemocracyLab as last resort
         if (url.includes('democracylab.org')) {
