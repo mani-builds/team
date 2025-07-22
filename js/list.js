@@ -103,32 +103,66 @@ function getCurrentCacheKey(fileSelect, selectedFile, selectedSheet) {
 // =============================================================================
 
 function parseCSV(csvText) {
-    const lines = csvText.split('\n').filter(line => line.trim());
-    const result = [];
+    // Robust CSV parser that handles quoted fields with newlines, escaped quotes, and proper field separation
+    // This prevents line returns within quoted field values from being treated as new rows
+    const rows = [];
+    let inQuotes = false;
+    let currentRow = [];
+    let currentField = '';
     
-    for (let line of lines) {
-        const row = [];
-        let current = '';
-        let inQuotes = false;
+    for (let i = 0; i < csvText.length; i++) {
+        const char = csvText[i];
+        const nextChar = csvText[i + 1];
         
-        for (let i = 0; i < line.length; i++) {
-            const char = line[i];
-            
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                row.push(current.trim());
-                current = '';
+        if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+                // Handle escaped quotes ("" inside quoted field)
+                currentField += '"';
+                i++; // Skip next quote
             } else {
-                current += char;
+                // Toggle quote state
+                inQuotes = !inQuotes;
             }
+        } else if (char === ',' && !inQuotes) {
+            // End of field
+            currentRow.push(currentField.trim());
+            currentField = '';
+        } else if ((char === '\n' || char === '\r\n') && !inQuotes) {
+            // End of row (only if not inside quotes)
+            currentRow.push(currentField.trim());
+            if (currentRow.length > 0 && currentRow.some(field => field !== '')) {
+                rows.push(currentRow);
+            }
+            currentRow = [];
+            currentField = '';
+            
+            // Skip \r if we're at \r\n
+            if (char === '\r' && nextChar === '\n') {
+                i++;
+            }
+        } else if (char === '\r' && !inQuotes) {
+            // Handle standalone \r as row separator
+            currentRow.push(currentField.trim());
+            if (currentRow.length > 0 && currentRow.some(field => field !== '')) {
+                rows.push(currentRow);
+            }
+            currentRow = [];
+            currentField = '';
+        } else {
+            // Regular character or newline inside quotes
+            currentField += char;
         }
-        
-        row.push(current.trim());
-        result.push(row);
     }
     
-    return result;
+    // Handle last field and row
+    if (currentField !== '' || currentRow.length > 0) {
+        currentRow.push(currentField.trim());
+        if (currentRow.length > 0 && currentRow.some(field => field !== '')) {
+            rows.push(currentRow);
+        }
+    }
+    
+    return rows;
 }
 
 function parseCSVToObjects(csvText) {
