@@ -160,6 +160,10 @@ class StandaloneNavigation {
                                     <i class="subnav-icon" data-feather="code"></i>
                                     <span>Democracy Lab Projects</span>
                                 </a>
+                                <a href="/projects" class="subnav-link">
+                                    <i class="subnav-icon" data-feather="globe"></i>
+                                    <span>Model.Earth Projects</span>
+                                </a>
                                 <a href="${rootPath}#projects/opportunities" class="subnav-link">
                                     <i class="subnav-icon" data-feather="target"></i>
                                     <span>Opportunities</span>
@@ -223,6 +227,22 @@ class StandaloneNavigation {
                                 <a href="${rootPath}#account/interests" class="subnav-link">
                                     <i class="subnav-icon" data-feather="heart"></i>
                                     <span>Interests</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="nav-section">
+                        <div class="nav-item">
+                            <button class="nav-link" data-section="realitystream" data-href="/realitystream/">
+                                <i class="nav-icon" data-feather="activity"></i>
+                                <span class="nav-text">RealityStream</span>
+                                <i class="nav-arrow" data-feather="chevron-right"></i>
+                            </button>
+                            <div class="subnav">
+                                <a href="/realitystream/models/" class="subnav-link">
+                                    <i class="subnav-icon" data-feather="trending-up"></i>
+                                    <span>Forecasting Models</span>
                                 </a>
                             </div>
                         </div>
