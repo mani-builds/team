@@ -147,6 +147,66 @@
     padding: 8px;
 }
 
+/* External Site Specific Styles - Add spacing for hidden header */
+.sidebar.external-site .nav-menu .nav-section:first-child {
+    padding-top: 42px;
+}
+
+/* External Site Specific Styles - Show arrows when expanded, hide when collapsed */
+.sidebar.external-site .nav-arrow {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    width: 16px !important;
+    height: 16px !important;
+    margin-left: 8px !important;
+}
+
+.sidebar.external-site.collapsed .nav-arrow,
+.sidebar.external-site.collapsed.hovered .nav-arrow,
+.sidebar.external-site.collapsed.locked .nav-arrow {
+    display: none !important;
+}
+
+.sidebar.external-site .sidebar-footer,
+.sidebar.external-site.collapsed .sidebar-footer,
+.sidebar.external-site.collapsed.hovered .sidebar-footer,
+.sidebar.external-site.collapsed.locked .sidebar-footer {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    margin-top: auto !important;
+    border-top: 1px solid var(--border-light) !important;
+    padding: 8px !important;
+}
+
+.sidebar.external-site .sidebar-toggle,
+.sidebar.external-site.collapsed .sidebar-toggle,
+.sidebar.external-site.collapsed.hovered .sidebar-toggle,
+.sidebar.external-site.collapsed.locked .sidebar-toggle {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: none !important;
+    border: none !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer !important;
+    padding: 12px !important;
+    border-radius: var(--radius-sm) !important;
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+}
+
+.sidebar.external-site .sidebar-expander,
+.sidebar.external-site.collapsed .sidebar-expander,
+.sidebar.external-site.collapsed.hovered .sidebar-expander,
+.sidebar.external-site.collapsed.locked .sidebar-expander {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
 /* Sidebar Expander - clickable area when collapsed and locked */
 .sidebar-expander {
     position: absolute;

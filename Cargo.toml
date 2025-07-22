@@ -62,6 +62,9 @@ prettytable-rs = "0.10"
 # Additional Configuration
 dirs = "5.0"
 
+# File System Watching
+notify = "6.1"
+
 # Excel Processing
 calamine = "0.25"
 mime_guess = "2.0"

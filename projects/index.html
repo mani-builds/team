@@ -11,6 +11,14 @@
     <!-- Standalone Navigation -->
     <link rel="stylesheet" href="../css/standalone-nav.css">
     <script src="../js/standalone-nav.js"></script>
+    
+    <!-- Feather Icons -->
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+    </script>
+
     <style>
         .container {
             max-width: 1000px;
@@ -1502,7 +1510,7 @@
                 
                 displayParticipantsTable(validData);
                 
-                appendStatusMessage(`Successfully loaded ${validData.length} records from ${loadResult.format.toUpperCase()} source!`, 'success');
+                appendStatusMessage(`Successfully loaded ${validData.length} records from ${loadResult.format.toUpperCase()} source`, 'success');
                 document.getElementById('loadStatus').style.display = 'block';
                 
                 // Show UI elements after successful data load
@@ -3917,12 +3925,6 @@
             goToPage(currentPage + 1);
         });
     </script>
-    
-    <!-- Feather Icons -->
-    <script src="https://unpkg.com/feather-icons"></script>
-    <script>
-        // Initialize Feather Icons
-        feather.replace();
-    </script>
+
 </body>
 </html>

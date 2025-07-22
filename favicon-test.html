@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favicon Test - MemberCommons</title>
+    <link rel="icon" type="image/x-icon" href="img/logo/neighborhood/favicon.png">
+    
+    <!-- Standalone Navigation -->
+    <link rel="stylesheet" href="css/standalone-nav.css">
+    <script src="js/standalone-nav.js"></script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Favicon Test Page</h1>
+        <p>This page tests the favicon functionality. Check the browser console for debug messages.</p>
+        
+        <div>
+            <button onclick="testRefreshFavicon()">Manual Refresh Favicon</button>
+            <button onclick="testConfigFetch()">Test Config Fetch</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        // Override console.log to also show in page
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const logDiv = document.getElementById('log');
+        
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.color = type === 'warn' ? '#dc3545' : '#28a745';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'log');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warn');
+        };
+        
+        function testRefreshFavicon() {
+            addToLog('=== Manual Refresh Test ===', 'log');
+            if (typeof refreshFavicon === 'function') {
+                refreshFavicon().then(result => {
+                    addToLog(`Refresh result: ${result}`, 'log');
+                }).catch(error => {
+                    addToLog(`Refresh error: ${error}`, 'warn');
+                });
+            } else {
+                addToLog('refreshFavicon function not found', 'warn');
+            }
+        }
+        
+        async function testConfigFetch() {
+            addToLog('=== Config Fetch Test ===', 'log');
+            try {
+                const response = await fetch('http://localhost:8081/api/config/current');
+                addToLog(`Response status: ${response.status}`, 'log');
+                if (response.ok) {
+                    const config = await response.json();
+                    addToLog(`Config: ${JSON.stringify(config, null, 2)}`, 'log');
+                } else {
+                    addToLog(`Response error: ${response.statusText}`, 'warn');
+                }
+            } catch (error) {
+                addToLog(`Fetch error: ${error.message}`, 'warn');
+            }
+        }
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+        
+        // Initial log
+        addToLog('Favicon test page loaded', 'log');
+    </script>
+</body>
+</html>

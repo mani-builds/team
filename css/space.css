@@ -1,0 +1,544 @@
+/**
+ * SpaceX Style Theme - Dark Mode
+ * Inspired by the official SpaceX website design system
+ * 
+ * This file applies SpaceX's clean, modern dark design without modifying existing CSS.
+ * Features aerospace-grade styling with sophisticated dark mode aesthetics.
+ */
+
+/* SpaceX Color Palette & Variables */
+:root {
+    /* Primary Backgrounds - SpaceX Dark Theme */
+    --spacex-bg-primary: #000000;
+    --spacex-bg-secondary: #0a0a0a;
+    --spacex-bg-tertiary: #141414;
+    --spacex-bg-card: rgba(20, 20, 20, 0.95);
+    --spacex-bg-elevated: #1a1a1a;
+    
+    /* SpaceX Signature Colors */
+    --spacex-blue: #005288;
+    --spacex-blue-light: #0066aa;
+    --spacex-blue-dark: #003d66;
+    --spacex-white: #ffffff;
+    --spacex-silver: #c0c0c0;
+    --spacex-gray: #808080;
+    
+    /* Text Colors */
+    --spacex-text-primary: #ffffff;
+    --spacex-text-secondary: #c0c0c0;
+    --spacex-text-muted: #808080;
+    --spacex-text-accent: #005288;
+    
+    /* Status Colors */
+    --spacex-success: #28a745;
+    --spacex-warning: #ffc107;
+    --spacex-danger: #dc3545;
+    --spacex-info: #17a2b8;
+    
+    /* Borders & Effects */
+    --spacex-border-light: rgba(255, 255, 255, 0.1);
+    --spacex-border-medium: rgba(255, 255, 255, 0.2);
+    --spacex-border-blue: rgba(0, 82, 136, 0.5);
+    --spacex-glow-blue: 0 0 20px rgba(0, 82, 136, 0.3);
+    --spacex-shadow-card: 0 8px 32px rgba(0, 0, 0, 0.6);
+    --spacex-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.8);
+    
+    /* Typography */
+    --spacex-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+    --spacex-font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Courier New', monospace;
+    --spacex-font-weight-light: 300;
+    --spacex-font-weight-normal: 400;
+    --spacex-font-weight-medium: 500;
+    --spacex-font-weight-bold: 700;
+    
+    /* Spacing & Layout */
+    --spacex-radius-sm: 4px;
+    --spacex-radius-md: 8px;
+    --spacex-radius-lg: 12px;
+    --spacex-radius-xl: 20px;
+}
+
+/* Global Dark Mode Styling */
+body {
+    background: linear-gradient(135deg, var(--spacex-bg-primary) 0%, var(--spacex-bg-secondary) 100%) !important;
+    background-attachment: fixed !important;
+    font-family: var(--spacex-font-primary) !important;
+    color: var(--spacex-text-primary) !important;
+    line-height: 1.6 !important;
+    font-weight: var(--spacex-font-weight-normal) !important;
+}
+
+/* Add subtle star field effect */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(2px 2px at 40px 70px, rgba(255,255,255,0.2), transparent),
+        radial-gradient(1px 1px at 90px 40px, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,0.3), transparent),
+        radial-gradient(2px 2px at 160px 30px, rgba(255,255,255,0.2), transparent);
+    background-repeat: repeat;
+    background-size: 200px 100px;
+    pointer-events: none;
+    z-index: -1;
+    opacity: 0.3;
+}
+
+/* Main Container Styling */
+.main-content,
+.container {
+    background-color: transparent !important;
+}
+
+/* Card & Panel Styling - SpaceX Aerospace Design */
+.card,
+div[class*="card"],
+.admin-card,
+.participants-table-card {
+    background: var(--spacex-bg-card) !important;
+    border: 1px solid var(--spacex-border-light) !important;
+    border-radius: var(--spacex-radius-lg) !important;
+    box-shadow: var(--spacex-shadow-card) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative !important;
+}
+
+.card::before,
+.admin-card::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    border-radius: var(--spacex-radius-lg);
+    background: linear-gradient(135deg, var(--spacex-border-blue), transparent, var(--spacex-border-blue));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.card:hover::before,
+.admin-card:hover::before {
+    opacity: 1;
+}
+
+.card:hover,
+.admin-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: var(--spacex-shadow-elevated), var(--spacex-glow-blue) !important;
+    border-color: var(--spacex-blue) !important;
+}
+
+/* Header Styling - Mission Control Aesthetic */
+.header,
+.card-title,
+h1, h2, h3, h4, h5, h6 {
+    color: var(--spacex-text-primary) !important;
+    font-weight: var(--spacex-font-weight-medium) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.header {
+    background: var(--spacex-bg-elevated) !important;
+    border: 1px solid var(--spacex-border-medium) !important;
+    border-radius: var(--spacex-radius-xl) !important;
+    box-shadow: var(--spacex-shadow-card) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+/* Button Styling - SpaceX Mission Critical */
+.btn-primary,
+button[class*="btn-primary"],
+input[type="submit"],
+input[type="button"] {
+    background: linear-gradient(135deg, var(--spacex-blue), var(--spacex-blue-light)) !important;
+    border: 1px solid var(--spacex-blue) !important;
+    color: var(--spacex-white) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    font-weight: var(--spacex-font-weight-medium) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 4px 16px rgba(0, 82, 136, 0.3) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:hover,
+button[class*="btn-primary"]:hover {
+    background: linear-gradient(135deg, var(--spacex-blue-light), var(--spacex-blue-dark)) !important;
+    box-shadow: var(--spacex-glow-blue), 0 8px 32px rgba(0, 82, 136, 0.5) !important;
+    transform: translateY(-2px) !important;
+}
+
+.btn-secondary,
+button[class*="btn-secondary"] {
+    background: transparent !important;
+    border: 1px solid var(--spacex-border-medium) !important;
+    color: var(--spacex-text-primary) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    font-weight: var(--spacex-font-weight-medium) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.btn-secondary:hover {
+    background: var(--spacex-bg-elevated) !important;
+    border-color: var(--spacex-blue) !important;
+    color: var(--spacex-blue) !important;
+    box-shadow: var(--spacex-glow-blue) !important;
+}
+
+/* Form Controls - Spacecraft Interface */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+select,
+textarea,
+.form-control {
+    background: var(--spacex-bg-elevated) !important;
+    border: 1px solid var(--spacex-border-light) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    color: var(--spacex-text-primary) !important;
+    font-family: var(--spacex-font-primary) !important;
+    font-weight: var(--spacex-font-weight-normal) !important;
+    transition: all 0.3s ease !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus {
+    border-color: var(--spacex-blue) !important;
+    box-shadow: var(--spacex-glow-blue) !important;
+    outline: none !important;
+    background: var(--spacex-bg-secondary) !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--spacex-text-muted) !important;
+    font-style: italic !important;
+}
+
+/* Form Labels - Mission Control Typography */
+.form-label,
+label,
+.form-group label,
+div[class*="label"],
+span[class*="label"] {
+    color: var(--spacex-text-primary) !important;
+    font-weight: var(--spacex-font-weight-medium) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Tables - Mission Data Display */
+table,
+.participants-table {
+    background: var(--spacex-bg-card) !important;
+    border-radius: var(--spacex-radius-lg) !important;
+    overflow: hidden !important;
+    border: 1px solid var(--spacex-border-light) !important;
+}
+
+.participants-table th {
+    background: var(--spacex-bg-elevated) !important;
+    color: var(--spacex-text-primary) !important;
+    font-weight: var(--spacex-font-weight-bold) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 2px solid var(--spacex-blue) !important;
+    font-size: 12px !important;
+}
+
+.participants-table td {
+    color: var(--spacex-text-secondary) !important;
+    border-bottom: 1px solid var(--spacex-border-light) !important;
+    font-family: var(--spacex-font-mono) !important;
+    font-size: 13px !important;
+}
+
+.participants-table tr:hover {
+    background: rgba(0, 82, 136, 0.1) !important;
+    color: var(--spacex-text-primary) !important;
+}
+
+.participants-table tr:hover td {
+    color: var(--spacex-text-primary) !important;
+}
+
+/* Code Blocks & Technical Display */
+pre,
+code,
+.log-output {
+    background: var(--spacex-bg-primary) !important;
+    color: var(--spacex-success) !important;
+    font-family: var(--spacex-font-mono) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    border: 1px solid var(--spacex-border-medium) !important;
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Status Messages - Mission Control Style */
+.success-message {
+    background: rgba(40, 167, 69, 0.15) !important;
+    border: 1px solid var(--spacex-success) !important;
+    color: var(--spacex-success) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    box-shadow: 0 0 16px rgba(40, 167, 69, 0.2) !important;
+}
+
+.error-message {
+    background: rgba(220, 53, 69, 0.15) !important;
+    border: 1px solid var(--spacex-danger) !important;
+    color: var(--spacex-danger) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    box-shadow: 0 0 16px rgba(220, 53, 69, 0.2) !important;
+}
+
+.warning-message {
+    background: rgba(255, 193, 7, 0.15) !important;
+    border: 1px solid var(--spacex-warning) !important;
+    color: var(--spacex-warning) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    box-shadow: 0 0 16px rgba(255, 193, 7, 0.2) !important;
+}
+
+.info-message,
+.config-info {
+    background: rgba(23, 162, 184, 0.15) !important;
+    border: 1px solid var(--spacex-info) !important;
+    color: var(--spacex-info) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    box-shadow: 0 0 16px rgba(23, 162, 184, 0.2) !important;
+}
+
+/* Navigation Overrides - Mission Control Interface */
+.sidebar.external-site {
+    background: linear-gradient(180deg, var(--spacex-bg-secondary), var(--spacex-bg-tertiary)) !important;
+    border-right: 1px solid var(--spacex-border-medium) !important;
+    box-shadow: var(--spacex-shadow-card) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+.nav-link {
+    color: var(--spacex-text-secondary) !important;
+    border-radius: var(--spacex-radius-md) !important;
+    font-weight: var(--spacex-font-weight-medium) !important;
+    transition: all 0.3s ease !important;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    background: rgba(0, 82, 136, 0.15) !important;
+    color: var(--spacex-blue) !important;
+    box-shadow: inset 4px 0 0 var(--spacex-blue) !important;
+}
+
+.nav-text {
+    color: inherit !important;
+}
+
+/* Dropdown & Select Styling */
+select,
+select option {
+    background: var(--spacex-bg-elevated) !important;
+    color: var(--spacex-text-primary) !important;
+    border: 1px solid var(--spacex-border-light) !important;
+}
+
+/* Status Indicators - Spacecraft Systems */
+.status-indicator.connected {
+    background: radial-gradient(circle, var(--spacex-success), #1e7e34) !important;
+    box-shadow: 0 0 12px rgba(40, 167, 69, 0.6) !important;
+}
+
+.status-indicator.error {
+    background: radial-gradient(circle, var(--spacex-danger), #c82333) !important;
+    box-shadow: 0 0 12px rgba(220, 53, 69, 0.6) !important;
+}
+
+.status-indicator.loading {
+    background: radial-gradient(circle, var(--spacex-blue), var(--spacex-blue-dark)) !important;
+    box-shadow: 0 0 12px rgba(0, 82, 136, 0.6) !important;
+}
+
+/* Loading Spinners - Satellite Rotation */
+.loading-spinner {
+    border-color: var(--spacex-border-light) !important;
+    border-top-color: var(--spacex-blue) !important;
+    filter: drop-shadow(0 0 4px rgba(0, 82, 136, 0.5)) !important;
+}
+
+/* Scrollbars - Spacecraft Console */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--spacex-bg-tertiary);
+    border-radius: var(--spacex-radius-md);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--spacex-blue), var(--spacex-blue-dark));
+    border-radius: var(--spacex-radius-md);
+    border: 2px solid var(--spacex-bg-tertiary);
+    transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--spacex-blue-light), var(--spacex-blue));
+    box-shadow: inset 0 0 8px rgba(0, 82, 136, 0.5);
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--spacex-bg-tertiary);
+}
+
+/* Custom SpaceX Animations */
+@keyframes spacex-launch {
+    0% { 
+        transform: translateY(20px) scale(0.95);
+        opacity: 0;
+    }
+    50% {
+        transform: translateY(-5px) scale(1.02);
+    }
+    100% { 
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spacex-orbit {
+    0% { transform: rotate(0deg) translateX(20px) rotate(0deg); }
+    100% { transform: rotate(360deg) translateX(20px) rotate(-360deg); }
+}
+
+@keyframes spacex-pulse {
+    0%, 100% { 
+        box-shadow: 0 0 5px rgba(0, 82, 136, 0.5);
+    }
+    50% { 
+        box-shadow: 0 0 20px rgba(0, 82, 136, 0.8), 0 0 30px rgba(0, 82, 136, 0.4);
+    }
+}
+
+/* Apply launch animation to cards */
+.card,
+.admin-card {
+    animation: spacex-launch 0.6s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Pulse animation for important buttons */
+.btn-primary:focus {
+    animation: spacex-pulse 2s infinite !important;
+}
+
+/* Responsive Design - Mission Adaptability */
+@media (max-width: 768px) {
+    .card,
+    .admin-card {
+        border-radius: var(--spacex-radius-md) !important;
+        margin: 8px !important;
+        box-shadow: var(--spacex-shadow-card) !important;
+    }
+    
+    .header {
+        border-radius: var(--spacex-radius-lg) !important;
+    }
+    
+    body::before {
+        opacity: 0.1;
+    }
+}
+
+/* High Contrast Focus for Mission Critical Accessibility */
+*:focus-visible {
+    outline: 2px solid var(--spacex-blue) !important;
+    outline-offset: 2px !important;
+    box-shadow: var(--spacex-glow-blue) !important;
+}
+
+/* Special SpaceX Branding Elements */
+.spacex-brand::before {
+    content: '🚀';
+    margin-right: 8px;
+    font-size: 1.2em;
+}
+
+/* Mission Status Badges */
+.mission-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: var(--spacex-font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mission-status.go {
+    background: rgba(40, 167, 69, 0.2);
+    color: var(--spacex-success);
+    border: 1px solid var(--spacex-success);
+}
+
+.mission-status.hold {
+    background: rgba(255, 193, 7, 0.2);
+    color: var(--spacex-warning);
+    border: 1px solid var(--spacex-warning);
+}
+
+.mission-status.scrub {
+    background: rgba(220, 53, 69, 0.2);
+    color: var(--spacex-danger);
+    border: 1px solid var(--spacex-danger);
+}
+
+/* Advanced Backdrop Effects */
+.card,
+.admin-card,
+.header {
+    position: relative;
+    z-index: 1;
+}
+
+.card::after,
+.admin-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 50% 0%, rgba(0, 82, 136, 0.05), transparent 70%);
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: -1;
+}

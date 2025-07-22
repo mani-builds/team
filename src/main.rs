@@ -9,11 +9,13 @@ use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres, Row, Column, ValueRef};
 use std::sync::{Arc, Mutex};
 use std::collections::HashMap;
-use std::process::{Child, Command, Stdio};
-use std::io::{BufRead, BufReader, Write};
+use std::process::{Child, Command};
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::path::Path;
 use uuid::Uuid;
 use url::Url;
+use notify::{Watcher, RecursiveMode, RecommendedWatcher, Config as NotifyConfig};
+use std::sync::mpsc::channel;
 
 mod import;
 mod google;
@@ -21,14 +23,18 @@ mod recommendations;
 use recommendations::{RecommendationRequest, Project};
 
 // Configuration structure
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 struct Config {
     database_url: String,
     gemini_api_key: String,
     server_host: String,
     server_port: u16,
     excel_file_path: String,
+    site_favicon: Option<String>,
 }
+
+// Thread-safe configuration holder
+type SharedConfig = Arc<Mutex<Config>>;
 
 impl Config {
     fn from_env() -> anyhow::Result<Self> {
@@ -54,8 +60,31 @@ impl Config {
                     .unwrap_or(8081),
                 excel_file_path: std::env::var("EXCEL_FILE_PATH")
                     .unwrap_or_else(|_| r"C:\Users\yashg\Model Earth\membercommons\preferences\projects\DFC-ActiveProjects.xlsx".to_string()),
+                site_favicon: std::env::var("SITE_FAVICON").ok(),
             })
         }
+    }
+    
+    fn reload() -> anyhow::Result<Self> {
+        log::info!("Reloading configuration from .env file");
+        
+        // Force reload of .env file by reading it directly and setting env vars
+        if let Ok(env_content) = std::fs::read_to_string(".env") {
+            for line in env_content.lines() {
+                let line = line.trim();
+                if line.is_empty() || line.starts_with('#') {
+                    continue;
+                }
+                
+                if let Some((key, value)) = line.split_once('=') {
+                    let key = key.trim();
+                    let value = value.trim();
+                    std::env::set_var(key, value);
+                }
+            }
+        }
+        
+        Self::from_env()
     }
     
     fn build_database_url() -> String {
@@ -150,7 +179,75 @@ enum Commands {
 // API State
 struct ApiState {
     db: Pool<Postgres>,
-    config: Config,
+    config: SharedConfig,
+}
+
+// Function to start watching .env file for changes
+fn start_env_watcher(config: SharedConfig) -> anyhow::Result<()> {
+    use notify::{Event, EventKind};
+    
+    let (tx, rx) = channel();
+    let mut watcher = RecommendedWatcher::new(tx, NotifyConfig::default())?;
+    
+    // Watch the .env file
+    let env_path = Path::new(".env");
+    if env_path.exists() {
+        watcher.watch(env_path, RecursiveMode::NonRecursive)?;
+        log::info!("Started watching .env file for changes");
+        
+        // Spawn a background thread to handle file change events
+        let config_clone = config.clone();
+        tokio::spawn(async move {
+            loop {
+                match rx.recv() {
+                    Ok(event) => {
+                        match event {
+                            Ok(Event { kind: EventKind::Modify(_), paths, .. }) |
+                            Ok(Event { kind: EventKind::Create(_), paths, .. }) => {
+                                if paths.iter().any(|path| path.file_name() == Some(std::ffi::OsStr::new(".env"))) {
+                                    log::info!(".env file changed, reloading configuration...");
+                                    
+                                    // Add a small delay to ensure file write is complete
+                                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+                                    
+                                    match Config::reload() {
+                                        Ok(new_config) => {
+                                            if let Ok(mut config_guard) = config_clone.lock() {
+                                                *config_guard = new_config;
+                                                log::info!("Configuration reloaded successfully");
+                                            } else {
+                                                log::error!("Failed to acquire config lock for reload");
+                                            }
+                                        }
+                                        Err(e) => {
+                                            log::error!("Failed to reload configuration: {}", e);
+                                        }
+                                    }
+                                }
+                            }
+                            Ok(Event { kind: EventKind::Remove(_), paths, .. }) => {
+                                if paths.iter().any(|path| path.file_name() == Some(std::ffi::OsStr::new(".env"))) {
+                                    log::warn!(".env file was removed");
+                                }
+                            }
+                            _ => {} // Ignore other events
+                        }
+                    }
+                    Err(e) => {
+                        log::error!("File watcher error: {}", e);
+                        break;
+                    }
+                }
+            }
+        });
+        
+        // Keep the watcher alive by storing it
+        std::mem::forget(watcher);
+    } else {
+        log::warn!("No .env file found to watch");
+    }
+    
+    Ok(())
 }
 
 // Request/Response types for projects
@@ -259,6 +356,20 @@ async fn health_check(data: web::Data<Arc<ApiState>>) -> Result<HttpResponse> {
             "error": e.to_string()
         }))),
     }
+}
+
+// Get current configuration from shared state
+async fn get_current_config(data: web::Data<Arc<ApiState>>) -> Result<HttpResponse> {
+    let config_guard = data.config.lock().unwrap();
+    let config_json = json!({
+        "server_host": config_guard.server_host,
+        "server_port": config_guard.server_port,
+        "site_favicon": config_guard.site_favicon,
+        "excel_file_path": config_guard.excel_file_path,
+        "gemini_api_key_present": !config_guard.gemini_api_key.is_empty() && config_guard.gemini_api_key != "dummy_key"
+    });
+    
+    Ok(HttpResponse::Ok().json(config_json))
 }
 
 // Get environment configuration
@@ -732,7 +843,11 @@ struct ProxyResponse {
 
 // Analyze data with Claude Code CLI
 async fn get_recommendations_handler(req: web::Json<RecommendationRequest>, data: web::Data<Arc<ApiState>>) -> Result<HttpResponse> {
-    match recommendations::get_recommendations(&req.preferences, &data.config.excel_file_path) {
+    let excel_file_path = {
+        let config_guard = data.config.lock().unwrap();
+        config_guard.excel_file_path.clone()
+    };
+    match recommendations::get_recommendations(&req.preferences, &excel_file_path) {
         Ok(projects) => Ok(HttpResponse::Ok().json(projects)),
         Err(e) => Ok(HttpResponse::InternalServerError().json(json!({ "error": e.to_string() }))),
     }
@@ -2001,19 +2116,29 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
     
     println!("Database connection successful!");
     
+    // Create shared config for hot reloading
+    let shared_config = Arc::new(Mutex::new(config));
+    
+    // Start watching .env file for changes
+    if let Err(e) = start_env_watcher(shared_config.clone()) {
+        log::warn!("Failed to start .env file watcher: {}", e);
+    }
+    
     let state = Arc::new(ApiState {
         db: pool,
-        config,
+        config: shared_config.clone(),
     });
     
     // Create persistent Claude session manager
     let claude_session_manager: ClaudeSessionManager = Arc::new(Mutex::new(ClaudeSession::new()));
     
-    println!("Starting API server on {}:{}", state.config.server_host, state.config.server_port);
+    // Get server config from shared config
+    let (server_host, server_port) = {
+        let config_guard = shared_config.lock().unwrap();
+        (config_guard.server_host.clone(), config_guard.server_port)
+    };
     
-    // Capture server binding info before moving state into closure
-    let server_host = state.config.server_host.clone();
-    let server_port = state.config.server_port;
+    println!("Starting API server on {}:{}", server_host, server_port);
     let session_manager_clone = claude_session_manager.clone();
     
     HttpServer::new(move || {
@@ -2062,6 +2187,7 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
                     )
                     .service(
                         web::scope("/config")
+                            .route("/current", web::get().to(get_current_config))
                             .route("/env", web::get().to(get_env_config))
                             .route("/env", web::post().to(save_env_config))
                             .route("/env/create", web::post().to(create_env_config))

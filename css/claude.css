@@ -1,0 +1,308 @@
+/**
+ * Claude.ai/Anthropic.com Style Theme
+ * Inspired by the official Claude.ai and Anthropic.com design system
+ * 
+ * This file applies styling similar to Claude.ai without modifying existing CSS.
+ * It uses high-specificity selectors and CSS custom properties to override defaults.
+ */
+
+/* Claude.ai Color Palette & Variables */
+:root {
+    /* Primary Background - Anthropic.com main background */
+    --claude-bg-primary: rgb(250, 249, 245);
+    --claude-bg-secondary: rgba(255, 255, 255, 0.9);
+    --claude-bg-tertiary: rgba(248, 247, 243, 0.8);
+    --claude-bg-card: rgba(255, 255, 255, 0.95);
+    
+    /* Claude Orange/Amber Accent */
+    --claude-accent-primary: #ff7a00;
+    --claude-accent-secondary: #ff9a33;
+    --claude-accent-tertiary: #fff2e6;
+    
+    /* Text Colors */
+    --claude-text-primary: #1a1a1a;
+    --claude-text-secondary: #666666;
+    --claude-text-muted: #999999;
+    --claude-text-inverse: #ffffff;
+    
+    /* Borders & Shadows */
+    --claude-border-light: rgba(0, 0, 0, 0.08);
+    --claude-border-medium: rgba(0, 0, 0, 0.12);
+    --claude-shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --claude-shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+    --claude-shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.12);
+    
+    /* Typography */
+    --claude-font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    --claude-font-mono: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    
+    /* Border Radius */
+    --claude-radius-sm: 6px;
+    --claude-radius-md: 8px;
+    --claude-radius-lg: 12px;
+    --claude-radius-xl: 16px;
+}
+
+/* Global Body Styling */
+body {
+    background-color: var(--claude-bg-primary) !important;
+    font-family: var(--claude-font-primary) !important;
+    color: var(--claude-text-primary) !important;
+    line-height: 1.6 !important;
+}
+
+/* Main Container Styling */
+.main-content,
+.container {
+    background-color: transparent !important;
+}
+
+/* Card & Panel Styling */
+.card,
+div[class*="card"],
+.admin-card,
+.participants-table-card {
+    background: var(--claude-bg-card) !important;
+    border: 1px solid var(--claude-border-light) !important;
+    border-radius: var(--claude-radius-lg) !important;
+    box-shadow: var(--claude-shadow-card) !important;
+    backdrop-filter: blur(8px);
+}
+
+/* Header Styling */
+.header,
+.card-title,
+h1, h2, h3, h4, h5, h6 {
+    color: var(--claude-text-primary) !important;
+    font-weight: 600 !important;
+}
+
+.header {
+    background: var(--claude-bg-card) !important;
+    border: 1px solid var(--claude-border-light) !important;
+    border-radius: var(--claude-radius-xl) !important;
+    box-shadow: var(--claude-shadow-card) !important;
+}
+
+/* Button Styling - Claude Orange Theme */
+.btn-primary,
+button[class*="btn-primary"],
+input[type="submit"],
+input[type="button"] {
+    background: linear-gradient(135deg, var(--claude-accent-primary), var(--claude-accent-secondary)) !important;
+    border: none !important;
+    color: var(--claude-text-inverse) !important;
+    border-radius: var(--claude-radius-md) !important;
+    font-weight: 500 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: var(--claude-shadow-subtle) !important;
+}
+
+.btn-primary:hover,
+button[class*="btn-primary"]:hover {
+    background: linear-gradient(135deg, #e66a00, #ff8c1a) !important;
+    box-shadow: var(--claude-shadow-elevated) !important;
+    transform: translateY(-1px) !important;
+}
+
+.btn-secondary,
+button[class*="btn-secondary"] {
+    background: var(--claude-bg-card) !important;
+    border: 1px solid var(--claude-border-medium) !important;
+    color: var(--claude-text-primary) !important;
+    border-radius: var(--claude-radius-md) !important;
+}
+
+.btn-secondary:hover {
+    background: var(--claude-accent-tertiary) !important;
+    border-color: var(--claude-accent-primary) !important;
+}
+
+/* Form Controls */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="url"],
+select,
+textarea,
+.form-control {
+    background: var(--claude-bg-card) !important;
+    border: 1px solid var(--claude-border-light) !important;
+    border-radius: var(--claude-radius-md) !important;
+    color: var(--claude-text-primary) !important;
+    font-family: var(--claude-font-primary) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus {
+    border-color: var(--claude-accent-primary) !important;
+    box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.1) !important;
+    outline: none !important;
+}
+
+/* Tables */
+table,
+.participants-table {
+    background: var(--claude-bg-card) !important;
+    border-radius: var(--claude-radius-lg) !important;
+    overflow: hidden !important;
+}
+
+.participants-table th {
+    background: var(--claude-bg-tertiary) !important;
+    color: var(--claude-text-primary) !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid var(--claude-border-light) !important;
+}
+
+.participants-table td {
+    color: var(--claude-text-secondary) !important;
+    border-bottom: 1px solid var(--claude-border-light) !important;
+}
+
+.participants-table tr:hover {
+    background: var(--claude-accent-tertiary) !important;
+}
+
+/* Code Blocks & Pre */
+pre,
+code,
+.log-output {
+    background: var(--claude-text-primary) !important;
+    color: var(--claude-accent-tertiary) !important;
+    font-family: var(--claude-font-mono) !important;
+    border-radius: var(--claude-radius-md) !important;
+    border: 1px solid var(--claude-border-medium) !important;
+}
+
+/* Messages */
+.success-message {
+    background: rgba(34, 197, 94, 0.1) !important;
+    border: 1px solid rgba(34, 197, 94, 0.2) !important;
+    color: rgb(21, 128, 61) !important;
+    border-radius: var(--claude-radius-md) !important;
+}
+
+.error-message {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+    color: rgb(185, 28, 28) !important;
+    border-radius: var(--claude-radius-md) !important;
+}
+
+.warning-message {
+    background: var(--claude-accent-tertiary) !important;
+    border: 1px solid rgba(255, 122, 0, 0.3) !important;
+    color: rgb(146, 64, 14) !important;
+    border-radius: var(--claude-radius-md) !important;
+}
+
+.info-message,
+.config-info {
+    background: var(--claude-bg-tertiary) !important;
+    border: 1px solid var(--claude-border-light) !important;
+    color: var(--claude-text-secondary) !important;
+    border-radius: var(--claude-radius-md) !important;
+}
+
+/* Navigation Overrides (if needed) */
+.sidebar.external-site {
+    background: var(--claude-bg-card) !important;
+    border-right: 1px solid var(--claude-border-light) !important;
+    box-shadow: var(--claude-shadow-card) !important;
+}
+
+.nav-link {
+    color: var(--claude-text-secondary) !important;
+    border-radius: var(--claude-radius-md) !important;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    background: var(--claude-accent-tertiary) !important;
+    color: var(--claude-accent-primary) !important;
+}
+
+/* Dropdown & Menu Styling */
+select option {
+    background: var(--claude-bg-card) !important;
+    color: var(--claude-text-primary) !important;
+}
+
+/* Status Indicators */
+.status-indicator.connected {
+    background: linear-gradient(45deg, #22c55e, #16a34a) !important;
+}
+
+.status-indicator.error {
+    background: linear-gradient(45deg, #ef4444, #dc2626) !important;
+}
+
+.status-indicator.loading {
+    background: linear-gradient(45deg, var(--claude-accent-primary), var(--claude-accent-secondary)) !important;
+}
+
+/* Loading Spinners */
+.loading-spinner {
+    border-color: var(--claude-border-light) !important;
+    border-top-color: var(--claude-accent-primary) !important;
+}
+
+/* Scrollbars (Webkit) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--claude-bg-tertiary);
+    border-radius: var(--claude-radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--claude-border-medium);
+    border-radius: var(--claude-radius-sm);
+    transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--claude-accent-primary);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card,
+    .admin-card {
+        border-radius: var(--claude-radius-md) !important;
+        margin: 8px !important;
+    }
+    
+    .header {
+        border-radius: var(--claude-radius-lg) !important;
+    }
+}
+
+/* Animation Enhancements */
+@keyframes claude-fade-in {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+.card,
+.admin-card {
+    animation: claude-fade-in 0.3s ease-out !important;
+}
+
+/* High Contrast Focus for Accessibility */
+*:focus-visible {
+    outline: 2px solid var(--claude-accent-primary) !important;
+    outline-offset: 2px !important;
+}

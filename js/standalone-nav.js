@@ -13,11 +13,16 @@ class StandaloneNavigation {
             currentPage: options.currentPage || 'admin',
             isWebrootContainer: options.isWebrootContainer || false,
             repoFolderName: options.repoFolderName || null,
+            isExternalSite: options.isExternalSite || false,
             ...options
         };
         
-        this.isCollapsed = false;
-        this.isLocked = false; // New state for locked collapsed mode
+        // Initialize collapsed state from localStorage immediately to prevent flash
+        const savedCollapsed = localStorage.getItem('standaloneNavCollapsed');
+        const savedLocked = localStorage.getItem('standaloneNavLocked');
+        
+        this.isCollapsed = savedCollapsed === 'true' || savedCollapsed === null; // Default to collapsed
+        this.isLocked = savedLocked === 'true'; // Default to unlocked
         this.isMobile = window.innerWidth <= 768;
         this.mobileOpen = false;
         
@@ -25,6 +30,8 @@ class StandaloneNavigation {
         this.eventListeners = [];
         this.featherTimeout = null;
         this.resizeTimeout = null;
+        this.faviconUpdateInterval = null;
+        this.currentFavicon = null;
         
         StandaloneNavigation.instance = this;
         this.init();
@@ -36,6 +43,7 @@ class StandaloneNavigation {
         this.setupEventListeners();
         this.setupMobileHandlers();
         this.initializeFeatherIcons();
+        this.startPeriodicFaviconUpdate();
     }
     
     // Debounced resize handler to prevent excessive calls
@@ -93,17 +101,22 @@ class StandaloneNavigation {
         const basePath = this.options.basePath || '';
         const isWebrootContainer = this.options.isWebrootContainer;
         const repoFolderName = this.options.repoFolderName;
+        const isExternalSite = this.options.isExternalSite;
         
         // Calculate paths based on container type
         let rootPath, adminPath, logoPath;
         
-        if (isWebrootContainer && repoFolderName) {
+        if (isExternalSite) {
+            // Called from external site, use absolute paths to team folder
+            rootPath = '/team/';
+            adminPath = '/team/admin/';
+            logoPath = '/team/img/logo/neighborhood/favicon.png';
+        } else if (isWebrootContainer && repoFolderName) {
             // In webroot container, need to include repo folder in paths
             const repoPath = `/${repoFolderName}/`;
             rootPath = repoPath;
             adminPath = `${repoPath}admin/`;
             logoPath = basePath ? `${basePath}${basePath.endsWith('/') ? '' : '/'}img/logo/neighborhood/favicon.png` : 'img/logo/neighborhood/favicon.png';
-            //alert(logoPath)
         } else {
             // Direct repo serving
             rootPath = basePath ? `${basePath}/` : './';
@@ -112,13 +125,20 @@ class StandaloneNavigation {
         }
         
         // Debug logging
-        console.log('Navigation paths:', { repoFolderName, isWebrootContainer, basePath, rootPath, adminPath, logoPath });
+        console.log('Navigation paths:', { repoFolderName, isWebrootContainer, isExternalSite, basePath, rootPath, adminPath, logoPath });
+        
+        // Apply initial collapsed state to prevent flash
+        const initialClasses = [
+            isExternalSite ? 'external-site' : '',
+            this.isCollapsed && !this.isMobile ? 'collapsed' : '',
+            this.isLocked && !this.isMobile ? 'locked' : ''
+        ].filter(Boolean).join(' ');
         
         const navHTML = `
-            <div class="sidebar" id="standalone-sidebar">
-                <div class="sidebar-header">
+            <div class="sidebar ${initialClasses}" id="standalone-sidebar">
+                <div class="sidebar-header" ${isExternalSite ? 'style="display: none;"' : ''}>
                     <div class="logo">
-                        <a href="${rootPath}"><img src="${logoPath}" alt="Up" /></a>
+                        <a href="${rootPath}"><img id="sidebar-logo" src="${logoPath}" alt="Up" /></a>
                     </div>
                     <span class="logo-text">MemberCommons</span>
                 </div>
@@ -156,13 +176,13 @@ class StandaloneNavigation {
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
                             </button>
                             <div class="subnav">
-                                <a href="${rootPath}projects/#list=democracylab" class="subnav-link">
-                                    <i class="subnav-icon" data-feather="code"></i>
-                                    <span>Democracy Lab Projects</span>
-                                </a>
                                 <a href="/projects" class="subnav-link">
                                     <i class="subnav-icon" data-feather="globe"></i>
                                     <span>Model.Earth Projects</span>
+                                </a>
+                                <a href="${rootPath}projects/#list=democracylab" class="subnav-link">
+                                    <i class="subnav-icon" data-feather="code"></i>
+                                    <span>Democracy Lab Projects</span>
                                 </a>
                                 <a href="${rootPath}#projects/opportunities" class="subnav-link">
                                     <i class="subnav-icon" data-feather="target"></i>
@@ -321,6 +341,144 @@ class StandaloneNavigation {
                     mainContent.appendChild(element);
                 }
             });
+        }
+        
+        // Check for custom favicon from environment/config
+        this.updateLogoFromConfig().catch(error => {
+            console.log('Failed to update logo/favicon from config:', error);
+        });
+    }
+    
+    // Update logo and favicon based on SITE_FAVICON environment variable or config
+    async updateLogoFromConfig() {
+        console.log('[FaviconManager] Starting logo/favicon update...');
+        let siteFavicon = null;
+        
+        // First, try to fetch current config from the server
+        try {
+            const apiUrl = 'http://localhost:8081/api/config/current';
+            console.log('[FaviconManager] Fetching config from', apiUrl);
+            const response = await fetch(apiUrl);
+            console.log('[FaviconManager] Response status:', response.status);
+            if (response.ok) {
+                const config = await response.json();
+                console.log('[FaviconManager] Config received:', config);
+                if (config.site_favicon) {
+                    siteFavicon = config.site_favicon;
+                    console.log('[FaviconManager] Found site_favicon:', siteFavicon);
+                }
+            }
+        } catch (error) {
+            console.log('Could not fetch server config, falling back to client-side detection:', error);
+        }
+        
+        // Fallback to client-side detection if server config not available
+        if (!siteFavicon) {
+            // Check if it's available as a global variable
+            if (typeof SITE_FAVICON !== 'undefined' && SITE_FAVICON) {
+                siteFavicon = SITE_FAVICON;
+            }
+            // Check if it's in a config object
+            else if (typeof window.config !== 'undefined' && window.config.SITE_FAVICON) {
+                siteFavicon = window.config.SITE_FAVICON;
+            }
+            // Check if it's in process.env (if available in browser context)
+            else if (typeof process !== 'undefined' && process.env && process.env.SITE_FAVICON) {
+                siteFavicon = process.env.SITE_FAVICON;
+            }
+        }
+        
+        // Update both sidebar logo and page favicon if a custom favicon is found
+        console.log('[FaviconManager] Final siteFavicon:', siteFavicon, 'currentFavicon:', this.currentFavicon);
+        if (siteFavicon && siteFavicon !== this.currentFavicon) {
+            console.log('[FaviconManager] Updating favicon from', this.currentFavicon, 'to', siteFavicon);
+            
+            // Update sidebar logo
+            const logoImg = document.getElementById('sidebar-logo');
+            if (logoImg) {
+                logoImg.src = siteFavicon;
+                console.log('[FaviconManager] Updated sidebar logo to:', siteFavicon);
+            } else {
+                console.log('[FaviconManager] No sidebar-logo element found');
+            }
+            
+            // Update page favicon
+            try {
+                await this.updatePageFavicon(siteFavicon);
+                this.currentFavicon = siteFavicon;
+                console.log('[FaviconManager] Successfully updated page favicon to:', siteFavicon);
+            } catch (error) {
+                console.warn('[FaviconManager] Failed to update page favicon:', error);
+            }
+        } else {
+            console.log('[FaviconManager] No favicon update needed - same as current or no favicon found');
+        }
+    }
+    
+    // Update the page favicon with validation
+    async updatePageFavicon(faviconUrl) {
+        return new Promise((resolve, reject) => {
+            // Validate the image URL before setting it
+            const testImg = new Image();
+            
+            testImg.onload = () => {
+                // Image is valid, proceed with setting favicon
+                this.applyPageFavicon(faviconUrl);
+                console.log('Updated page favicon to:', faviconUrl);
+                resolve();
+            };
+            
+            testImg.onerror = () => {
+                console.warn('Invalid favicon URL:', faviconUrl);
+                reject(new Error('Invalid favicon URL'));
+            };
+            
+            testImg.src = faviconUrl;
+        });
+    }
+    
+    // Apply the favicon to the page
+    applyPageFavicon(faviconUrl) {
+        // Remove existing favicon links
+        const existingFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+        existingFavicons.forEach(favicon => favicon.remove());
+
+        // Create new favicon link
+        const favicon = document.createElement('link');
+        favicon.rel = 'icon';
+        favicon.type = 'image/png'; // Assume PNG, but browsers are flexible
+        favicon.href = faviconUrl;
+
+        // Add to document head
+        document.head.appendChild(favicon);
+
+        // For older browsers, also create a shortcut icon link
+        const shortcutFavicon = document.createElement('link');
+        shortcutFavicon.rel = 'shortcut icon';
+        shortcutFavicon.type = 'image/png';
+        shortcutFavicon.href = faviconUrl;
+        document.head.appendChild(shortcutFavicon);
+    }
+    
+    // Start periodic updates to check for favicon changes
+    startPeriodicFaviconUpdate() {
+        // Check for updates every 30 seconds
+        this.faviconUpdateInterval = setInterval(() => {
+            this.updateLogoFromConfig().catch(error => {
+                console.log('Periodic favicon update failed:', error);
+            });
+        }, 30000);
+    }
+    
+    // Manual refresh method for external use
+    async refreshFavicon() {
+        console.log('Manual favicon refresh requested');
+        try {
+            await this.updateLogoFromConfig();
+            return true;
+        } catch (error) {
+            console.warn('Manual favicon refresh failed:', error);
+            return false;
         }
     }
     
@@ -625,26 +783,9 @@ class StandaloneNavigation {
         this.refreshFeatherIcons();
     }
     
-    // Restore collapsed state from localStorage
+    // Initialize state after DOM is ready (no longer changes state, just updates UI)
     restoreState() {
-        const savedCollapsed = localStorage.getItem('standaloneNavCollapsed');
-        const savedLocked = localStorage.getItem('standaloneNavLocked');
-        const sidebar = document.getElementById('standalone-sidebar');
-        
-        if (savedCollapsed === 'true' && !this.isMobile) {
-            this.isCollapsed = true;
-            this.isLocked = savedLocked === 'true';
-            sidebar?.classList.add('collapsed');
-            if (this.isLocked) {
-                sidebar?.classList.add('locked');
-            }
-        } else {
-            this.isCollapsed = false;
-            this.isLocked = false;
-            sidebar?.classList.remove('collapsed', 'locked');
-        }
-        
-        // Update expander tooltip based on state
+        // Update expander tooltip based on current state
         this.updateExpanderTooltip();
         
         // Update icon to match current state
@@ -788,12 +929,15 @@ class StandaloneNavigation {
     
     // Clean up event listeners to prevent memory leaks
     destroy() {
-        // Clear all timeouts
+        // Clear all timeouts and intervals
         if (this.featherTimeout) {
             clearTimeout(this.featherTimeout);
         }
         if (this.resizeTimeout) {
             clearTimeout(this.resizeTimeout);
+        }
+        if (this.faviconUpdateInterval) {
+            clearInterval(this.faviconUpdateInterval);
         }
         
         // Remove any tooltips
@@ -831,22 +975,35 @@ function initializeStandaloneNav() {
     const currentPath = window.location.pathname;
     const pathSegments = currentPath.split('/').filter(segment => segment && !segment.endsWith('.html'));
     let basePath = '';
+    let repoFolderName = null;
+    let isWebrootContainer = false;
+    let isExternalSite = false;
     
-    // Extract repo folder name from URL (e.g., 'team' from '/team/admin/page')
-    const repoFolderName = pathSegments.length > 0 ? pathSegments[0] : null;
-    const isWebrootContainer = repoFolderName && currentPath.startsWith(`/${repoFolderName}/`);
-    
-    if (isWebrootContainer) {
-        // In webroot container, calculate path relative to repo folder
-        const repoIndex = pathSegments.indexOf(repoFolderName);
+    // Check if we're being called from an external site
+    // Look for the team folder in the current path or detect if we're external
+    if (pathSegments.includes('team')) {
+        // We're inside the team folder
+        repoFolderName = 'team';
+        isWebrootContainer = true;
+        const repoIndex = pathSegments.indexOf('team');
         const segmentsAfterRepo = pathSegments.slice(repoIndex + 1);
         
         if (segmentsAfterRepo.length > 0) {
             basePath = '../'.repeat(segmentsAfterRepo.length);
             basePath = basePath.replace(/\/$/, '');
         }
+    } else if (pathSegments.length > 0 && !currentPath.startsWith('/team/')) {
+        // We're in a different site in the webroot, need to reference team folder
+        isExternalSite = true;
+        repoFolderName = 'team';
+        basePath = '/team';
+    } else if (pathSegments.length === 0) {
+        // We're at root level, might be external site at root
+        isExternalSite = true;
+        repoFolderName = 'team';
+        basePath = '/team';
     } else {
-        // Direct repo serving
+        // Direct repo serving (legacy behavior)
         if (pathSegments.length > 1) {
             basePath = '../'.repeat(pathSegments.length - 1);
             basePath = basePath.replace(/\/$/, '');
@@ -864,7 +1021,8 @@ function initializeStandaloneNav() {
         basePath: basePath,
         currentPage: currentPage,
         isWebrootContainer: isWebrootContainer,
-        repoFolderName: repoFolderName
+        repoFolderName: repoFolderName,
+        isExternalSite: isExternalSite
     });
     
     // Restore state after initialization
@@ -895,3 +1053,13 @@ window.addEventListener('beforeunload', () => {
         standaloneNav.destroy();
     }
 });
+
+// Global function for manual favicon refresh
+window.refreshFavicon = function() {
+    if (standaloneNav && standaloneNav.refreshFavicon) {
+        return standaloneNav.refreshFavicon();
+    } else {
+        console.warn('[FaviconManager] Navigation not initialized yet');
+        return Promise.resolve(false);
+    }
+};

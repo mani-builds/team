@@ -81,24 +81,29 @@ impl std::error::Error for GeminiErrorDetails {}
 
 // Test Gemini API configuration
 pub async fn test_gemini_config(data: web::Data<std::sync::Arc<ApiState>>) -> Result<HttpResponse> {
-    let api_key_present = !data.config.gemini_api_key.is_empty() 
-        && data.config.gemini_api_key != "dummy_key"
-        && data.config.gemini_api_key != "get-key-at-aistudio.google.com";
-    
-    let api_key_preview = if api_key_present {
-        let key = &data.config.gemini_api_key;
-        if key.len() > 8 {
-            Some(format!("{}...{}", &key[..4], &key[key.len()-4..]))
+    let (api_key_present, api_key_preview, gemini_api_key) = {
+        let config_guard = data.config.lock().unwrap();
+        let api_key_present = !config_guard.gemini_api_key.is_empty() 
+            && config_guard.gemini_api_key != "dummy_key"
+            && config_guard.gemini_api_key != "get-key-at-aistudio.google.com";
+        
+        let api_key_preview = if api_key_present {
+            let key = &config_guard.gemini_api_key;
+            if key.len() > 8 {
+                Some(format!("{}...{}", &key[..4], &key[key.len()-4..]))
+            } else {
+                Some("***".to_string())
+            }
         } else {
-            Some("***".to_string())
-        }
-    } else {
-        None
+            None
+        };
+        
+        (api_key_present, api_key_preview, config_guard.gemini_api_key.clone())
     };
     
     let (success, message, error) = if api_key_present {
         // Test the API key by making a simple request
-        match test_gemini_api_key(&data.config.gemini_api_key).await {
+        match test_gemini_api_key(&gemini_api_key).await {
             Ok(()) => (true, "Gemini API key is valid and working".to_string(), None),
             Err(e) => (false, "Gemini API key present but test failed".to_string(), Some(e.to_string())),
         }
@@ -139,9 +144,13 @@ pub async fn analyze_with_gemini(
     data: web::Data<std::sync::Arc<ApiState>>,
     req: web::Json<GeminiAnalysisRequest>,
 ) -> Result<HttpResponse> {
-    let api_key_present = !data.config.gemini_api_key.is_empty() 
-        && data.config.gemini_api_key != "dummy_key"
-        && data.config.gemini_api_key != "get-key-at-aistudio.google.com";
+    let (api_key_present, gemini_api_key) = {
+        let config_guard = data.config.lock().unwrap();
+        let api_key_present = !config_guard.gemini_api_key.is_empty() 
+            && config_guard.gemini_api_key != "dummy_key"
+            && config_guard.gemini_api_key != "get-key-at-aistudio.google.com";
+        (api_key_present, config_guard.gemini_api_key.clone())
+    };
     
     if !api_key_present {
         return Ok(HttpResponse::BadRequest().json(GeminiAnalysisResponse {
@@ -153,7 +162,7 @@ pub async fn analyze_with_gemini(
         }));
     }
 
-    match call_gemini_api(&data.config.gemini_api_key, &req.prompt).await {
+    match call_gemini_api(&gemini_api_key, &req.prompt).await {
         Ok((analysis, token_usage)) => Ok(HttpResponse::Ok().json(GeminiAnalysisResponse {
             success: true,
             analysis: Some(analysis),

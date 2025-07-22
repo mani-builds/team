@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Favicon Test</title>
+    <link rel="icon" type="image/x-icon" href="img/logo/neighborhood/favicon.png">
+</head>
+<body>
+    <h1>Simple Favicon Test</h1>
+    <p>Testing favicon functionality directly...</p>
+    <button onclick="testFavicon()">Test Favicon Update</button>
+    <div id="log"></div>
+
+    <script>
+        async function testFavicon() {
+            const log = document.getElementById('log');
+            log.innerHTML = '<p>Testing favicon update...</p>';
+            
+            try {
+                // Fetch config from server
+                const response = await fetch('http://localhost:8081/api/config/current');
+                log.innerHTML += `<p>Response status: ${response.status}</p>`;
+                
+                if (response.ok) {
+                    const config = await response.json();
+                    log.innerHTML += `<p>Config: ${JSON.stringify(config, null, 2)}</p>`;
+                    
+                    if (config.site_favicon) {
+                        // Update favicon
+                        updateFavicon(config.site_favicon);
+                        log.innerHTML += `<p>Updated favicon to: ${config.site_favicon}</p>`;
+                    }
+                }
+            } catch (error) {
+                log.innerHTML += `<p>Error: ${error.message}</p>`;
+            }
+        }
+        
+        function updateFavicon(faviconUrl) {
+            // Remove existing favicon links
+            const existingFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+            existingFavicons.forEach(favicon => favicon.remove());
+
+            // Create new favicon link
+            const favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/png';
+            favicon.href = faviconUrl;
+            document.head.appendChild(favicon);
+
+            // For older browsers
+            const shortcutFavicon = document.createElement('link');
+            shortcutFavicon.rel = 'shortcut icon';
+            shortcutFavicon.type = 'image/png';
+            shortcutFavicon.href = faviconUrl;
+            document.head.appendChild(shortcutFavicon);
+            
+            console.log('Favicon updated to:', faviconUrl);
+        }
+        
+        // Auto-test on page load
+        setTimeout(testFavicon, 1000);
+    </script>
+</body>
+</html>
