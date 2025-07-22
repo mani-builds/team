@@ -934,8 +934,8 @@
                 saveFileSelectionToStorage(value);
             }
             
-            // Update URL hash parameter with the new feed value
-            updateFeedHashParam(value);
+            // Update URL hash parameter with the new list value
+            updateListHashParam(value);
             
             // Hide insights and preview section when dropdown changes
             const aiInsights = document.getElementById('aiInsights');
@@ -949,6 +949,13 @@
                 // Show custom file upload section
                 showSection(customFileSection);
                 showSection(analyzeSection);
+                hideSection(sheetSelection);
+                selectedFile = null;
+            } else if (value === 'all') {
+                // Handle "All Lists" selection - for now, just show a message
+                showMessage('All Lists view not implemented in import tool. Please select a specific data source.', 'info');
+                hideSection(customFileSection);
+                hideSection(analyzeSection);
                 hideSection(sheetSelection);
                 selectedFile = null;
             } else if (value.startsWith('custom_')) {
@@ -2356,7 +2363,7 @@
             console.log('DEBUG: Removed hidden class from aiInsights');
             
             // Check if we have cached insights for this file/sheet (Claude first, then Gemini)
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log('DEBUG: showAIInsightsSection - checking cache for key:', cacheKey);
             console.log('DEBUG: claudeInsightsCache keys:', Object.keys(claudeInsightsCache));
             console.log('DEBUG: aiInsightsCache keys:', Object.keys(aiInsightsCache));
@@ -2389,7 +2396,7 @@
             console.log('Button elements:', {claudeInsightsBtn, geminiInsightsBtn});
             
             // Check if we have cached insights to show refresh buttons
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             const hasClaudeCache = claudeInsightsCache[cacheKey];
             const hasGeminiCache = aiInsightsCache[cacheKey];
             
@@ -2605,7 +2612,7 @@ ${basicAnalysis.replace('## 📊 Data Analysis (Offline Mode)', '').replace('---
                 return;
             }
 
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log('Cache key:', cacheKey);
             
             // Check cache first
@@ -2634,7 +2641,7 @@ ${basicAnalysis.replace('## 📊 Data Analysis (Offline Mode)', '').replace('---
                 return;
             }
 
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log('Cache key:', cacheKey);
             
             // Check cache first
@@ -2668,7 +2675,7 @@ ${basicAnalysis.replace('## 📊 Data Analysis (Offline Mode)', '').replace('---
             const geminiRefreshBtn = document.getElementById('geminiRefreshBtn');
             const insightsContent = document.getElementById('insightsContent');
             
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log('Cache key:', cacheKey);
             
             try {
@@ -2828,7 +2835,7 @@ Keep the response structured and actionable for a data import workflow.`;
             const insightsContent = document.getElementById('insightsContent');
             
             // Check if this is cached data
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             const cachedData = aiInsightsCache[cacheKey];
             const isCached = cachedData && cachedData.success && !isNewAnalysis;
             
@@ -2981,7 +2988,7 @@ Keep the response structured and actionable for a data import workflow.`;
             const insightsContent = document.getElementById('insightsContent');
             
             // Check if this is cached data
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             const cachedData = aiInsightsCache[cacheKey];
             const isCached = cachedData && cachedData.success && !isNewAnalysis;
             
@@ -3113,7 +3120,7 @@ Keep the response structured and actionable for a data import workflow.`;
             console.log('Retrying Gemini analysis...');
             
             // Clear error state from cache
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             if (aiInsightsCache[cacheKey]) {
                 console.log('Clearing cache entry for retry');
                 delete aiInsightsCache[cacheKey];
@@ -3146,7 +3153,7 @@ Keep the response structured and actionable for a data import workflow.`;
             const claudeRefreshBtn = document.getElementById('claudeRefreshBtn');
             const insightsContent = document.getElementById('insightsContent');
             
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             
             try {
                 // Set active AI and update button states
@@ -3363,7 +3370,7 @@ Please analyze this dataset according to the request above.`;
             const insightsContent = document.getElementById('insightsContent');
             
             // Check if this is cached data
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             const cachedData = claudeInsightsCache[cacheKey];
             const isCached = cachedData && cachedData.success && !isNewAnalysis;
             
@@ -3419,7 +3426,7 @@ Please analyze this dataset according to the request above.`;
             const insightsContent = document.getElementById('insightsContent');
             
             // Check if this is cached data
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             const cachedData = claudeInsightsCache[cacheKey];
             const isCached = cachedData && cachedData.success && !isNewAnalysis;
             
@@ -3479,7 +3486,7 @@ Please analyze this dataset according to the request above.`;
 
         function retryClaudeAnalysis() {
             // Clear cache for current file and retry
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             delete claudeInsightsCache[cacheKey];
             saveClaudeCacheToStorage(); // Persist cache deletion
             
@@ -3729,7 +3736,7 @@ Please analyze this dataset according to the request above.`;
             const promptInput = document.getElementById('promptInput');
             const submitBtn = document.getElementById('promptSubmitBtn');
             
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log(`Showing refresh prompt for ${aiType}, cache key: ${cacheKey}`);
             
             if (aiType === 'claude') {
@@ -3760,7 +3767,7 @@ Please analyze this dataset according to the request above.`;
             const modal = document.getElementById('promptModal');
             modal.classList.add('hidden');
             
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log('Closing prompt modal, currentPromptAI was:', currentPromptAI);
             
             if (currentPromptAI === 'claude') {
@@ -3812,7 +3819,7 @@ Please analyze this dataset according to the request above.`;
             }
             
             // Clear cache for current file to force fresh analysis
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             
             // Check if this is the default prompt (poem request)
             const isDefaultPrompt = customPrompt === 'Tell me an amazing poem about this data.';
@@ -3854,7 +3861,7 @@ Please analyze this dataset according to the request above.`;
                 return;
             }
 
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log('Checking Claude cache for key:', cacheKey);
             
             // Check if we have cached Claude insights
@@ -3887,7 +3894,7 @@ Please analyze this dataset according to the request above.`;
                 return;
             }
 
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             console.log('Checking Gemini cache for key:', cacheKey);
             
             // Check if we have cached Gemini insights
@@ -3915,7 +3922,7 @@ Please analyze this dataset according to the request above.`;
         // Save/Cancel functions for Claude analysis
         function saveClaudeAnalysis() {
             if (pendingClaudeAnalysis) {
-                const cacheKey = getCurrentCacheKey();
+                const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Saving Claude analysis to cache with key:', cacheKey);
                 
                 // Show status that we're saving the new analysis
@@ -3951,7 +3958,7 @@ Please analyze this dataset according to the request above.`;
 
         function cancelClaudeAnalysis() {
             if (pendingClaudeAnalysis) {
-                const cacheKey = getCurrentCacheKey();
+                const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Canceling Claude analysis, reverting to cached version');
                 console.log('Current cache key:', cacheKey);
                 console.log('Available cache keys:', Object.keys(claudeInsightsCache));
@@ -4003,7 +4010,7 @@ Please analyze this dataset according to the request above.`;
         // Save/Cancel functions for Gemini analysis
         function saveGeminiAnalysis() {
             if (pendingGeminiAnalysis) {
-                const cacheKey = getCurrentCacheKey();
+                const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Saving Gemini analysis to cache with key:', cacheKey);
                 
                 // Show status that we're saving the new analysis
@@ -4039,7 +4046,7 @@ Please analyze this dataset according to the request above.`;
 
         function cancelGeminiAnalysis() {
             if (pendingGeminiAnalysis) {
-                const cacheKey = getCurrentCacheKey();
+                const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Canceling Gemini analysis, reverting to cached version');
                 console.log('Current cache key:', cacheKey);
                 console.log('Available cache keys:', Object.keys(aiInsightsCache));
@@ -4134,7 +4141,7 @@ Please analyze this dataset according to the request above.`;
             const claudeRefreshBtn = document.getElementById('claudeRefreshBtn');
             const insightsContent = document.getElementById('insightsContent');
             
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             
             try {
                 // Set active AI and update button states
@@ -4234,7 +4241,7 @@ ${JSON.stringify(sampleData, null, 2)}`;
             const geminiRefreshBtn = document.getElementById('geminiRefreshBtn');
             const insightsContent = document.getElementById('insightsContent');
             
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             
             try {
                 // Set active AI and update button states
@@ -4398,7 +4405,7 @@ ${JSON.stringify(sampleData, null, 2)}`;
         
         // Show raw markdown from cached analysis
         function showRawMarkdown(aiType) {
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             const insightsContent = document.getElementById('insightsContent');
             
             let cachedData, analysis, aiName;
@@ -4433,7 +4440,7 @@ ${JSON.stringify(sampleData, null, 2)}`;
         
         // Show rendered markdown from cached analysis
         function showRenderedMarkdown(aiType) {
-            const cacheKey = getCurrentCacheKey();
+            const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             let cachedData;
             
             if (aiType === 'claude') {
@@ -4457,7 +4464,7 @@ ${JSON.stringify(sampleData, null, 2)}`;
                 
                 // Wait a bit for the page to fully load and data to be set
                 setTimeout(() => {
-                    const cacheKey = getCurrentCacheKey();
+                    const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                     console.log('Current cache key:', cacheKey);
                     
                     if (cacheKey) {
@@ -4493,40 +4500,100 @@ ${JSON.stringify(sampleData, null, 2)}`;
         // Note: loadGoogleSheetConfig is now in js/list.js as a shared function
 
 
+        // Add "All Lists" option functionality
+        function addAllListsOption() {
+            // Check if "All Lists" option already exists
+            const existingAllOption = Array.from(fileSelect.options).find(option => option.value === 'all');
+            if (existingAllOption) return;
+            
+            // Add "All Lists" option at the top (first position)
+            const allListsOption = document.createElement('option');
+            allListsOption.value = 'all';
+            allListsOption.textContent = 'All Lists';
+            allListsOption.setAttribute('data-url', 'all');
+            
+            // Insert as the first option
+            fileSelect.insertBefore(allListsOption, fileSelect.firstChild);
+        }
+        
+        // Hash parameter utility functions are now available from list.js
+        // getURLHashParam, setURLHashParam, updateListHashParam
+        
         // Track initialization state to avoid saving to browser storage on initial hash parameter load
         let isInitializing = true;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
             // Use shared function for Google Sheet loading and initialization
-            const selectedOption = await initializeFileSelectionWithGoogleSheet(fileSelect, 'feed', 'fileSelection');
+            const selectedOption = await initializeFileSelectionWithGoogleSheet(fileSelect, 'list', 'fileSelection');
             selectedFile = selectedOption.value;
+            
+            // Add "All Lists" option after dynamic options are loaded
+            addAllListsOption();
             
             // Check for hash parameters
             const urlParams = new URLSearchParams(window.location.hash.substring(1));
             const mode = urlParams.get('m');
+            const listParam = getURLHashParam('list');
             
-            showMessage(`Import tool loaded. ${selectedOption.text} is selected.`, 'info');
-            
-            // Auto-load the selected file on page load
-            const dataUrl = selectedOption.getAttribute('data-url');
-            const isCors = selectedOption.getAttribute('data-cors') === 'true';
-            
-            if (dataUrl) {
-                // This is a dynamic option from Google Sheet
-                selectedFile = dataUrl;
-                console.log(`Auto-loading dynamic option: ${selectedOption.text} (${selectedOption.value}) - URL: ${dataUrl}, CORS: ${isCors}`);
+            // If there's a list parameter, try to select it
+            if (listParam && listParam !== selectedOption.value) {
+                console.log(`Trying to select list parameter: ${listParam}`);
+                console.log('Available options:', Array.from(fileSelect.options).map(opt => `${opt.value} - ${opt.textContent}`));
                 
-                if (isCors) {
-                    // Use CORS proxy when CORS is true
-                    autoAnalyzeAndPreviewWithRustToAvoidsCORS();
+                const targetOption = Array.from(fileSelect.options).find(option => option.value === listParam);
+                if (targetOption) {
+                    fileSelect.value = listParam;
+                    selectedFile = targetOption.getAttribute('data-url') || listParam;
+                    console.log(`✅ Selected from URL hash parameter: ${targetOption.textContent} (${listParam})`);
                 } else {
-                    // Use direct fetch for non-CORS URLs
+                    console.log(`❌ Option with value '${listParam}' not found in dropdown options`);
+                    // Try waiting a bit and then checking again (in case options are still loading)
+                    setTimeout(() => {
+                        const delayedTargetOption = Array.from(fileSelect.options).find(option => option.value === listParam);
+                        if (delayedTargetOption) {
+                            fileSelect.value = listParam;
+                            selectedFile = delayedTargetOption.getAttribute('data-url') || listParam;
+                            console.log(`✅ Delayed selection successful: ${delayedTargetOption.textContent} (${listParam})`);
+                            // Trigger reloading with the correct selection
+                            handleFileDropdownChange({ target: { value: listParam } });
+                        } else {
+                            console.log(`❌ Option '${listParam}' still not found after delay`);
+                        }
+                    }, 100);
+                }
+            } else if (listParam) {
+                console.log(`List parameter '${listParam}' matches current selection '${selectedOption.value}'`);
+            }
+            
+            // Get the currently selected option (might have been updated by list parameter)
+            const currentSelectedOption = fileSelect.options[fileSelect.selectedIndex];
+            showMessage(`Import tool loaded. ${currentSelectedOption.textContent} is selected.`, 'info');
+            
+            // Auto-load the selected file on page load (unless it's "All Lists")
+            if (currentSelectedOption.value === 'all') {
+                // Handle "All Lists" selection during initialization
+                showMessage('All Lists view not available in import tool. Please select a specific data source.', 'info');
+            } else {
+                const dataUrl = currentSelectedOption.getAttribute('data-url');
+                const isCors = currentSelectedOption.getAttribute('data-cors') === 'true';
+                
+                if (dataUrl) {
+                    // This is a dynamic option from Google Sheet
+                    selectedFile = dataUrl;
+                    console.log(`Auto-loading dynamic option: ${currentSelectedOption.textContent} (${currentSelectedOption.value}) - URL: ${dataUrl}, CORS: ${isCors}`);
+                    
+                    if (isCors) {
+                        // Use CORS proxy when CORS is true
+                        autoAnalyzeAndPreviewWithRustToAvoidsCORS();
+                    } else {
+                        // Use direct fetch for non-CORS URLs
+                        autoAnalyzeAndPreview();
+                    }
+                } else {
+                    // This is a static predefined file
                     autoAnalyzeAndPreview();
                 }
-            } else {
-                // This is a static predefined file
-                autoAnalyzeAndPreview();
             }
             
             // Restore cached insights after data loads
@@ -4567,6 +4634,24 @@ ${JSON.stringify(sampleData, null, 2)}`;
                     }
                 }, 2000); // Wait 2 seconds for data to load
             }
+            
+            // Add hash change listener for list parameter changes
+            window.addEventListener('hashchange', function() {
+                const listParam = getURLHashParam('list');
+                
+                // Update dropdown selection if it doesn't match current value
+                if (listParam && listParam !== fileSelect.value) {
+                    // Check if the option exists in the dropdown
+                    const targetOption = Array.from(fileSelect.options).find(option => option.value === listParam);
+                    if (targetOption) {
+                        fileSelect.value = listParam;
+                        selectedFile = targetOption.getAttribute('data-url') || listParam;
+                        
+                        // Trigger the change event to update the UI
+                        handleFileDropdownChange({ target: { value: listParam } });
+                    }
+                }
+            });
             
             // Initialization complete, allow browser storage updates on dropdown changes
             isInitializing = false;

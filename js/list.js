@@ -83,7 +83,9 @@ function saveClaudeCacheToStorage(claudeInsightsCache, getCurrentCacheKey) {
 
 function getCurrentCacheKey(fileSelect, selectedFile, selectedSheet) {
     // Always use the dropdown value for consistent caching, regardless of selectedFile content
-    const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+    const selectedOption = fileSelect && fileSelect.options && fileSelect.options.length > 0 
+        ? fileSelect.options[fileSelect.selectedIndex] 
+        : null;
     let fileKey = selectedOption ? selectedOption.value : (selectedFile || 'unknown');
     
     console.log('DEBUG getCurrentCacheKey - selectedFile:', selectedFile);
@@ -639,6 +641,10 @@ function updateFeedHashParam(feedValue) {
     setURLHashParam('feed', feedValue);
 }
 
+function updateListHashParam(listValue) {
+    setURLHashParam('list', listValue);
+}
+
 // =============================================================================
 // LOCAL STORAGE UTILITIES
 // =============================================================================
@@ -778,7 +784,7 @@ async function initializeFileSelectionWithGoogleSheet(fileSelect, hashParam = 'f
     
     if (hashParamValue) {
         // Use value from URL hash parameter
-        const hashOption = Array.from(fileSelect.options).find(option => option.value === hashParamValue);
+        const hashOption = fileSelect.options ? Array.from(fileSelect.options).find(option => option.value === hashParamValue) : null;
         if (hashOption) {
             fileSelect.value = hashParamValue;
             selectedOption = hashOption;
@@ -786,26 +792,30 @@ async function initializeFileSelectionWithGoogleSheet(fileSelect, hashParam = 'f
         } else {
             // Hash parameter not found, fall back to browser storage
             const savedSelection = loadFileSelectionFromStorage(storageKey);
-            if (savedSelection) {
+            if (savedSelection && fileSelect.options) {
                 const savedOption = Array.from(fileSelect.options).find(option => option.value === savedSelection);
                 if (savedOption) {
                     fileSelect.value = savedSelection;
                     selectedOption = savedOption;
                     console.log(`Hash ${hashParam} not found, restored from browser storage:`, savedSelection);
                 } else {
-                    selectedOption = fileSelect.options[fileSelect.selectedIndex];
-                    console.log(`Hash ${hashParam} not found, saved selection not available, using default:`, selectedOption.value);
+                    selectedOption = fileSelect.options && fileSelect.options.length > 0 ? fileSelect.options[fileSelect.selectedIndex] : null;
+                    if (selectedOption) {
+                        console.log(`Hash ${hashParam} not found, saved selection not available, using default:`, selectedOption.value);
+                    }
                 }
             } else {
-                selectedOption = fileSelect.options[fileSelect.selectedIndex];
-                console.log(`Hash ${hashParam} not found, no saved selection, using default:`, selectedOption.value);
+                selectedOption = fileSelect.options && fileSelect.options.length > 0 ? fileSelect.options[fileSelect.selectedIndex] : null;
+                if (selectedOption) {
+                    console.log(`Hash ${hashParam} not found, no saved selection, using default:`, selectedOption.value);
+                }
             }
         }
     } else {
         // No hash parameter, try to restore saved selection from browser storage
         const savedSelection = loadFileSelectionFromStorage(storageKey);
         
-        if (savedSelection) {
+        if (savedSelection && fileSelect.options) {
             // Check if the saved selection is still available in the dropdown
             const savedOption = Array.from(fileSelect.options).find(option => option.value === savedSelection);
             if (savedOption) {
@@ -814,21 +824,33 @@ async function initializeFileSelectionWithGoogleSheet(fileSelect, hashParam = 'f
                 console.log('Restored file selection from browser storage:', savedSelection);
             } else {
                 // Saved selection no longer available, use default
-                selectedOption = fileSelect.options[fileSelect.selectedIndex];
-                console.log('Saved file selection not available, using default:', selectedOption.value);
+                selectedOption = fileSelect.options && fileSelect.options.length > 0 ? fileSelect.options[fileSelect.selectedIndex] : null;
+                if (selectedOption) {
+                    console.log('Saved file selection not available, using default:', selectedOption.value);
+                }
             }
         } else {
             // No saved selection, use default
-            selectedOption = fileSelect.options[fileSelect.selectedIndex];
-            console.log('No saved file selection, using default:', selectedOption.value);
+            selectedOption = fileSelect.options && fileSelect.options.length > 0 ? fileSelect.options[fileSelect.selectedIndex] : null;
+            if (selectedOption) {
+                console.log('No saved file selection, using default:', selectedOption.value);
+            }
         }
         
         // Update URL hash with the selected value
-        if (hashParam === 'feed') {
-            updateFeedHashParam(selectedOption.value);
-        } else {
-            setURLHashParam(hashParam, selectedOption.value);
+        if (selectedOption) {
+            if (hashParam === 'feed') {
+                updateFeedHashParam(selectedOption.value);
+            } else {
+                setURLHashParam(hashParam, selectedOption.value);
+            }
         }
+    }
+    
+    // If no selectedOption was set, create a fallback
+    if (!selectedOption && fileSelect.options && fileSelect.options.length > 0) {
+        selectedOption = fileSelect.options[0];
+        console.log('Using first available option as fallback:', selectedOption.value);
     }
     
     return selectedOption;
@@ -1261,6 +1283,7 @@ if (typeof module !== 'undefined' && module.exports) {
         getURLHashParam,
         setURLHashParam,
         updateFeedHashParam,
+        updateListHashParam,
         
         // Local storage utilities
         savePromptToStorage,

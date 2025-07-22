@@ -1133,6 +1133,165 @@
             border-color: var(--border-medium);
             color: var(--text-primary);
         }
+        
+        /* Button Groups for AI Insights */
+        .insights-status {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .insight-button-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 8px;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+        }
+
+        .insight-button-group:hover {
+            box-shadow: var(--shadow-md);
+            background: var(--bg-secondary);
+        }
+
+        .insight-button-group .btn {
+            margin: 0;
+            border-radius: 8px;
+            flex: 1;
+        }
+
+        .refresh-btn {
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            max-width: 40px;
+            padding: 0;
+            margin: 0;
+            border-radius: 6px;
+            background: var(--accent-blue);
+            color: white;
+            border: 1px solid var(--bg-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s;
+            cursor: pointer;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .refresh-btn:hover {
+            background: #2563EB;
+            transform: scale(1.05);
+            box-shadow: var(--shadow-md);
+        }
+
+        .refresh-btn:active {
+            transform: scale(0.95);
+        }
+
+        .refresh-btn span {
+            font-size: 32px;
+            line-height: 1;
+            font-weight: normal;
+            margin-top: -4px;
+        }
+
+        /* AI Insights Styles */
+        .ai-insights {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+        }
+
+        .insights-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .ai-icon {
+            font-size: 24px;
+        }
+
+        .insights-content {
+            background: var(--bg-primary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            border: 1px solid var(--border-light);
+        }
+
+        .loading-status {
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            text-align: left;
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        /* Prompt Modal */
+        .prompt-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .prompt-modal.hidden {
+            display: none;
+        }
+
+        .prompt-modal-content {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .prompt-modal-content h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .prompt-modal-content textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 16px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -1331,6 +1490,58 @@
             <div class="view-container" id="gallery-view" style="display: none;">
                 <div class="participants-gallery" id="participants-gallery-grid"></div>
             </div>
+            <!-- AI Insights -->
+            <div id="aiInsights" class="ai-insights" style="display: none;">
+                <div class="insights-header">
+                    <div class="ai-icon">🤖</div>
+                    <h3>AI-Powered Dataset Insights</h3>
+                    <div class="insights-status" id="insightsStatus">
+                        <div class="insight-button-group">
+                            <button id="claudeInsightsBtn" class="btn btn-secondary" onclick="handleClaudeInsightsClick()">
+                                <span id="claudeInsightsText">Claude Insights</span>
+                            </button>
+                            <button id="claudeRefreshBtn" class="btn btn-secondary refresh-btn" onclick="showRefreshPrompt('claude')" title="Refresh with custom prompt" style="display: none;">
+                                <span>↻</span>
+                            </button>
+                        </div>
+                        <div class="insight-button-group">
+                            <button id="geminiInsightsBtn" class="btn btn-primary" onclick="handleGeminiInsightsClick()">
+                                <span id="geminiInsightsText">Gemini Insights</span>
+                            </button>
+                            <button id="geminiRefreshBtn" class="btn btn-primary refresh-btn" onclick="showRefreshPrompt('gemini')" title="Refresh with custom prompt" style="display: none;">
+                                <span>↻</span>
+                            </button>
+                            <div class="max-rows-control" style="display: flex; align-items: center; gap: 6px; margin-left: 8px; font-size: 12px;">
+                                <label for="maxRowsInput" style="color: var(--text-secondary); white-space: nowrap;">Max rows:</label>
+                                <input type="number" id="maxRowsInput" value="20" min="1" max="100" style="width: 50px; padding: 4px 6px; border: 1px solid var(--border-light); border-radius: 4px; font-size: 12px;" title="Maximum number of rows to send to Gemini API">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="loadingStatus" class="loading-status" style="display: block; padding: 12px; margin-bottom: 16px; background: linear-gradient(135deg, #6B7280, #E5E7EB); border-radius: var(--radius-md); text-align: left; font-style: italic; color: white; font-weight: bold;">
+                    Ready for AI analysis
+                </div>
+                <div id="insightsContent" class="insights-content">
+                    <div style="color: var(--text-secondary); font-style: italic; text-align: center; padding: 20px;">
+                        Click "Claude Insights" or "Gemini Insights" for AI analysis. Use the ↻ refresh button for custom prompts.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Prompt Modal for custom AI prompts -->
+        <div class="prompt-modal hidden" id="promptModal">
+            <div class="prompt-modal-content">
+                <h3 id="promptModalTitle">Refresh AI Insights</h3>
+                <div style="margin-bottom: 16px; color: var(--text-secondary); font-size: 14px;">
+                    Enter a custom prompt to send with your dataset:
+                </div>
+                <textarea id="promptInput" placeholder="Tell me an amazing poem about this data.">Tell me an amazing poem about this data.</textarea>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closePromptModal()">Cancel</button>
+                    <button id="promptSubmitBtn" class="btn btn-primary" onclick="submitPrompt()">Refresh Insights</button>
+                </div>
+            </div>
         </div>
         
         <!-- Load Status Panel -->
@@ -1345,6 +1556,211 @@
     <script src="../js/list.js"></script>
     <script>
         const GEMINI_API_BASE = 'http://localhost:8081/api';
+        
+        // AI Insights variables
+        let currentActiveAI = null;
+        let currentPromptAI = null;
+        const aiInsightsCache = JSON.parse(localStorage.getItem('aiInsightsCache') || '{}');
+        const claudeInsightsCache = JSON.parse(localStorage.getItem('claudeInsightsCache') || '{}');
+        
+        // AI Insights Functions
+        function showAIInsightsSection() {
+            const aiInsights = document.getElementById('aiInsights');
+            if (aiInsights && window.participantsData && window.participantsData.length > 0) {
+                aiInsights.style.display = 'block';
+                showAIInsightsButtons();
+            }
+        }
+        
+        function showAIInsightsButtons() {
+            const cacheKey = getCurrentDataSource();
+            const hasGeminiCache = aiInsightsCache[cacheKey];
+            const hasClaudeCache = claudeInsightsCache[cacheKey];
+            
+            // Update button states
+            const claudeBtn = document.getElementById('claudeInsightsBtn');
+            const claudeText = document.getElementById('claudeInsightsText');
+            const claudeRefresh = document.getElementById('claudeRefreshBtn');
+            const geminiBtn = document.getElementById('geminiInsightsBtn');
+            const geminiText = document.getElementById('geminiInsightsText');
+            const geminiRefresh = document.getElementById('geminiRefreshBtn');
+            
+            if (claudeBtn && claudeText && claudeRefresh) {
+                claudeBtn.disabled = false;
+                claudeText.textContent = hasClaudeCache ? 'Claude Insights (Cached)' : 'Claude Insights';
+                claudeRefresh.style.display = hasClaudeCache ? 'flex' : 'none';
+            }
+            
+            if (geminiBtn && geminiText && geminiRefresh) {
+                geminiBtn.disabled = false;
+                geminiText.textContent = hasGeminiCache ? 'Gemini Insights (Cached)' : 'Gemini Insights';
+                geminiRefresh.style.display = hasGeminiCache ? 'flex' : 'none';
+            }
+            
+            // Show ready message
+            const loadingStatus = document.getElementById('loadingStatus');
+            if (loadingStatus) {
+                loadingStatus.textContent = 'Ready for AI analysis';
+                loadingStatus.style.display = 'block';
+            }
+        }
+        
+        function getCurrentDataSource() {
+            const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+            if (selectedOption && selectedOption.getAttribute('data-url')) {
+                return selectedOption.getAttribute('data-url');
+            }
+            return selectedFile || 'unknown';
+        }
+        
+        function handleClaudeInsightsClick() {
+            if (!window.participantsData || window.participantsData.length === 0) {
+                appendStatusMessage('No data available for analysis. Please load a list first.', 'error');
+                return;
+            }
+            
+            const cacheKey = getCurrentDataSource();
+            if (claudeInsightsCache[cacheKey]) {
+                displayCachedInsights(cacheKey, 'claude');
+            } else {
+                showRefreshPrompt('claude');
+            }
+        }
+        
+        function handleGeminiInsightsClick() {
+            if (!window.participantsData || window.participantsData.length === 0) {
+                appendStatusMessage('No data available for analysis. Please load a list first.', 'error');
+                return;
+            }
+            
+            const cacheKey = getCurrentDataSource();
+            if (aiInsightsCache[cacheKey]) {
+                displayCachedInsights(cacheKey, 'gemini');
+            } else {
+                showRefreshPrompt('gemini');
+            }
+        }
+        
+        function displayCachedInsights(cacheKey, aiType) {
+            const cache = aiType === 'claude' ? claudeInsightsCache : aiInsightsCache;
+            const insights = cache[cacheKey];
+            
+            if (insights) {
+                const content = document.getElementById('insightsContent');
+                const loadingStatus = document.getElementById('loadingStatus');
+                
+                loadingStatus.textContent = `Displaying cached ${aiType} analysis`;
+                content.innerHTML = `
+                    <div style="padding: 16px;">
+                        <h4 style="color: var(--accent-${aiType === 'claude' ? 'blue' : 'green'}); margin-bottom: 12px;">
+                            ${aiType === 'claude' ? '🤖 Claude' : '✨ Gemini'} Analysis (Cached)
+                        </h4>
+                        <div style="line-height: 1.6;">${insights.analysis || insights}</div>
+                        ${insights.timestamp ? `<div style="margin-top: 12px; font-size: 12px; color: var(--text-secondary);">Generated: ${new Date(insights.timestamp).toLocaleString()}</div>` : ''}
+                    </div>
+                `;
+                
+                // Update button states
+                currentActiveAI = aiType;
+                updateActiveAIButtons();
+            }
+        }
+        
+        function showRefreshPrompt(aiType) {
+            currentPromptAI = aiType;
+            const modal = document.getElementById('promptModal');
+            const title = document.getElementById('promptModalTitle');
+            
+            title.textContent = `${aiType === 'claude' ? 'Claude' : 'Gemini'} Analysis`;
+            modal.classList.remove('hidden');
+        }
+        
+        function closePromptModal() {
+            const modal = document.getElementById('promptModal');
+            modal.classList.add('hidden');
+            currentPromptAI = null;
+        }
+        
+        async function submitPrompt() {
+            const prompt = document.getElementById('promptInput').value;
+            const aiType = currentPromptAI;
+            
+            if (!prompt || !aiType || !window.participantsData) return;
+            
+            closePromptModal();
+            
+            // Show loading state
+            const loadingStatus = document.getElementById('loadingStatus');
+            const content = document.getElementById('insightsContent');
+            
+            loadingStatus.textContent = `Analyzing data with ${aiType}...`;
+            content.innerHTML = '<div style="padding: 20px; text-align: center;">🔄 Generating insights...</div>';
+            
+            try {
+                // Prepare data for analysis
+                const maxRows = parseInt(document.getElementById('maxRowsInput')?.value || 20);
+                const analysisData = window.participantsData.slice(0, maxRows);
+                
+                const endpoint = aiType === 'claude' ? '/claude/analyze' : '/google/gemini/analyze';
+                const response = await fetch(`${GEMINI_API_BASE}${endpoint}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        data_context: {
+                            total_records: window.participantsData.length,
+                            sample_data: analysisData,
+                            headers: Object.keys(analysisData[0] || {})
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success && result.analysis) {
+                    // Cache the result
+                    const cacheKey = getCurrentDataSource();
+                    const insights = {
+                        analysis: result.analysis,
+                        timestamp: new Date().toISOString(),
+                        prompt: prompt
+                    };
+                    
+                    if (aiType === 'claude') {
+                        claudeInsightsCache[cacheKey] = insights;
+                        localStorage.setItem('claudeInsightsCache', JSON.stringify(claudeInsightsCache));
+                    } else {
+                        aiInsightsCache[cacheKey] = insights;
+                        localStorage.setItem('aiInsightsCache', JSON.stringify(aiInsightsCache));
+                    }
+                    
+                    displayCachedInsights(cacheKey, aiType);
+                    showAIInsightsButtons(); // Update button states
+                    
+                } else {
+                    content.innerHTML = `<div style="padding: 16px; color: var(--error-color);">Analysis failed: ${result.error || 'Unknown error'}</div>`;
+                    loadingStatus.textContent = 'Analysis failed';
+                }
+                
+            } catch (error) {
+                console.error('AI analysis error:', error);
+                content.innerHTML = `<div style="padding: 16px; color: var(--error-color);">Analysis failed: ${error.message}</div>`;
+                loadingStatus.textContent = 'Analysis failed';
+            }
+        }
+        
+        function updateActiveAIButtons() {
+            // Update button states based on active AI
+            const claudeBtn = document.getElementById('claudeInsightsBtn');
+            const geminiBtn = document.getElementById('geminiInsightsBtn');
+            
+            if (claudeBtn && geminiBtn) {
+                claudeBtn.classList.toggle('active', currentActiveAI === 'claude');
+                geminiBtn.classList.toggle('active', currentActiveAI === 'gemini');
+            }
+        }
 
         // Google Meetup Participants
         const getParticipantsButton = document.getElementById('get-participants');
@@ -1515,6 +1931,9 @@
                 
                 // Show UI elements after successful data load
                 showListDisplayElements();
+                
+                // Show AI Insights section after successful data load
+                showAIInsightsSection();
 
             } catch (error) {
                 console.error('Full error details:', error);
@@ -1708,7 +2127,7 @@
                     card.style.cursor = 'pointer';
                     card.title = `Click to view data from: ${participant.Title || participant.Feed}`;
                     card.addEventListener('click', () => {
-                        updateHashParam('list', participant.Feed);
+                        setURLHashParam('list', participant.Feed);
                         updateParticipantListTitle(participant.Title || participant.Feed);
                     });
                 }
@@ -1814,7 +2233,7 @@
                         
                         // Only navigate if it's a quick click (not text selection)
                         if (timeDiff <= 200 && distance <= 5) {
-                            updateHashParam('list', row.Feed);
+                            setURLHashParam('list', row.Feed);
                             updateParticipantListTitle(row.Title || row.Feed);
                             return;
                         }
@@ -2103,7 +2522,7 @@
                     card.style.cursor = 'pointer';
                     card.title = `Click to view data from: ${participant.Title || participant.Feed}`;
                     card.addEventListener('click', () => {
-                        updateHashParam('list', participant.Feed);
+                        setURLHashParam('list', participant.Feed);
                         updateParticipantListTitle(participant.Title || participant.Feed);
                     });
                 }
@@ -2467,9 +2886,9 @@
             
             // Update URL hash parameter (don't send 'column' since it's the default)
             if (viewType === 'column') {
-                updateHashParam('display', null); // Remove display parameter for column view
+                setURLHashParam('display', null); // Remove display parameter for column view
             } else {
-                updateHashParam('display', viewType);
+                setURLHashParam('display', viewType);
             }
             
             // Hide all views
@@ -3394,21 +3813,8 @@
             customFileSection.style.display = 'none';
         }
         
-        function updateHashParam(paramName, paramValue) {
-            const urlParams = new URLSearchParams(window.location.hash.substring(1));
-            if (paramValue) {
-                urlParams.set(paramName, paramValue);
-            } else {
-                urlParams.delete(paramName);
-            }
-            
-            const newHash = urlParams.toString();
-            window.location.hash = newHash ? `#${newHash}` : '';
-        }
-
-        function updateListHashParam(listValue) {
-            updateHashParam('list', listValue);
-        }
+        // Hash parameter utility functions are now available from list.js
+        // getURLHashParam, setURLHashParam, updateListHashParam
         
         async function initializeFileSelection() {
             // Use shared function for Google Sheet loading and initialization
