@@ -285,6 +285,19 @@
         
         .participants-table td {
             color: var(--text-secondary);
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            vertical-align: top;
+        }
+        
+        .participants-table td.expanded {
+            white-space: normal;
+            word-wrap: break-word;
+            max-width: none;
         }
         
         .participants-table tr:hover {
@@ -1761,14 +1774,77 @@
                 const tr = document.createElement('tr');
                 tr.dataset.participantName = getParticipantName(row);
                 
+                // Add row-level click handling variables
+                let mouseDownTime = 0;
+                let mouseDownPos = { x: 0, y: 0 };
+                let savedSelectionOnMouseDown = null;
+                
+                // Track mouse down on the row to detect selection attempts and capture selection
+                tr.addEventListener('mousedown', (e) => {
+                    mouseDownTime = Date.now();
+                    mouseDownPos = { x: e.clientX, y: e.clientY };
+                    
+                    // Capture any existing selection immediately on mousedown
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0 && selection.toString().length > 0) {
+                        savedSelectionOnMouseDown = selection.getRangeAt(0).cloneRange();
+                    } else {
+                        savedSelectionOnMouseDown = null;
+                    }
+                });
+                
+                // Add row-level click event to toggle expanded state
+                tr.addEventListener('click', (e) => {
+                    // Handle meta list navigation first
+                    if (isMetaList && row.Feed) {
+                        const clickTime = Date.now();
+                        const timeDiff = clickTime - mouseDownTime;
+                        const distance = Math.sqrt(
+                            Math.pow(e.clientX - mouseDownPos.x, 2) + 
+                            Math.pow(e.clientY - mouseDownPos.y, 2)
+                        );
+                        
+                        // Only navigate if it's a quick click (not text selection)
+                        if (timeDiff <= 200 && distance <= 5) {
+                            updateHashParam('list', row.Feed);
+                            updateParticipantListTitle(row.Title || row.Feed);
+                            return;
+                        }
+                    }
+                    
+                    const clickTime = Date.now();
+                    const timeDiff = clickTime - mouseDownTime;
+                    const distance = Math.sqrt(
+                        Math.pow(e.clientX - mouseDownPos.x, 2) + 
+                        Math.pow(e.clientY - mouseDownPos.y, 2)
+                    );
+                    
+                    // Don't toggle if this appears to be the end of a text selection
+                    // (long press or mouse movement suggests selection intent)
+                    if (timeDiff > 200 || distance > 5) {
+                        return;
+                    }
+                    
+                    // Toggle expanded class for all cells in this row
+                    const allCellsInRow = tr.querySelectorAll('td');
+                    allCellsInRow.forEach(cell => {
+                        cell.classList.toggle('expanded');
+                    });
+                    
+                    // Restore selection that was captured on mousedown
+                    if (savedSelectionOnMouseDown) {
+                        const selection = window.getSelection();
+                        setTimeout(() => {
+                            selection.removeAllRanges();
+                            selection.addRange(savedSelectionOnMouseDown);
+                        }, 0);
+                    }
+                });
+                
                 // Add clickable functionality for meta list
                 if (isMetaList && row.Feed) {
                     tr.style.cursor = 'pointer';
                     tr.title = `Click to view data from: ${row.Title || row.Feed}`;
-                    tr.addEventListener('click', () => {
-                        updateHashParam('list', row.Feed);
-                        updateParticipantListTitle(row.Title || row.Feed);
-                    });
                 }
                 
                 headers.forEach(header => {
