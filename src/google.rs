@@ -14,17 +14,6 @@ pub struct MeetupRequest {
     meetup_link: String,
 }
 
-// Get participant list from Google Meetup
-pub async fn get_meetup_participants(
-    _data: web::Data<std::sync::Arc<ApiState>>,
-    _req: web::Json<MeetupRequest>,
-) -> Result<HttpResponse> {
-    // TODO: Re-enable when Google Sheets dependencies are properly configured
-    Ok(HttpResponse::Ok().json(json!({
-        "success": false,
-        "error": "Google Sheets integration not yet configured"
-    })))
-}
 
 #[derive(Debug, Serialize)]
 pub struct GeminiTestResponse {
@@ -79,65 +68,6 @@ impl std::fmt::Display for GeminiErrorDetails {
 
 impl std::error::Error for GeminiErrorDetails {}
 
-// Test Gemini API configuration
-pub async fn test_gemini_config(data: web::Data<std::sync::Arc<ApiState>>) -> Result<HttpResponse> {
-    let (api_key_present, api_key_preview, gemini_api_key) = {
-        let config_guard = data.config.lock().unwrap();
-        let api_key_present = !config_guard.gemini_api_key.is_empty() 
-            && config_guard.gemini_api_key != "dummy_key"
-            && config_guard.gemini_api_key != "get-key-at-aistudio.google.com";
-        
-        let api_key_preview = if api_key_present {
-            let key = &config_guard.gemini_api_key;
-            if key.len() > 8 {
-                Some(format!("{}...{}", &key[..4], &key[key.len()-4..]))
-            } else {
-                Some("***".to_string())
-            }
-        } else {
-            None
-        };
-        
-        (api_key_present, api_key_preview, config_guard.gemini_api_key.clone())
-    };
-    
-    let (success, message, error) = if api_key_present {
-        // Test the API key by making a simple request
-        match test_gemini_api_key(&gemini_api_key).await {
-            Ok(()) => (true, "Gemini API key is valid and working".to_string(), None),
-            Err(e) => (false, "Gemini API key present but test failed".to_string(), Some(e.to_string())),
-        }
-    } else {
-        (false, "Gemini API key not configured or is dummy value".to_string(), None)
-    };
-    
-    Ok(HttpResponse::Ok().json(GeminiTestResponse {
-        success,
-        message,
-        api_key_present,
-        api_key_preview,
-        error,
-    }))
-}
-
-// Simple function to test Gemini API key
-async fn test_gemini_api_key(api_key: &str) -> anyhow::Result<()> {
-    let client = reqwest::Client::new();
-    let url = format!("https://generativelanguage.googleapis.com/v1/models?key={}", api_key);
-    
-    let response = client
-        .get(&url)
-        .timeout(std::time::Duration::from_secs(10))
-        .send()
-        .await
-        .context("Failed to make request to Gemini API")?;
-    
-    if response.status().is_success() {
-        Ok(())
-    } else {
-        Err(anyhow::anyhow!("Gemini API returned error: {}", response.status()))
-    }
-}
 
 // Analyze data with Gemini AI
 pub async fn analyze_with_gemini(
@@ -285,16 +215,16 @@ async fn call_gemini_api(api_key: &str, prompt: &str) -> anyhow::Result<(String,
     // Extract token usage information
     let token_usage = response_json
         .get("usageMetadata")
-        .and_then(|usage| {
+        .map(|usage| {
             let prompt_tokens = usage.get("promptTokenCount").and_then(|v| v.as_u64()).map(|v| v as u32);
             let completion_tokens = usage.get("candidatesTokenCount").and_then(|v| v.as_u64()).map(|v| v as u32);
             let total_tokens = usage.get("totalTokenCount").and_then(|v| v.as_u64()).map(|v| v as u32);
             
-            Some(TokenUsage {
+            TokenUsage {
                 prompt_tokens,
                 completion_tokens,
                 total_tokens,
-            })
+            }
         });
     
     if let Some(ref usage) = token_usage {

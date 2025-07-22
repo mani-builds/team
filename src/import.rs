@@ -197,7 +197,7 @@ fn read_excel_file(file_path: &str, sheet_name: Option<&str>) -> Result<Vec<Proj
     
     let sheet_name = match sheet_name {
         Some(name) => name.to_string(),
-        None => workbook.sheet_names().get(0).unwrap_or(&"Sheet1".to_string()).clone(),
+        None => workbook.sheet_names().first().unwrap_or(&"Sheet1".to_string()).clone(),
     };
 
     let range = workbook.worksheet_range(&sheet_name)

@@ -20,7 +20,7 @@ use std::sync::mpsc::channel;
 mod import;
 mod google;
 mod recommendations;
-use recommendations::{RecommendationRequest, Project};
+use recommendations::RecommendationRequest;
 
 // Configuration structure
 #[derive(Debug, Deserialize, Clone)]
@@ -386,7 +386,7 @@ async fn get_env_config() -> Result<HttpResponse> {
         let password_key = format!("{}_PASSWORD", prefix);
         let ssl_key = format!("{}_SSL_MODE", prefix);
         
-        if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
+        if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(_password)) = (
             std::env::var(&host_key),
             std::env::var(&port_key),
             std::env::var(&name_key),
@@ -428,7 +428,7 @@ async fn get_env_config() -> Result<HttpResponse> {
             
             database_connections.push(DatabaseConnection {
                 name: prefix.to_string(),
-                display_name: display_name,
+                display_name,
                 config,
             });
         }
@@ -542,10 +542,8 @@ async fn save_env_config(req: web::Json<SaveEnvConfigRequest>) -> Result<HttpRes
     // Read existing .env file if it exists
     if let Ok(file) = std::fs::File::open(env_path) {
         let reader = BufReader::new(file);
-        for line in reader.lines() {
-            if let Ok(line) = line {
-                env_lines.push(line);
-            }
+        for line in reader.lines().flatten() {
+            env_lines.push(line);
         }
     }
     
@@ -707,121 +705,9 @@ async fn fetch_csv(req: web::Json<FetchCsvRequest>) -> Result<HttpResponse> {
     }
 }
 
-// Test specific database connection
-async fn test_database_connection(path: web::Path<String>) -> Result<HttpResponse> {
-    let connection_name = path.into_inner();
-    
-    // Get the database URL for this connection
-    let database_url = if let Ok(url) = std::env::var(&connection_name) {
-        // Direct URL environment variable
-        url
-    } else {
-        // Try component-based configuration
-        let host_key = format!("{}_HOST", connection_name);
-        let port_key = format!("{}_PORT", connection_name);
-        let name_key = format!("{}_NAME", connection_name);
-        let user_key = format!("{}_USER", connection_name);
-        let password_key = format!("{}_PASSWORD", connection_name);
-        let ssl_key = format!("{}_SSL_MODE", connection_name);
-        
-        if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
-            std::env::var(&host_key),
-            std::env::var(&port_key),
-            std::env::var(&name_key),
-            std::env::var(&user_key),
-            std::env::var(&password_key)
-        ) {
-            let ssl_mode = std::env::var(&ssl_key).unwrap_or_else(|_| "require".to_string());
-            format!("postgres://{}:{}@{}:{}/{}?sslmode={}", user, password, host, port, name, ssl_mode)
-        } else {
-            return Ok(HttpResponse::BadRequest().json(json!({
-                "success": false,
-                "error": format!("Connection '{}' not found in environment variables", connection_name)
-            })));
-        }
-    };
-    
-    // Test the connection
-    match PgPoolOptions::new()
-        .max_connections(1)
-        .connect(&database_url)
-        .await
-    {
-        Ok(pool) => {
-            // Test with a simple query
-            match sqlx::query("SELECT 1").fetch_one(&pool).await {
-                Ok(_) => {
-                    // Parse URL for display info
-                    if let Ok(url) = Url::parse(&database_url) {
-                        let server = format!("{}:{}", 
-                            url.host_str().unwrap_or("unknown"), 
-                            url.port().unwrap_or(5432)
-                        );
-                        let database = url.path().trim_start_matches('/').to_string();
-                        let username = url.username().to_string();
-                        let ssl = database_url.contains("sslmode=require");
-                        
-                        Ok(HttpResponse::Ok().json(json!({
-                            "success": true,
-                            "message": "Database connection successful",
-                            "connection_name": connection_name,
-                            "config": {
-                                "server": server,
-                                "database": database,
-                                "username": username,
-                                "port": url.port().unwrap_or(5432),
-                                "ssl": ssl
-                            }
-                        })))
-                    } else {
-                        Ok(HttpResponse::Ok().json(json!({
-                            "success": true,
-                            "message": "Database connection successful",
-                            "connection_name": connection_name
-                        })))
-                    }
-                }
-                Err(e) => {
-                    Ok(HttpResponse::Ok().json(json!({
-                        "success": false,
-                        "error": format!("Query failed: {}", e),
-                        "connection_name": connection_name
-                    })))
-                }
-            }
-        }
-        Err(e) => {
-            Ok(HttpResponse::Ok().json(json!({
-                "success": false,
-                "error": format!("Connection failed: {}", e),
-                "connection_name": connection_name
-            })))
-        }
-    }
-}
 
 
 
-#[derive(Debug, Deserialize)]
-struct ClaudeAnalysisRequest {
-    prompt: String,
-    dataset_info: Option<serde_json::Value>,
-}
-
-#[derive(Debug, Serialize)]
-struct ClaudeAnalysisResponse {
-    success: bool,
-    analysis: Option<String>,
-    error: Option<String>,
-    token_usage: Option<TokenUsage>,
-}
-
-#[derive(Debug, Serialize)]
-struct TokenUsage {
-    prompt_tokens: Option<u32>,
-    completion_tokens: Option<u32>,
-    total_tokens: Option<u32>,
-}
 
 #[derive(Debug, Deserialize)]
 struct ProxyRequest {
@@ -853,157 +739,8 @@ async fn get_recommendations_handler(req: web::Json<RecommendationRequest>, data
     }
 }
 
-async fn analyze_with_claude_cli(
-    req: web::Json<ClaudeAnalysisRequest>,
-) -> Result<HttpResponse> {
-    match call_claude_code_cli(&req.prompt, &req.dataset_info).await {
-        Ok((analysis, token_usage)) => Ok(HttpResponse::Ok().json(ClaudeAnalysisResponse {
-            success: true,
-            analysis: Some(analysis),
-            error: None,
-            token_usage,
-        })),
-        Err(e) => {
-            eprintln!("Claude Code CLI Error: {:?}", e);
-            
-            // Provide estimated token usage even when Claude CLI fails
-            let prompt_len = req.prompt.len();
-            let estimated_prompt_tokens = (prompt_len / 4) as u32;
-            let estimated_completion_tokens = 50; // Rough estimate for fallback message
-            let estimated_total = estimated_prompt_tokens + estimated_completion_tokens;
-            
-            let fallback_token_usage = Some(TokenUsage {
-                prompt_tokens: Some(estimated_prompt_tokens),
-                completion_tokens: Some(estimated_completion_tokens),
-                total_tokens: Some(estimated_total),
-            });
-            
-            // Provide a helpful fallback message instead of just an error
-            let fallback_analysis = "Claude analysis temporarily unavailable. The dataset was processed successfully, but the AI analysis encountered technical difficulties. This may be due to Claude CLI connectivity issues. Please try again later or use Gemini insights instead.";
-            
-            Ok(HttpResponse::Ok().json(ClaudeAnalysisResponse {
-                success: true,
-                analysis: Some(fallback_analysis.to_string()),
-                error: None,
-                token_usage: fallback_token_usage,
-            }))
-        }
-    }
-}
 
 
-// Call Claude Code CLI for dataset analysis
-async fn call_claude_code_cli(prompt: &str, dataset_info: &Option<serde_json::Value>) -> anyhow::Result<(String, Option<TokenUsage>)> {
-    use std::process::Command;
-    
-    // Build the full prompt with dataset context
-    let full_prompt = if let Some(dataset) = dataset_info {
-        format!("{}\n\nDataset Context:\n{}", prompt, serde_json::to_string_pretty(dataset)?)
-    } else {
-        prompt.to_string()
-    };
-    
-    println!("Executing Claude Code CLI analysis...");
-    
-    // First try with regular text output since JSON format has issues
-    let output = Command::new("claude")
-        .arg("--print")
-        .arg(&full_prompt)
-        .output()
-        .context("Failed to execute claude command. Make sure Claude Code CLI is installed and accessible.")?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("Claude Code CLI failed: {}", stderr));
-    }
-    
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stdout_str = stdout.trim();
-    
-    if stdout_str.is_empty() {
-        return Err(anyhow::anyhow!("Claude Code CLI returned empty response"));
-    }
-    
-    // Check if the response is "Execution error" and try alternative approach
-    let analysis_text = if stdout_str.trim() == "Execution error" {
-        println!("Claude CLI returned 'Execution error', trying with simplified prompt");
-        
-        // Try with a much simpler prompt to see if it works
-        let simple_prompt = format!("Please analyze this dataset with {} records and these columns: {}. Provide a brief summary of the data quality and key insights.", 
-                                  dataset_info.as_ref().and_then(|d| d.get("total_records")).unwrap_or(&serde_json::Value::Null).as_u64().unwrap_or(0),
-                                  dataset_info.as_ref().and_then(|d| d.get("headers")).unwrap_or(&serde_json::Value::Null).as_array().map(|arr| arr.len()).unwrap_or(0));
-        
-        let simple_output = Command::new("claude")
-            .arg("--print")
-            .arg(&simple_prompt)
-            .output();
-        
-        match simple_output {
-            Ok(output) if output.status.success() => {
-                let simple_stdout = String::from_utf8_lossy(&output.stdout);
-                let simple_text = simple_stdout.trim().to_string();
-                println!("Simple prompt succeeded, length: {}", simple_text.len());
-                
-                if simple_text != "Execution error" && !simple_text.is_empty() {
-                    simple_text
-                } else {
-                    "Claude analysis temporarily unavailable. The dataset was processed successfully, but the AI analysis encountered technical difficulties. Please try again later.".to_string()
-                }
-            }
-            _ => {
-                println!("Simple prompt also failed, using fallback message");
-                "Claude analysis temporarily unavailable. The dataset was processed successfully, but the AI analysis encountered technical difficulties. Please try again later.".to_string()
-            }
-        }
-    } else {
-        stdout_str.to_string()
-    };
-    
-    // Try to get token usage with a separate JSON call
-    let mut token_usage = None;
-    
-    // Make a separate call to get token usage information
-    let json_output = Command::new("claude")
-        .arg("--print")
-        .arg("--output-format")
-        .arg("json")
-        .arg("Count to 5")  // Simple prompt for token usage
-        .output();
-    
-    if let Ok(json_output) = json_output {
-        if json_output.status.success() {
-            let json_stdout = String::from_utf8_lossy(&json_output.stdout);
-            if let Ok(json_response) = serde_json::from_str::<serde_json::Value>(json_stdout.trim()) {
-                if let Some(usage) = json_response.get("usage") {
-                    let input_tokens = usage.get("input_tokens").and_then(|v| v.as_u64()).map(|v| v as u32);
-                    let output_tokens = usage.get("output_tokens").and_then(|v| v.as_u64()).map(|v| v as u32);
-                    let total = input_tokens.and_then(|i| output_tokens.map(|o| i + o));
-                    
-                    // Estimate token usage for the actual prompt (rough approximation)
-                    let estimated_prompt_tokens = (full_prompt.len() / 4) as u32; // Rough estimate: 4 chars per token
-                    let estimated_completion_tokens = (analysis_text.len() / 4) as u32;
-                    let estimated_total = estimated_prompt_tokens + estimated_completion_tokens;
-                    
-                    token_usage = Some(TokenUsage {
-                        prompt_tokens: Some(estimated_prompt_tokens),
-                        completion_tokens: Some(estimated_completion_tokens),
-                        total_tokens: Some(estimated_total),
-                    });
-                    
-                    println!("Estimated token usage: {:?}", token_usage);
-                }
-            }
-        }
-    }
-    
-    if analysis_text.is_empty() {
-        return Err(anyhow::anyhow!("Claude Code CLI returned empty analysis"));
-    }
-    
-    println!("Claude CLI analysis completed - Length: {} chars", analysis_text.len());
-    
-    Ok((analysis_text, token_usage))
-}
 
 // Proxy external requests to bypass CORS restrictions
 async fn proxy_external_request(req: web::Json<ProxyRequest>) -> Result<HttpResponse> {
@@ -2337,21 +2074,6 @@ async fn get_claude_cli_usage() -> anyhow::Result<serde_json::Value> {
     Err(anyhow::anyhow!("Could not extract usage data"))
 }
 
-// Helper function to extract numbers from usage text lines
-fn extract_number_from_usage_line(line: &str) -> Option<u32> {
-    // Look for patterns like "1,234", "1234", or numbers followed by "tokens"
-    use regex::Regex;
-    
-    // Try to find the first number in the line (removing commas)
-    if let Ok(re) = Regex::new(r"(\d{1,3}(?:,\d{3})*|\d+)") {
-        if let Some(captures) = re.find(line) {
-            let number_str = captures.as_str().replace(",", "");
-            return number_str.parse::<u32>().ok();
-        }
-    }
-    
-    None
-}
 
 // Handlers for Claude usage - get real data from persistent Claude CLI session
 async fn get_claude_usage_cli(session_manager: web::Data<ClaudeSessionManager>) -> Result<HttpResponse> {
