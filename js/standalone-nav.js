@@ -280,7 +280,7 @@ class StandaloneNavigation {
                                     <i class="subnav-icon" data-feather="users"></i>
                                     <span>Meetup Integration</span>
                                 </a>
-                                <a href="${adminPath}google/" class="subnav-link">
+                                <a href="${adminPath}server/" class="subnav-link">
                                     <i class="subnav-icon" data-feather="zap"></i>
                                     <span>Configure Server</span>
                                 </a>
