@@ -156,6 +156,10 @@ class StandaloneNavigation {
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
                             </button>
                             <div class="subnav">
+                                <a href="${rootPath}projects/#list=democracylab" class="subnav-link">
+                                    <i class="subnav-icon" data-feather="code"></i>
+                                    <span>Democracy Lab Projects</span>
+                                </a>
                                 <a href="${rootPath}#projects/opportunities" class="subnav-link">
                                     <i class="subnav-icon" data-feather="target"></i>
                                     <span>Opportunities</span>
@@ -174,13 +178,13 @@ class StandaloneNavigation {
 
                     <div class="nav-section">
                         <div class="nav-item">
-                            <button class="nav-link" data-section="people" data-href="${rootPath}#people/people">
+                            <button class="nav-link" data-section="people" data-href="${rootPath}projects/#list=modelteam">
                                 <i class="nav-icon" data-feather="users"></i>
                                 <span class="nav-text">People & Teams</span>
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
                             </button>
                             <div class="subnav">
-                                <a href="${rootPath}/projects/#list=modelteam" class="subnav-link">
+                                <a href="${rootPath}projects/#list=modelteam" class="subnav-link">
                                     <i class="subnav-icon" data-feather="map"></i>
                                     <span>Model Team</span>
                                 </a>

@@ -1195,7 +1195,7 @@
 
         <div class="card" id="participants-table-card" style="display: none;">
             <div style="margin-bottom: 20px;">
-                <h2 class="card-title" id="participants-list-title" style="margin: 0;">📊 Participants List</h2>
+                <h2 class="card-title" id="list-title" style="margin: 0;">📊 Participants List</h2>
             </div>
             
             <!-- Present Participants Control -->
@@ -1543,7 +1543,7 @@
         // Note: parseCSV function is now available from js/list.js
         
         // Current view mode and filtering
-        let currentView = getURLHashParam('display') || localStorage.getItem('participantsViewMode') || 'column';
+        let currentView = getURLHashParam('display') || 'column'; // Always default to column if absent from hash
         let currentTeamFilter = localStorage.getItem('participantsTeamFilter') || null;
         let initialTeamLegendGenerated = false;
         
@@ -2457,8 +2457,12 @@
             // Save view preference to localStorage
             localStorage.setItem('participantsViewMode', viewType);
             
-            // Update URL hash parameter
-            updateHashParam('display', viewType);
+            // Update URL hash parameter (don't send 'column' since it's the default)
+            if (viewType === 'column') {
+                updateHashParam('display', null); // Remove display parameter for column view
+            } else {
+                updateHashParam('display', viewType);
+            }
             
             // Hide all views
             document.getElementById('column-view').style.display = 'none';
@@ -3280,7 +3284,7 @@
         }
         
         function updateParticipantListTitle(customTitle = null) {
-            const participantListTitle = document.getElementById('participants-list-title');
+            const participantListTitle = document.getElementById('list-title');
             let titleText;
             
             if (customTitle) {
@@ -3288,15 +3292,30 @@
                 titleText = customTitle;
                 participantListTitle.textContent = `📊 ${customTitle}`;
             } else {
-                const selectedOption = fileSelect.options[fileSelect.selectedIndex];
-                if (selectedOption && selectedOption.textContent && selectedOption.value !== 'custom') {
-                    // Use the title from the selected option
-                    titleText = selectedOption.textContent;
-                    participantListTitle.textContent = `📊 ${selectedOption.textContent}`;
+                // Check if there's a list parameter in the hash
+                const listParam = getURLHashParam('list');
+                if (listParam) {
+                    // Look for matching option in dropdown to get proper title
+                    const matchingOption = Array.from(fileSelect.options).find(option => option.value === listParam);
+                    if (matchingOption && matchingOption.textContent) {
+                        titleText = matchingOption.textContent;
+                        participantListTitle.textContent = `📊 ${matchingOption.textContent}`;
+                    } else {
+                        // Use the list parameter value as title if no matching option found
+                        titleText = listParam;
+                        participantListTitle.textContent = `📊 ${listParam}`;
+                    }
                 } else {
-                    // Default title
-                    titleText = 'Participants List';
-                    participantListTitle.textContent = '📊 Participants List';
+                    const selectedOption = fileSelect.options[fileSelect.selectedIndex];
+                    if (selectedOption && selectedOption.textContent && selectedOption.value !== 'custom') {
+                        // Use the title from the selected option
+                        titleText = selectedOption.textContent;
+                        participantListTitle.textContent = `📊 ${selectedOption.textContent}`;
+                    } else {
+                        // Default title
+                        titleText = 'Participants List';
+                        participantListTitle.textContent = '📊 Participants List';
+                    }
                 }
             }
             
@@ -3320,6 +3339,9 @@
         function updateUIForHashChange() {
             updateHeaderVisibility();
             updateParticipantListTitle();
+            
+            // Clear status messages when list changes
+            statusMessages.innerHTML = '';
         }
         
         function handleCustomFileSelect(event) {
@@ -3762,8 +3784,8 @@
             
             // Listen for URL changes to handle display mode changes
             window.addEventListener('hashchange', function() {
-                const displayParam = getURLHashParam('display');
-                if (displayParam && ['column', 'table', 'gallery'].includes(displayParam) && displayParam !== currentView) {
+                const displayParam = getURLHashParam('display') || 'column'; // Default to column if absent
+                if (['column', 'table', 'gallery'].includes(displayParam) && displayParam !== currentView) {
                     switchView(displayParam);
                 }
             });
