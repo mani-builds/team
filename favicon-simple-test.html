@@ -5,12 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simple Favicon Test</title>
     <link rel="icon" type="image/x-icon" href="img/logo/neighborhood/favicon.png">
+
+    <!-- Standalone Navigation, shared styles and custom space.css -->
+    <script src="../../js/standalone-nav.js"></script>
+    <link rel="stylesheet" href="css/standalone-nav.css">
+    <link rel="stylesheet" href="css/common.css">
+    <link rel="stylesheet" href="css/shared-styles.css">
+    <link rel="stylesheet" href="css/space.css">
+
 </head>
 <body>
+    <div class="container">
+        <div class="breadcrumb">
+            <a href="../../../admin/">← Admin Dashboard</a> - <a href="../../../projects/#list=modelteam">Coding Meetup Team</a>
+        </div>
+
+        <div class="card">
+
     <h1>Simple Favicon Test</h1>
     <p>Testing favicon functionality directly...</p>
     <button onclick="testFavicon()">Test Favicon Update</button>
     <div id="log"></div>
+
+</div></div>
+
 
     <script>
         async function testFavicon() {
