@@ -299,21 +299,18 @@ h2 {
 }
 
 /* ===== LAYOUT OVERRIDES ===== */
-/* Override main content margin for this specialized page */
-.main-content {
-    margin-left: var(--sidebar-width);
-}
-
 /* Ensure all content containers respect viewport width */
 .container, .card, .readme-content {
     min-width: 0;
     overflow-wrap: break-word;
 }
 
-/* Fix for standalone navigation layout */
-.main-content {
-    min-width: 0;
-    overflow-x: auto;
+/* Fix for standalone navigation layout - desktop only */
+@media (min-width: 769px) {
+    .main-content {
+        min-width: 0;
+        overflow-x: auto;
+    }
 }
 
 /* Specific fix for code blocks that are too wide */
