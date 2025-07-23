@@ -146,7 +146,7 @@ class StandaloneNavigation {
                 <div class="nav-menu">
                     <div class="nav-section">
                         <div class="nav-item">
-                            <button class="nav-link" data-section="home" data-href="${rootPath}#home/welcome">
+                            <button class="nav-link" data-section="home" data-href="${rootPath}#home">
                                 <i class="nav-icon" data-feather="home"></i>
                                 <span class="nav-text">Home</span>
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
@@ -170,7 +170,7 @@ class StandaloneNavigation {
 
                     <div class="nav-section">
                         <div class="nav-item">
-                            <button class="nav-link" data-section="projects" data-href="${rootPath}#projects/opportunities">
+                            <button class="nav-link" data-section="projects" data-href="${rootPath}#projects">
                                 <i class="nav-icon" data-feather="folder"></i>
                                 <span class="nav-text">Projects</span>
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
@@ -202,7 +202,7 @@ class StandaloneNavigation {
 
                     <div class="nav-section">
                         <div class="nav-item">
-                            <button class="nav-link" data-section="people" data-href="${rootPath}projects/#list=modelteam">
+                            <button class="nav-link" data-section="people" data-href="${rootPath}#people">
                                 <i class="nav-icon" data-feather="users"></i>
                                 <span class="nav-text">People & Teams</span>
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
@@ -230,7 +230,7 @@ class StandaloneNavigation {
 
                     <div class="nav-section">
                         <div class="nav-item">
-                            <button class="nav-link" data-section="account" data-href="${rootPath}#account/preferences">
+                            <button class="nav-link" data-section="account" data-href="${rootPath}#account">
                                 <i class="nav-icon" data-feather="settings"></i>
                                 <span class="nav-text">My Account</span>
                                 <i class="nav-arrow" data-feather="chevron-right"></i>
@@ -556,11 +556,17 @@ class StandaloneNavigation {
                             const targetHash = hashMatch[1];
                             const currentHash = window.location.hash.substring(1);
                             
-                            // If already on the target page, navigate to the hash
-                            if (currentHash === targetHash) {
-                                window.location.href = href;
+                            // Check if we're on the root index.html page
+                            const isRootPage = window.location.pathname === '/' || 
+                                             window.location.pathname.endsWith('/index.html') ||
+                                             window.location.pathname.endsWith('/team/') ||
+                                             window.location.pathname.endsWith('/team/index.html');
+                            
+                            if (isRootPage) {
+                                // On root page, use hash navigation only
+                                window.location.hash = targetHash;
                             } else {
-                                // Navigate to the target page
+                                // On other pages, use full href navigation
                                 window.location.href = href;
                             }
                         } else {
@@ -842,11 +848,17 @@ class StandaloneNavigation {
                     const targetHash = hashMatch[1];
                     const currentHash = window.location.hash.substring(1);
                     
-                    // If already on the target page, navigate to the hash
-                    if (currentHash === targetHash) {
-                        window.location.href = href;
+                    // Check if we're on the root index.html page
+                    const isRootPage = window.location.pathname === '/' || 
+                                     window.location.pathname.endsWith('/index.html') ||
+                                     window.location.pathname.endsWith('/team/') ||
+                                     window.location.pathname.endsWith('/team/index.html');
+                    
+                    if (isRootPage) {
+                        // On root page, use hash navigation only
+                        window.location.hash = targetHash;
                     } else {
-                        // Navigate to the target page
+                        // On other pages, use full href navigation
                         window.location.href = href;
                     }
                 } else {

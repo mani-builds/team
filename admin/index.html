@@ -111,17 +111,17 @@
         }
 
         .admin-card-icon.database {
-            background: var(--accent-blue);
+            background: linear-gradient(45deg, #8B5A8C, #B794B8);
             color: white;
         }
 
         .admin-card-icon.excel {
-            background: var(--accent-green);
+            background: linear-gradient(45deg, #059669, #10B981);
             color: white;
         }
 
         .admin-card-icon.logs {
-            background: var(--accent-orange);
+            background: linear-gradient(45deg, #E67300, #F59E0B);
             color: white;
         }
 
@@ -301,10 +301,10 @@
 
         <div class="admin-grid">
 
-            <div class="admin-card clickable-card" onclick="window.location.href='../projects/#list=modelteam'">
+            <div class="admin-card clickable-card" onclick="smartClick(event, function() { window.location.href='../projects/#list=modelteam'; })">
                 <div class="admin-card-header">
                     <div class="admin-card-header-content">
-                        <div class="admin-card-icon" style="background: var(--accent-purple); color: white;">
+                        <div class="admin-card-icon" style="background: linear-gradient(45deg, #553C9A, #7C3AED); color: white;">
                             <i data-feather="users"></i>
                         </div>
                         <div>
@@ -324,10 +324,10 @@
                 </div>
             </div>
 
-            <div class="admin-card clickable-card" onclick="window.location.href='server/'">
+            <div class="admin-card clickable-card" onclick="smartClick(event, function() { window.location.href='server/'; })">
                 <div class="admin-card-header">
                     <div class="admin-card-header-content">
-                        <div class="admin-card-icon" style="background: linear-gradient(45deg, #4285F4, #34A853, #FBBC05, #EA4335); color: white;">
+                        <div class="admin-card-icon" style="background: linear-gradient(45deg, #1D4ED8, #60A5FA); color: white;">
                             <i data-feather="zap"></i>
                         </div>
                         <div>
@@ -348,7 +348,7 @@
             </div>
 
             <!-- Database Admin Panel -->
-            <div class="admin-card clickable-card" onclick="window.location.href='sql/panel/'">
+            <div class="admin-card clickable-card" onclick="smartClick(event, function() { window.location.href='sql/panel/'; })">
                 <div class="admin-card-header">
                     <div class="admin-card-header-content">
                         <div class="admin-card-icon database">
@@ -372,7 +372,7 @@
             </div>
 
             <!-- Data Import Tool -->
-            <div class="admin-card clickable-card" onclick="window.location.href='import-data.html'">
+            <div class="admin-card clickable-card" onclick="smartClick(event, function() { window.location.href='import-data.html'; })">
                 <div class="admin-card-header">
                     <div class="admin-card-header-content">
                         <div class="admin-card-icon excel">
@@ -396,7 +396,7 @@
             </div>
 
             <!-- Log Output Monitor -->
-            <div class="admin-card clickable-card" onclick="window.location.href='log-output/'">
+            <div class="admin-card clickable-card" onclick="smartClick(event, function() { window.location.href='log-output/'; })">
                 <div class="admin-card-header">
                     <div class="admin-card-header-content">
                         <div class="admin-card-icon logs">
@@ -422,7 +422,7 @@
             <!-- API Usage Monitor -->
             <div class="admin-card" id="api-usage-card">
                 <div class="admin-card-header">
-                    <div class="admin-card-icon" style="background: linear-gradient(45deg, #E67300, #F59E0B); color: white;">
+                    <div class="admin-card-icon" style="background: linear-gradient(45deg, #CA8A04, #EAB308); color: white;">
                         <i data-feather="activity"></i>
                     </div>
                     <div>
@@ -870,6 +870,32 @@
         // Load README with logging
         displayFile("README.md", "readmeDiv", "_parent");
         
+        // Function to handle smart clicking - prevents navigation when text is selected
+        function smartClick(event, navigationFunction) {
+            // Check if user has selected text
+            const selection = window.getSelection();
+            if (selection && selection.toString().length > 0) {
+                // User has selected text, don't navigate
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+            
+            // Check if user is currently in the process of selecting text
+            if (event.detail > 1) {
+                // This is a multi-click (double/triple click), might be text selection
+                const target = event.target;
+                if (target && (target.tagName === 'P' || target.tagName === 'H3' || target.tagName === 'LI' || target.tagName === 'SPAN')) {
+                    // Clicked on text element, allow potential text selection
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            
+            // No text selected and not a text selection attempt, proceed with navigation
+            navigationFunction();
+        }
+
         // Check status on page load
         checkSystemStatus();
         

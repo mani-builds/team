@@ -522,7 +522,7 @@
                         </div>
 
                         <div class="feature-grid">
-                            <div class="feature-card clickable-card" onclick="window.location.href='./admin/import-data.html'">
+                            <div class="feature-card clickable-card" onclick="smartClick(event, () => window.location.href='./admin/import-data.html')">
                                 <div class="feature-icon">
                                     <i data-feather="zap"></i>
                                 </div>
@@ -530,7 +530,7 @@
                                 <p class="feature-desc">Get smart recommendations and natural language search with customizations using AI to accelerate your project workflows.</p>
                             </div>
 
-                            <div class="feature-card clickable-card" onclick="window.location.hash = '#people/teams'">
+                            <div class="feature-card clickable-card" onclick="smartClick(event, () => window.location.hash = '#people/teams')">
                                 <div class="feature-icon">
                                     <i data-feather="users"></i>
                                 </div>
@@ -538,7 +538,7 @@
                                 <p class="feature-desc">Connect with local programming teams, join Innovation Bond projects, and collaborate on government AI initiatives.</p>
                             </div>
 
-                            <div class="feature-card clickable-card" onclick="window.location.hash = '#projects/opportunities'">
+                            <div class="feature-card clickable-card" onclick="smartClick(event, () => window.location.hash = '#projects/opportunities')">
                                 <div class="feature-icon">
                                     <i data-feather="trending-up"></i>
                                 </div>
@@ -546,7 +546,7 @@
                                 <p class="feature-desc">Manage opportunities, track progress, assign tasks, and monitor timelines with beautiful, intuitive interfaces.</p>
                             </div>
 
-                            <div class="feature-card clickable-card" onclick="window.location.href = './projects/'">
+                            <div class="feature-card clickable-card" onclick="smartClick(event, () => window.location.href = './projects/')">
                                 <div class="feature-icon">
                                     <i data-feather="target"></i>
                                 </div>
@@ -1661,6 +1661,10 @@
             handleHashChange() {
                 const route = this.parseHash();
                 
+                // Check if this is a simple section change (no slash in hash)
+                const hash = window.location.hash.slice(1);
+                const isSimpleSectionChange = hash && !hash.includes('/') && !hash.includes('?');
+                
                 // Update application state
                 AppState.currentSection = route.section;
                 AppState.currentTab = route.tab;
@@ -1668,6 +1672,14 @@
                 
                 // Update UI
                 this.updateUI(route);
+                
+                // Scroll to top for simple section changes (hashes without slashes)
+                if (isSimpleSectionChange) {
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
                 
                 // Handle special parameters
                 this.handleSpecialParams(route.params);
@@ -1932,6 +1944,12 @@
             if (pageTitle) {
                 pageTitle.textContent = titles[sectionName] || 'MemberCommons';
             }
+            
+            // Scroll to top when switching main sections
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
         }
 
         function switchTab(tabName) {
@@ -2212,6 +2230,32 @@
                     }, 500); // Debounce search updates
                 }
             });
+        }
+
+        // Function to handle smart clicking - prevents navigation when text is selected
+        function smartClick(event, navigationFunction) {
+            // Check if user has selected text
+            const selection = window.getSelection();
+            if (selection && selection.toString().length > 0) {
+                // User has selected text, don't navigate
+                event.preventDefault();
+                event.stopPropagation();
+                return false;
+            }
+            
+            // Check if user is currently in the process of selecting text
+            if (event.detail > 1) {
+                // This is a multi-click (double/triple click), might be text selection
+                const target = event.target;
+                if (target && (target.tagName === 'P' || target.tagName === 'H3' || target.tagName === 'LI' || target.tagName === 'SPAN')) {
+                    // Clicked on text element, allow potential text selection
+                    event.preventDefault();
+                    return false;
+                }
+            }
+            
+            // No text selected and not a text selection attempt, proceed with navigation
+            navigationFunction();
         }
 
         // Handle window resize for responsive design
