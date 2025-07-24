@@ -14,6 +14,7 @@
     <!-- Standalone Navigation -->
     <link rel="stylesheet" href="../../../css/standalone-nav.css">
     <script src="../../../js/standalone-nav.js"></script>
+    <script src="../../../js/common.js"></script>
     
     <link rel="stylesheet" href="../../../css/claude.css">
 
@@ -996,76 +997,6 @@
             btn.innerHTML = '<i data-feather="check"></i> Completed';
         }
 
-        // Load README.md content
-        async function loadReadme() {
-            const readmeDiv = document.getElementById('readmeDiv');
-            
-            try {
-                const response = await fetch('./README.md');
-                if (!response.ok) {
-                    throw new Error('README.md not found');
-                }
-                
-                const markdown = await response.text();
-                
-                // Enhanced markdown to HTML conversion that preserves code blocks
-                let html = markdown;
-                
-                // First, extract and preserve code blocks
-                const codeBlocks = [];
-                let codeBlockIndex = 0;
-                html = html.replace(/```([\s\S]*?)```/g, (match, code) => {
-                    const placeholder = `__CODEBLOCK_${codeBlockIndex}__`;
-                    codeBlocks[codeBlockIndex] = `<pre><code>${code}</code></pre>`;
-                    codeBlockIndex++;
-                    return placeholder;
-                });
-                
-                // Process everything else (avoiding code blocks)
-                html = html
-                    // Handle headers
-                    .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-                    .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-                    .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-                    // Handle lists
-                    .replace(/^\* (.*$)/gm, '<ul><li>$1</li></ul>')
-                    .replace(/^\d+\. (.*$)/gm, '<ol><li>$1</li></ol>')
-                    // Handle inline code
-                    .replace(/`([^`]+)`/g, '<code>$1</code>')
-                    // Handle bold and italic
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                    // Handle paragraphs
-                    .replace(/\n\n/g, '</p><p>')
-                    .replace(/\n/g, '<br>');
-                
-                // Restore code blocks
-                codeBlocks.forEach((codeBlock, index) => {
-                    html = html.replace(`__CODEBLOCK_${index}__`, codeBlock);
-                });
-                
-                // Fix list tags
-                html = html.replace(/<\/ul>\s*<ul>/g, '').replace(/<\/ol>\s*<ol>/g, '');
-                
-                // Clean up line breaks around pre tags
-                html = html.replace(/<br>\s*<pre>/g, '<pre>').replace(/<\/pre>\s*<br>/g, '</pre>');
-                
-                // Wrap in paragraphs (but avoid wrapping pre and header tags)
-                if (!html.startsWith('<h') && !html.startsWith('<ul') && !html.startsWith('<ol') && !html.startsWith('<pre')) {
-                    html = '<p>' + html + '</p>';
-                }
-                
-                readmeDiv.innerHTML = html;
-                
-            } catch (error) {
-                readmeDiv.innerHTML = `
-                    <p style="color: var(--text-muted); font-style: italic;">
-                        Could not load README.md file. Error: ${error.message}
-                    </p>
-                `;
-            }
-        }
-
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize feather icons
@@ -1074,8 +1005,7 @@
             // Load configuration automatically
             loadConfiguration();
             
-            // Load README content
-            loadReadme();
+            displayFile("README.md", "readmeDiv", "_parent");
         });
     </script>
 </body>
