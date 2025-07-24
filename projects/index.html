@@ -882,6 +882,11 @@
             position: relative;
         }
         
+        .button-with-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
         /* Sort Dropdown */
         .sort-dropdown {
             position: absolute;
@@ -1403,8 +1408,26 @@
                 <div class="legend-header">
                     <h4>Filter by Team</h4>
                     <div class="legend-controls">
-                        <button class="btn btn-sm" id="sort-toggle">Sort by</button>
-                        <button class="btn btn-sm" id="status-toggle">Status</button>
+                        <div class="button-with-dropdown">
+                            <button class="btn btn-sm" id="sort-toggle">Sort by</button>
+                            <div class="sort-dropdown" id="sort-dropdown" style="display: none;">
+                                <div class="sort-header">
+                                    <h4>Sort by</h4>
+                                    <button class="btn btn-sm" id="close-sort">×</button>
+                                </div>
+                                <div class="sort-items" id="sort-items"></div>
+                            </div>
+                        </div>
+                        <div class="button-with-dropdown">
+                            <button class="btn btn-sm" id="status-toggle">Status</button>
+                            <div class="status-dropdown" id="status-dropdown" style="display: none;">
+                                <div class="status-header">
+                                    <h4>Filter by Status</h4>
+                                    <button class="btn btn-sm" id="close-status">×</button>
+                                </div>
+                                <div class="status-items" id="status-items"></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="legend-controls-condensed">
                         <button class="condensed-icon-btn" id="filters-toggle" title="Filters">
@@ -1413,24 +1436,6 @@
                         <div class="menu-dropdown" id="filters-dropdown" style="display: none;">
                             <div class="menu-item" id="condensed-sort-toggle">Sort by</div>
                             <div class="menu-item" id="condensed-status-toggle">Status</div>
-                        </div>
-                        
-                        <!-- Sort Dropdown -->
-                        <div class="sort-dropdown" id="sort-dropdown" style="display: none;">
-                            <div class="sort-header">
-                                <h4>Sort by</h4>
-                                <button class="btn btn-sm" id="close-sort">×</button>
-                            </div>
-                            <div class="sort-items" id="sort-items"></div>
-                        </div>
-                        
-                        <!-- Status Dropdown -->
-                        <div class="status-dropdown" id="status-dropdown" style="display: none;">
-                            <div class="status-header">
-                                <h4>Filter by Status</h4>
-                                <button class="btn btn-sm" id="close-status">×</button>
-                            </div>
-                            <div class="status-items" id="status-items"></div>
                         </div>
                     </div>
                 </div>
@@ -1783,15 +1788,25 @@
             statusMessages.appendChild(messageDiv);
         }
 
+        // Helper function to get modelteam URL from dropdown options
+        function getModelteamUrl() {
+            const modelteamOption = Array.from(fileSelect.options).find(option => option.value === 'modelteam');
+            return modelteamOption ? modelteamOption.getAttribute('data-url') : null;
+        }
+        
         async function getMeetupParticipants() {
             // Get URL from selected dropdown option
             const selectedOption = fileSelect.options[fileSelect.selectedIndex];
-            const meetupLink = selectedOption.getAttribute('data-url') || selectedFile;
+            let meetupLink = selectedOption.getAttribute('data-url') || selectedFile;
             const isCors = selectedOption.getAttribute('data-cors') === 'true';
             
+            // If no valid URL found, try to get modelteam URL from dropdown
             if (!meetupLink) {
-                appendStatusMessage('Please select a valid data source.', 'error');
-                return;
+                meetupLink = getModelteamUrl();
+                if (!meetupLink) {
+                    appendStatusMessage('Please select a valid data source or wait for options to load.', 'error');
+                    return;
+                }
             }
 
             try {
@@ -2542,7 +2557,11 @@
         // Sort functionality
         function generateSortDropdown() {
             const sortItems = document.getElementById('sort-items');
-            if (!allParticipantsData.length) return;
+            if (!allParticipantsData || !allParticipantsData.length) {
+                // Show helpful message when no data is available
+                sortItems.innerHTML = '<div class="no-data-message" style="padding: 10px; text-align: center; color: #666; font-style: italic;">Data is loading, please wait...</div>';
+                return;
+            }
             
             // Get available columns from data
             const columns = Object.keys(allParticipantsData[0]);
@@ -2647,7 +2666,11 @@
         // Status filtering functionality
         function generateStatusDropdown() {
             const statusItems = document.getElementById('status-items');
-            if (!allParticipantsData.length) return;
+            if (!allParticipantsData || !allParticipantsData.length) {
+                // Show helpful message when no data is available
+                statusItems.innerHTML = '<div class="no-data-message" style="padding: 10px; text-align: center; color: #666; font-style: italic;">Data is loading, please wait...</div>';
+                return;
+            }
             
             // Get unique status values from data
             const statuses = new Set();
@@ -3472,13 +3495,21 @@
         // Team filter event listener (now handled in generateTeamLegend function)
         
         // Sort event listeners
-        document.getElementById('sort-toggle').addEventListener('click', toggleSortDropdown);
+        document.getElementById('sort-toggle').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSortDropdown();
+        });
         document.getElementById('close-sort').addEventListener('click', () => {
             document.getElementById('sort-dropdown').style.display = 'none';
         });
         
         // Status event listeners
-        document.getElementById('status-toggle').addEventListener('click', toggleStatusDropdown);
+        document.getElementById('status-toggle').addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleStatusDropdown();
+        });
         document.getElementById('close-status').addEventListener('click', () => {
             document.getElementById('status-dropdown').style.display = 'none';
         });
@@ -4244,12 +4275,16 @@
             });
             
             // Add event listeners for condensed filters dropdown
-            document.getElementById('condensed-sort-toggle').addEventListener('click', function() {
+            document.getElementById('condensed-sort-toggle').addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 document.getElementById('filters-dropdown').style.display = 'none';
                 toggleSortDropdown();
             });
             
-            document.getElementById('condensed-status-toggle').addEventListener('click', function() {
+            document.getElementById('condensed-status-toggle').addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
                 document.getElementById('filters-dropdown').style.display = 'none';
                 toggleStatusDropdown();
             });

@@ -365,7 +365,6 @@ async fn get_current_config(data: web::Data<Arc<ApiState>>) -> Result<HttpRespon
         "server_host": config_guard.server_host,
         "server_port": config_guard.server_port,
         "site_favicon": config_guard.site_favicon,
-        "excel_file_path": config_guard.excel_file_path,
         "gemini_api_key_present": !config_guard.gemini_api_key.is_empty() && config_guard.gemini_api_key != "dummy_key"
     });
     

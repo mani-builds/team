@@ -462,12 +462,17 @@ class StandaloneNavigation {
     
     // Start periodic updates to check for favicon changes
     startPeriodicFaviconUpdate() {
+        // Disabled periodic favicon updates to reduce unnecessary API calls
+        // The favicon will be set once on initialization
+        console.log('[FaviconManager] Periodic updates disabled');
+        /*
         // Check for updates every 30 seconds
         this.faviconUpdateInterval = setInterval(() => {
             this.updateLogoFromConfig().catch(error => {
                 console.log('Periodic favicon update failed:', error);
             });
         }, 30000);
+        */
     }
     
     // Manual refresh method for external use
@@ -975,8 +980,11 @@ let standaloneNav;
 
 // Initialize navigation function
 function initializeStandaloneNav() {
+    console.log('[StandaloneNav] initializeStandaloneNav called, existing instance:', !!StandaloneNavigation.instance);
+    
     // Clean up existing instance if it exists
     if (standaloneNav) {
+        console.log('[StandaloneNav] Destroying existing navigation instance');
         standaloneNav.destroy();
     }
     
@@ -1048,15 +1056,20 @@ document.addEventListener('DOMContentLoaded', initializeStandaloneNav);
 
 // Re-initialize on page visibility change (when coming back to a page)
 document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-        // Page became visible again - reinitialize navigation
+    if (!document.hidden && !StandaloneNavigation.instance) {
+        // Page became visible again - only reinitialize if no instance exists
+        console.log('[StandaloneNav] Visibility change - reinitializing navigation');
         setTimeout(initializeStandaloneNav, 100);
     }
 });
 
 // Re-initialize on focus (when coming back to a page)
 window.addEventListener('focus', function() {
-    setTimeout(initializeStandaloneNav, 100);
+    if (!StandaloneNavigation.instance) {
+        // Only reinitialize if no instance exists
+        console.log('[StandaloneNav] Focus event - reinitializing navigation');
+        setTimeout(initializeStandaloneNav, 100);
+    }
 });
 
 // Clean up on page unload

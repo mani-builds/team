@@ -683,6 +683,34 @@ function saveFileSelectionToStorage(fileValue, storageKey = 'membercommons_selec
 function loadFileSelectionFromStorage(storageKey = 'membercommons_selected_file') {
     const savedFileSelection = localStorage.getItem(storageKey);
     if (savedFileSelection) {
+        // Filter out hardcoded system paths that contain other users' directories
+        const isHardcodedSystemPath = savedFileSelection.includes('C:\\Users\\') || 
+                                    savedFileSelection.includes('/Users/') || 
+                                    savedFileSelection.includes('/home/');
+        
+        if (isHardcodedSystemPath) {
+            let currentUserGuessed = null;
+            
+            // Parse username from path
+            if (savedFileSelection.includes('C:\\Users\\')) {
+                const match = savedFileSelection.match(/C:\\Users\\([^\\]+)/);
+                currentUserGuessed = match ? match[1] : null;
+            } else if (savedFileSelection.includes('/Users/')) {
+                const match = savedFileSelection.match(/\/Users\/([^\/]+)/);
+                currentUserGuessed = match ? match[1] : null;
+            } else if (savedFileSelection.includes('/home/')) {
+                const match = savedFileSelection.match(/\/home\/([^\/]+)/);
+                currentUserGuessed = match ? match[1] : null;
+            }
+            
+            // Remove item if user is not yashg
+            if (currentUserGuessed !== 'yashg') {
+                console.warn('Temp, will delete "yashg" hardcoding later. Clearing hardcoded path from storage:', savedFileSelection);
+                localStorage.removeItem(storageKey);
+                return null;
+            }
+        }
+        
         console.log('Loaded file selection from browser storage:', savedFileSelection);
         return savedFileSelection;
     }

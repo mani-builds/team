@@ -1,6 +1,6 @@
 ### 🛡️ Run Claude Code CLL
 
-Right click the membercommons folder and start a virtual environment.
+Right click the "team" folder and start a virtual environment.
 
 **Mac/Linux** 
 
@@ -14,7 +14,7 @@ Right click the membercommons folder and start a virtual environment.
 
 **CLaude Code CLI Installation**
 
-In the membercommons folder, install [NodeJS 18+](https://nodejs.org/en/download), then install Claude Code CLI:
+In the "team" folder, install [NodeJS 18+](https://nodejs.org/en/download), then install Claude Code CLI:
 
 	npm install -g @anthropic-ai/claude-code
 

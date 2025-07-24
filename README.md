@@ -157,7 +157,7 @@ We recommend skipping 1 and open a server in your webroot instead.
    http://localhost:3000
    ```
 
-&nbsp; &nbsp; Or (recommended) open your webroot folder after running in your webroot (parent of membercommons folder):
+&nbsp; &nbsp; Or (recommended) open your webroot folder after running in your webroot (parent of the "team" folder):
    ```
    python -m http.server 8887
    ```
