@@ -7,35 +7,25 @@ use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres, Row, Column, ValueRef};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::collections::HashMap;
-use std::process::{Child, Command};
-use std::time::{SystemTime, UNIX_EPOCH};
-use std::path::Path;
 use uuid::Uuid;
 use url::Url;
-use notify::{Watcher, RecursiveMode, RecommendedWatcher, Config as NotifyConfig};
-use std::sync::mpsc::channel;
 
 mod import;
-mod gemini_insights;
-mod claude_insights;
+mod google;
 mod recommendations;
-use recommendations::RecommendationRequest;
+use recommendations::{RecommendationRequest, Project};
 
 // Configuration structure
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 struct Config {
     database_url: String,
     gemini_api_key: String,
     server_host: String,
     server_port: u16,
     excel_file_path: String,
-    site_favicon: Option<String>,
 }
-
-// Thread-safe configuration holder
-type SharedConfig = Arc<Mutex<Config>>;
 
 impl Config {
     fn from_env() -> anyhow::Result<Self> {
@@ -61,31 +51,8 @@ impl Config {
                     .unwrap_or(8081),
                 excel_file_path: std::env::var("EXCEL_FILE_PATH")
                     .unwrap_or_else(|_| r"C:\Users\yashg\Model Earth\membercommons\preferences\projects\DFC-ActiveProjects.xlsx".to_string()),
-                site_favicon: std::env::var("SITE_FAVICON").ok(),
             })
         }
-    }
-    
-    fn reload() -> anyhow::Result<Self> {
-        log::info!("Reloading configuration from .env file");
-        
-        // Force reload of .env file by reading it directly and setting env vars
-        if let Ok(env_content) = std::fs::read_to_string(".env") {
-            for line in env_content.lines() {
-                let line = line.trim();
-                if line.is_empty() || line.starts_with('#') {
-                    continue;
-                }
-                
-                if let Some((key, value)) = line.split_once('=') {
-                    let key = key.trim();
-                    let value = value.trim();
-                    std::env::set_var(key, value);
-                }
-            }
-        }
-        
-        Self::from_env()
     }
     
     fn build_database_url() -> String {
@@ -117,49 +84,6 @@ impl Config {
     }
 }
 
-// Persistent Claude Session Manager
-#[derive(Debug)]
-struct ClaudeSession {
-    process: Option<Child>,
-    session_start: u64,
-    prompt_count: u32,
-    total_input_tokens: u32,
-    total_output_tokens: u32,
-    last_usage: Option<serde_json::Value>,
-}
-
-impl ClaudeSession {
-    fn new() -> Self {
-        let start_time = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-            
-        ClaudeSession {
-            process: None,
-            session_start: start_time,
-            prompt_count: 0,
-            total_input_tokens: 0,
-            total_output_tokens: 0,
-            last_usage: None,
-        }
-    }
-    
-    fn is_active(&self) -> bool {
-        self.process.is_some()
-    }
-    
-    fn get_session_duration(&self) -> u64 {
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        now - self.session_start
-    }
-}
-
-type ClaudeSessionManager = Arc<Mutex<ClaudeSession>>;
-
 // CLI structure
 #[derive(Parser)]
 #[command(name = "suitecrm")]
@@ -180,75 +104,7 @@ enum Commands {
 // API State
 struct ApiState {
     db: Pool<Postgres>,
-    config: SharedConfig,
-}
-
-// Function to start watching .env file for changes
-fn start_env_watcher(config: SharedConfig) -> anyhow::Result<()> {
-    use notify::{Event, EventKind};
-    
-    let (tx, rx) = channel();
-    let mut watcher = RecommendedWatcher::new(tx, NotifyConfig::default())?;
-    
-    // Watch the .env file
-    let env_path = Path::new(".env");
-    if env_path.exists() {
-        watcher.watch(env_path, RecursiveMode::NonRecursive)?;
-        log::info!("Started watching .env file for changes");
-        
-        // Spawn a background thread to handle file change events
-        let config_clone = config.clone();
-        tokio::spawn(async move {
-            loop {
-                match rx.recv() {
-                    Ok(event) => {
-                        match event {
-                            Ok(Event { kind: EventKind::Modify(_), paths, .. }) |
-                            Ok(Event { kind: EventKind::Create(_), paths, .. }) => {
-                                if paths.iter().any(|path| path.file_name() == Some(std::ffi::OsStr::new(".env"))) {
-                                    log::info!(".env file changed, reloading configuration...");
-                                    
-                                    // Add a small delay to ensure file write is complete
-                                    tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-                                    
-                                    match Config::reload() {
-                                        Ok(new_config) => {
-                                            if let Ok(mut config_guard) = config_clone.lock() {
-                                                *config_guard = new_config;
-                                                log::info!("Configuration reloaded successfully");
-                                            } else {
-                                                log::error!("Failed to acquire config lock for reload");
-                                            }
-                                        }
-                                        Err(e) => {
-                                            log::error!("Failed to reload configuration: {}", e);
-                                        }
-                                    }
-                                }
-                            }
-                            Ok(Event { kind: EventKind::Remove(_), paths, .. }) => {
-                                if paths.iter().any(|path| path.file_name() == Some(std::ffi::OsStr::new(".env"))) {
-                                    log::warn!(".env file was removed");
-                                }
-                            }
-                            _ => {} // Ignore other events
-                        }
-                    }
-                    Err(e) => {
-                        log::error!("File watcher error: {}", e);
-                        break;
-                    }
-                }
-            }
-        });
-        
-        // Keep the watcher alive by storing it
-        std::mem::forget(watcher);
-    } else {
-        log::warn!("No .env file found to watch");
-    }
-    
-    Ok(())
+    config: Config,
 }
 
 // Request/Response types for projects
@@ -359,19 +215,6 @@ async fn health_check(data: web::Data<Arc<ApiState>>) -> Result<HttpResponse> {
     }
 }
 
-// Get current configuration from shared state
-async fn get_current_config(data: web::Data<Arc<ApiState>>) -> Result<HttpResponse> {
-    let config_guard = data.config.lock().unwrap();
-    let config_json = json!({
-        "server_host": config_guard.server_host,
-        "server_port": config_guard.server_port,
-        "site_favicon": config_guard.site_favicon,
-        "gemini_api_key_present": !config_guard.gemini_api_key.is_empty() && config_guard.gemini_api_key != "dummy_key"
-    });
-    
-    Ok(HttpResponse::Ok().json(config_json))
-}
-
 // Get environment configuration
 async fn get_env_config() -> Result<HttpResponse> {
     let mut database_config = None;
@@ -386,7 +229,7 @@ async fn get_env_config() -> Result<HttpResponse> {
         let password_key = format!("{}_PASSWORD", prefix);
         let ssl_key = format!("{}_SSL_MODE", prefix);
         
-        if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(_password)) = (
+        if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
             std::env::var(&host_key),
             std::env::var(&port_key),
             std::env::var(&name_key),
@@ -428,7 +271,7 @@ async fn get_env_config() -> Result<HttpResponse> {
             
             database_connections.push(DatabaseConnection {
                 name: prefix.to_string(),
-                display_name,
+                display_name: display_name,
                 config,
             });
         }
@@ -542,8 +385,10 @@ async fn save_env_config(req: web::Json<SaveEnvConfigRequest>) -> Result<HttpRes
     // Read existing .env file if it exists
     if let Ok(file) = std::fs::File::open(env_path) {
         let reader = BufReader::new(file);
-        for line in reader.lines().flatten() {
-            env_lines.push(line);
+        for line in reader.lines() {
+            if let Ok(line) = line {
+                env_lines.push(line);
+            }
         }
     }
     
@@ -705,9 +550,121 @@ async fn fetch_csv(req: web::Json<FetchCsvRequest>) -> Result<HttpResponse> {
     }
 }
 
+// Test specific database connection
+async fn test_database_connection(path: web::Path<String>) -> Result<HttpResponse> {
+    let connection_name = path.into_inner();
+    
+    // Get the database URL for this connection
+    let database_url = if let Ok(url) = std::env::var(&connection_name) {
+        // Direct URL environment variable
+        url
+    } else {
+        // Try component-based configuration
+        let host_key = format!("{}_HOST", connection_name);
+        let port_key = format!("{}_PORT", connection_name);
+        let name_key = format!("{}_NAME", connection_name);
+        let user_key = format!("{}_USER", connection_name);
+        let password_key = format!("{}_PASSWORD", connection_name);
+        let ssl_key = format!("{}_SSL_MODE", connection_name);
+        
+        if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
+            std::env::var(&host_key),
+            std::env::var(&port_key),
+            std::env::var(&name_key),
+            std::env::var(&user_key),
+            std::env::var(&password_key)
+        ) {
+            let ssl_mode = std::env::var(&ssl_key).unwrap_or_else(|_| "require".to_string());
+            format!("postgres://{}:{}@{}:{}/{}?sslmode={}", user, password, host, port, name, ssl_mode)
+        } else {
+            return Ok(HttpResponse::BadRequest().json(json!({
+                "success": false,
+                "error": format!("Connection '{}' not found in environment variables", connection_name)
+            })));
+        }
+    };
+    
+    // Test the connection
+    match PgPoolOptions::new()
+        .max_connections(1)
+        .connect(&database_url)
+        .await
+    {
+        Ok(pool) => {
+            // Test with a simple query
+            match sqlx::query("SELECT 1").fetch_one(&pool).await {
+                Ok(_) => {
+                    // Parse URL for display info
+                    if let Ok(url) = Url::parse(&database_url) {
+                        let server = format!("{}:{}", 
+                            url.host_str().unwrap_or("unknown"), 
+                            url.port().unwrap_or(5432)
+                        );
+                        let database = url.path().trim_start_matches('/').to_string();
+                        let username = url.username().to_string();
+                        let ssl = database_url.contains("sslmode=require");
+                        
+                        Ok(HttpResponse::Ok().json(json!({
+                            "success": true,
+                            "message": "Database connection successful",
+                            "connection_name": connection_name,
+                            "config": {
+                                "server": server,
+                                "database": database,
+                                "username": username,
+                                "port": url.port().unwrap_or(5432),
+                                "ssl": ssl
+                            }
+                        })))
+                    } else {
+                        Ok(HttpResponse::Ok().json(json!({
+                            "success": true,
+                            "message": "Database connection successful",
+                            "connection_name": connection_name
+                        })))
+                    }
+                }
+                Err(e) => {
+                    Ok(HttpResponse::Ok().json(json!({
+                        "success": false,
+                        "error": format!("Query failed: {}", e),
+                        "connection_name": connection_name
+                    })))
+                }
+            }
+        }
+        Err(e) => {
+            Ok(HttpResponse::Ok().json(json!({
+                "success": false,
+                "error": format!("Connection failed: {}", e),
+                "connection_name": connection_name
+            })))
+        }
+    }
+}
 
 
 
+#[derive(Debug, Deserialize)]
+struct ClaudeAnalysisRequest {
+    prompt: String,
+    dataset_info: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize)]
+struct ClaudeAnalysisResponse {
+    success: bool,
+    analysis: Option<String>,
+    error: Option<String>,
+    token_usage: Option<TokenUsage>,
+}
+
+#[derive(Debug, Serialize)]
+struct TokenUsage {
+    prompt_tokens: Option<u32>,
+    completion_tokens: Option<u32>,
+    total_tokens: Option<u32>,
+}
 
 #[derive(Debug, Deserialize)]
 struct ProxyRequest {
@@ -729,18 +686,163 @@ struct ProxyResponse {
 
 // Analyze data with Claude Code CLI
 async fn get_recommendations_handler(req: web::Json<RecommendationRequest>, data: web::Data<Arc<ApiState>>) -> Result<HttpResponse> {
-    let excel_file_path = {
-        let config_guard = data.config.lock().unwrap();
-        config_guard.excel_file_path.clone()
-    };
-    match recommendations::get_recommendations(&req.preferences, &excel_file_path) {
+    match recommendations::get_recommendations(&req.preferences, &data.config.excel_file_path) {
         Ok(projects) => Ok(HttpResponse::Ok().json(projects)),
         Err(e) => Ok(HttpResponse::InternalServerError().json(json!({ "error": e.to_string() }))),
     }
 }
 
+async fn analyze_with_claude_cli(
+    req: web::Json<ClaudeAnalysisRequest>,
+) -> Result<HttpResponse> {
+    match call_claude_code_cli(&req.prompt, &req.dataset_info).await {
+        Ok((analysis, token_usage)) => Ok(HttpResponse::Ok().json(ClaudeAnalysisResponse {
+            success: true,
+            analysis: Some(analysis),
+            error: None,
+            token_usage,
+        })),
+        Err(e) => {
+            eprintln!("Claude Code CLI Error: {:?}", e);
+            
+            // Provide estimated token usage even when Claude CLI fails
+            let prompt_len = req.prompt.len();
+            let estimated_prompt_tokens = (prompt_len / 4) as u32;
+            let estimated_completion_tokens = 50; // Rough estimate for fallback message
+            let estimated_total = estimated_prompt_tokens + estimated_completion_tokens;
+            
+            let fallback_token_usage = Some(TokenUsage {
+                prompt_tokens: Some(estimated_prompt_tokens),
+                completion_tokens: Some(estimated_completion_tokens),
+                total_tokens: Some(estimated_total),
+            });
+            
+            // Provide a helpful fallback message instead of just an error
+            let fallback_analysis = "Claude analysis temporarily unavailable. The dataset was processed successfully, but the AI analysis encountered technical difficulties. This may be due to Claude CLI connectivity issues. Please try again later or use Gemini insights instead.";
+            
+            Ok(HttpResponse::Ok().json(ClaudeAnalysisResponse {
+                success: true,
+                analysis: Some(fallback_analysis.to_string()),
+                error: None,
+                token_usage: fallback_token_usage,
+            }))
+        }
+    }
+}
 
 
+// Call Claude Code CLI for dataset analysis
+async fn call_claude_code_cli(prompt: &str, dataset_info: &Option<serde_json::Value>) -> anyhow::Result<(String, Option<TokenUsage>)> {
+    use std::process::Command;
+    
+    // Build the full prompt with dataset context
+    let full_prompt = if let Some(dataset) = dataset_info {
+        format!("{}\n\nDataset Context:\n{}", prompt, serde_json::to_string_pretty(dataset)?)
+    } else {
+        prompt.to_string()
+    };
+    
+    println!("Executing Claude Code CLI analysis...");
+    
+    // First try with regular text output since JSON format has issues
+    let output = Command::new("claude")
+        .arg("--print")
+        .arg(&full_prompt)
+        .output()
+        .context("Failed to execute claude command. Make sure Claude Code CLI is installed and accessible.")?;
+    
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(anyhow::anyhow!("Claude Code CLI failed: {}", stderr));
+    }
+    
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout_str = stdout.trim();
+    
+    if stdout_str.is_empty() {
+        return Err(anyhow::anyhow!("Claude Code CLI returned empty response"));
+    }
+    
+    // Check if the response is "Execution error" and try alternative approach
+    let analysis_text = if stdout_str.trim() == "Execution error" {
+        println!("Claude CLI returned 'Execution error', trying with simplified prompt");
+        
+        // Try with a much simpler prompt to see if it works
+        let simple_prompt = format!("Please analyze this dataset with {} records and these columns: {}. Provide a brief summary of the data quality and key insights.", 
+                                  dataset_info.as_ref().and_then(|d| d.get("total_records")).unwrap_or(&serde_json::Value::Null).as_u64().unwrap_or(0),
+                                  dataset_info.as_ref().and_then(|d| d.get("headers")).unwrap_or(&serde_json::Value::Null).as_array().map(|arr| arr.len()).unwrap_or(0));
+        
+        let simple_output = Command::new("claude")
+            .arg("--print")
+            .arg(&simple_prompt)
+            .output();
+        
+        match simple_output {
+            Ok(output) if output.status.success() => {
+                let simple_stdout = String::from_utf8_lossy(&output.stdout);
+                let simple_text = simple_stdout.trim().to_string();
+                println!("Simple prompt succeeded, length: {}", simple_text.len());
+                
+                if simple_text != "Execution error" && !simple_text.is_empty() {
+                    simple_text
+                } else {
+                    "Claude analysis temporarily unavailable. The dataset was processed successfully, but the AI analysis encountered technical difficulties. Please try again later.".to_string()
+                }
+            }
+            _ => {
+                println!("Simple prompt also failed, using fallback message");
+                "Claude analysis temporarily unavailable. The dataset was processed successfully, but the AI analysis encountered technical difficulties. Please try again later.".to_string()
+            }
+        }
+    } else {
+        stdout_str.to_string()
+    };
+    
+    // Try to get token usage with a separate JSON call
+    let mut token_usage = None;
+    
+    // Make a separate call to get token usage information
+    let json_output = Command::new("claude")
+        .arg("--print")
+        .arg("--output-format")
+        .arg("json")
+        .arg("Count to 5")  // Simple prompt for token usage
+        .output();
+    
+    if let Ok(json_output) = json_output {
+        if json_output.status.success() {
+            let json_stdout = String::from_utf8_lossy(&json_output.stdout);
+            if let Ok(json_response) = serde_json::from_str::<serde_json::Value>(json_stdout.trim()) {
+                if let Some(usage) = json_response.get("usage") {
+                    let input_tokens = usage.get("input_tokens").and_then(|v| v.as_u64()).map(|v| v as u32);
+                    let output_tokens = usage.get("output_tokens").and_then(|v| v.as_u64()).map(|v| v as u32);
+                    let total = input_tokens.and_then(|i| output_tokens.map(|o| i + o));
+                    
+                    // Estimate token usage for the actual prompt (rough approximation)
+                    let estimated_prompt_tokens = (full_prompt.len() / 4) as u32; // Rough estimate: 4 chars per token
+                    let estimated_completion_tokens = (analysis_text.len() / 4) as u32;
+                    let estimated_total = estimated_prompt_tokens + estimated_completion_tokens;
+                    
+                    token_usage = Some(TokenUsage {
+                        prompt_tokens: Some(estimated_prompt_tokens),
+                        completion_tokens: Some(estimated_completion_tokens),
+                        total_tokens: Some(estimated_total),
+                    });
+                    
+                    println!("Estimated token usage: {:?}", token_usage);
+                }
+            }
+        }
+    }
+    
+    if analysis_text.is_empty() {
+        return Err(anyhow::anyhow!("Claude Code CLI returned empty analysis"));
+    }
+    
+    println!("Claude CLI analysis completed - Length: {} chars", analysis_text.len());
+    
+    Ok((analysis_text, token_usage))
+}
 
 // Proxy external requests to bypass CORS restrictions
 async fn proxy_external_request(req: web::Json<ProxyRequest>) -> Result<HttpResponse> {
@@ -1853,30 +1955,16 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
     
     println!("Database connection successful!");
     
-    // Create shared config for hot reloading
-    let shared_config = Arc::new(Mutex::new(config));
-    
-    // Start watching .env file for changes
-    if let Err(e) = start_env_watcher(shared_config.clone()) {
-        log::warn!("Failed to start .env file watcher: {}", e);
-    }
-    
     let state = Arc::new(ApiState {
         db: pool,
-        config: shared_config.clone(),
+        config,
     });
     
-    // Create persistent Claude session manager
-    let claude_session_manager: ClaudeSessionManager = Arc::new(Mutex::new(ClaudeSession::new()));
+    println!("Starting API server on {}:{}", state.config.server_host, state.config.server_port);
     
-    // Get server config from shared config
-    let (server_host, server_port) = {
-        let config_guard = shared_config.lock().unwrap();
-        (config_guard.server_host.clone(), config_guard.server_port)
-    };
-    
-    println!("Starting API server on {}:{}", server_host, server_port);
-    let session_manager_clone = claude_session_manager.clone();
+    // Capture server binding info before moving state into closure
+    let server_host = state.config.server_host.clone();
+    let server_port = state.config.server_port;
     
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -1887,7 +1975,6 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
         
         App::new()
             .app_data(web::Data::new(state.clone()))
-            .app_data(web::Data::new(session_manager_clone.clone()))
             .wrap(cors)
             .wrap(middleware::Logger::default())
             .service(
@@ -1916,21 +2003,14 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
                         web::scope("/claude")
                             .route("/usage/cli", web::get().to(get_claude_usage_cli))
                             .route("/usage/website", web::get().to(get_claude_usage_website))
-                            .route("/analyze", web::post().to(claude_insights::analyze_with_claude_cli))
                     )
                     .service(
                         web::scope("/gemini")
                             .route("/usage/cli", web::get().to(get_gemini_usage_cli))
                             .route("/usage/website", web::get().to(get_gemini_usage_website))
-                            .route("/analyze", web::post().to(gemini_insights::analyze_with_gemini))
-                    )
-                    .service(
-                        web::scope("/google/gemini")
-                            .route("/analyze", web::post().to(gemini_insights::analyze_with_gemini))
                     )
                     .service(
                         web::scope("/config")
-                            .route("/current", web::get().to(get_current_config))
                             .route("/env", web::get().to(get_env_config))
                             .route("/env", web::post().to(save_env_config))
                             .route("/env/create", web::post().to(create_env_config))
@@ -1954,192 +2034,52 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
     Ok(())
 }
 
-// Function to get persistent Claude CLI usage data
-async fn get_claude_cli_usage_persistent(session_manager: ClaudeSessionManager) -> anyhow::Result<serde_json::Value> {
-    let mut session = session_manager.lock().unwrap();
-    
-    // Check if we need to start a new session
-    if !session.is_active() {
-        println!("Starting new persistent Claude CLI session...");
-        session.prompt_count = 0;
-        session.total_input_tokens = 0;
-        session.total_output_tokens = 0;
-    }
-    
-    // Increment prompt count for this session
-    session.prompt_count += 1;
-    let current_prompt_count = session.prompt_count;
-    
-    // Send a small prompt to get current usage data
-    let prompt = format!("This is prompt #{} in our persistent session. What is 2+2?", current_prompt_count);
-    
-    println!("Sending prompt #{} to Claude CLI persistent session...", current_prompt_count);
-    
-    // Execute Claude CLI command with JSON output
-    let output = Command::new("claude")
-        .arg("--print")
-        .arg("--output-format")
-        .arg("json")
-        .arg(&prompt)
-        .output()
-        .context("Failed to execute claude command. Make sure Claude CLI is installed and accessible.")?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("Claude CLI command failed: {}", stderr));
-    }
-    
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stdout_str = stdout.trim();
-    
-    if stdout_str.is_empty() {
-        return Err(anyhow::anyhow!("Claude CLI returned empty response"));
-    }
-    
-    // Parse the JSON response
-    if let Ok(json_data) = serde_json::from_str::<serde_json::Value>(stdout_str) {
-        // Extract usage information if available
-        if let Some(usage) = json_data.get("usage") {
-            println!("Found usage data in Claude CLI response: {:?}", usage);
-            
-            // Update session tracking with new usage data
-            if let Some(input_tokens) = usage.get("input_tokens").and_then(|v| v.as_u64()) {
-                session.total_input_tokens = input_tokens as u32;
-            }
-            if let Some(output_tokens) = usage.get("output_tokens").and_then(|v| v.as_u64()) {
-                session.total_output_tokens += output_tokens as u32; // Accumulate output tokens
-            }
-            
-            // Store the latest usage data
-            session.last_usage = Some(usage.clone());
-            
-            // Create enhanced usage data with session info
-            let enhanced_usage = json!({
-                "input_tokens": usage.get("input_tokens").unwrap_or(&json!(0)),
-                "output_tokens": usage.get("output_tokens").unwrap_or(&json!(0)),
-                "cache_creation_input_tokens": usage.get("cache_creation_input_tokens").unwrap_or(&json!(0)),
-                "cache_read_input_tokens": usage.get("cache_read_input_tokens").unwrap_or(&json!(0)),
-                "service_tier": usage.get("service_tier").unwrap_or(&json!("standard")),
-                "session_info": {
-                    "prompt_count": current_prompt_count,
-                    "session_duration_seconds": session.get_session_duration(),
-                    "total_accumulated_output_tokens": session.total_output_tokens,
-                    "session_start_timestamp": session.session_start
-                }
-            });
-            
-            return Ok(enhanced_usage);
+// Mock handlers for Claude and Gemini usage
+async fn get_claude_usage_cli() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok().json(json!({
+        "success": true,
+        "usage": {
+            "session_tokens_used": 1234,
+            "session_limit": 50000,
+            "monthly_tokens_used": 123456,
+            "monthly_limit": 1000000
         }
-        
-        // If no usage field, create session status
-        let usage_data = json!({
-            "connection_status": "connected",
-            "session_info": {
-                "prompt_count": current_prompt_count,
-                "session_duration_seconds": session.get_session_duration(),
-                "total_accumulated_output_tokens": session.total_output_tokens,
-                "session_start_timestamp": session.session_start
-            },
-            "note": "Claude CLI is connected and working, but usage data is not available through the CLI"
-        });
-        
-        println!("Claude CLI persistent session active, returning status: {:?}", usage_data);
-        return Ok(usage_data);
-    }
-    
-    // If JSON parsing fails, Claude CLI might not be working properly
-    return Err(anyhow::anyhow!("Claude CLI response could not be parsed as JSON: {}", stdout_str))
+    })))
 }
 
-// Fallback function for non-persistent usage (keeping for compatibility)
-async fn get_claude_cli_usage() -> anyhow::Result<serde_json::Value> {
-    println!("Using fallback one-time Claude CLI request...");
-    
-    let output = Command::new("claude")
-        .arg("--print")
-        .arg("--output-format")
-        .arg("json")
-        .arg("What is 1+1?")
-        .output()
-        .context("Failed to execute claude command")?;
-    
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("Claude CLI command failed: {}", stderr));
-    }
-    
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stdout_str = stdout.trim();
-    
-    if let Ok(json_data) = serde_json::from_str::<serde_json::Value>(stdout_str) {
-        if let Some(usage) = json_data.get("usage") {
-            return Ok(usage.clone());
+async fn get_claude_usage_website() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok().json(json!({
+        "success": true,
+        "usage": {
+            "session_tokens_used": 5678,
+            "session_limit": 50000,
+            "monthly_tokens_used": 234567,
+            "monthly_limit": 1000000
         }
-    }
-    
-    Err(anyhow::anyhow!("Could not extract usage data"))
-}
-
-
-// Handlers for Claude usage - get real data from persistent Claude CLI session
-async fn get_claude_usage_cli(session_manager: web::Data<ClaudeSessionManager>) -> Result<HttpResponse> {
-    match get_claude_cli_usage_persistent(session_manager.get_ref().clone()).await {
-        Ok(usage_data) => Ok(HttpResponse::Ok().json(json!({
-            "success": true,
-            "usage": usage_data
-        }))),
-        Err(e) => {
-            // Fall back to one-time request if persistent session fails
-            println!("Persistent session failed, falling back to one-time request: {}", e);
-            match get_claude_cli_usage().await {
-                Ok(fallback_data) => Ok(HttpResponse::Ok().json(json!({
-                    "success": true,
-                    "usage": fallback_data
-                }))),
-                Err(fallback_e) => Ok(HttpResponse::Ok().json(json!({
-                    "success": false,
-                    "error": format!("Failed to get Claude CLI usage: {}", fallback_e)
-                })))
-            }
-        }
-    }
-}
-
-async fn get_claude_usage_website(session_manager: web::Data<ClaudeSessionManager>) -> Result<HttpResponse> {
-    // For website usage, we'll use the same persistent CLI session since that's what's available
-    match get_claude_cli_usage_persistent(session_manager.get_ref().clone()).await {
-        Ok(usage_data) => Ok(HttpResponse::Ok().json(json!({
-            "success": true,
-            "usage": usage_data
-        }))),
-        Err(e) => {
-            // Fall back to one-time request if persistent session fails  
-            println!("Persistent session failed, falling back to one-time request: {}", e);
-            match get_claude_cli_usage().await {
-                Ok(fallback_data) => Ok(HttpResponse::Ok().json(json!({
-                    "success": true,
-                    "usage": fallback_data
-                }))),
-                Err(fallback_e) => Ok(HttpResponse::Ok().json(json!({
-                    "success": false,
-                    "error": format!("Failed to get Claude usage: {}", fallback_e)
-                })))
-            }
-        }
-    }
+    })))
 }
 
 async fn get_gemini_usage_cli() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(json!({
-        "success": false,
-        "error": "Gemini CLI not connected or not available"
+        "success": true,
+        "usage": {
+            "session_tokens_used": 4321,
+            "session_limit": 100000,
+            "monthly_tokens_used": 654321,
+            "monthly_limit": 1000000
+        }
     })))
 }
 
 async fn get_gemini_usage_website() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok().json(json!({
-        "success": false,
-        "error": "Gemini website API not configured"
+        "success": true,
+        "usage": {
+            "session_tokens_used": 8765,
+            "session_limit": 100000,
+            "monthly_tokens_used": 765432,
+            "monthly_limit": 1000000
+        }
     })))
 }
 

@@ -775,7 +775,6 @@
 
             <!-- Custom file upload (hidden by default) -->
             <div class="form-group hidden" id="customFileSection">
-                <label class="form-label">Upload Data</label>
                 <div class="file-input-wrapper">
                     <input type="file" id="excelFile" class="file-input" accept=".xlsx,.xls,.csv" />
                     <div class="file-input-display" id="fileDisplay">
@@ -2818,7 +2817,7 @@ Keep the response structured and actionable for a data import workflow.`;
                     timestamp: new Date().toISOString(),
                     sheetName: sheetName
                 };
-                saveCacheToStorage(); // Persist to localStorage
+                saveCacheToStorage(aiInsightsCache, () => getCurrentCacheKey(fileSelect, selectedFile, selectedSheet)); // Persist to localStorage
                 
                 displayGeminiError(error.message, dataset.length, error.details);
                 
@@ -2864,7 +2863,7 @@ Keep the response structured and actionable for a data import workflow.`;
                 
                 let html = `
                     <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
-                        <strong>📊 Gemini Analysis:</strong> ${totalRecords} total records analyzed (${sampleSize} sample)
+                        <strong>📊 Gemini Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
                         ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px; cursor: pointer; text-decoration: underline;" onclick="showRawMarkdown(\'gemini\')">💾 Cached Gemini Analysis</span>' : ''}
                         ${isNewAnalysis ? '<span style="color: var(--accent-green); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
                     </div>
@@ -3016,14 +3015,14 @@ Keep the response structured and actionable for a data import workflow.`;
             
             let html = `
                 <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
-                    <strong>📊 Gemini Analysis:</strong> ${totalRecords} total records analyzed (${sampleSize} sample)
+                    <strong>📊 Gemini Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
                     ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">💾 Cached analysis</span>' : ''}
                     ${isNewAnalysis ? '<span style="color: var(--accent-green); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
                 </div>
                 ${saveButtonsHTML}
                 ${promptHTML}
                 <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
-                    <strong>📊 Dataset Overview:</strong> ${totalRecords} total records analyzed (${sampleSize} sample)
+                    <strong>📊 Dataset Overview:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
                     ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">💾 Cached analysis</span>' : ''}
                 </div>
             `;
@@ -3124,7 +3123,7 @@ Keep the response structured and actionable for a data import workflow.`;
             if (aiInsightsCache[cacheKey]) {
                 console.log('Clearing cache entry for retry');
                 delete aiInsightsCache[cacheKey];
-                saveCacheToStorage(); // Persist cache deletion
+                saveCacheToStorage(aiInsightsCache, () => getCurrentCacheKey(fileSelect, selectedFile, selectedSheet)); // Persist cache deletion
             }
             
             // Reset button states
@@ -3247,7 +3246,7 @@ Keep the response structured and actionable for a data import workflow.`;
                     timestamp: new Date().toISOString(),
                     sheetName: sheetName
                 };
-                saveClaudeCacheToStorage(); // Persist to localStorage
+                saveClaudeCacheToStorage(claudeInsightsCache, () => getCurrentCacheKey(fileSelect, selectedFile, selectedSheet)); // Persist to localStorage
                 
                 displayClaudeError(error.message, dataset.length);
                 
@@ -3399,7 +3398,7 @@ Please analyze this dataset according to the request above.`;
 
                 let html = `
                     <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
-                        <strong>🤖 Claude Analysis:</strong> ${totalRecords} total records analyzed (${sampleSize} sample)
+                        <strong>🤖 Claude Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
                         ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px; cursor: pointer; text-decoration: underline;" onclick="showRawMarkdown(\'claude\')">💾 Cached Claude Analysis</span>' : ''}
                         ${isNewAnalysis ? '<span style="color: var(--accent-blue); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
                     </div>
@@ -3451,7 +3450,7 @@ Please analyze this dataset according to the request above.`;
             
             let html = `
                 <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
-                    <strong>🤖 Claude Analysis:</strong> ${totalRecords} total records analyzed (${sampleSize} sample)
+                    <strong>🤖 Claude Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
                     ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">💾 Cached analysis</span>' : ''}
                     ${isNewAnalysis ? '<span style="color: var(--accent-blue); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
                 </div>
@@ -3488,7 +3487,7 @@ Please analyze this dataset according to the request above.`;
             // Clear cache for current file and retry
             const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             delete claudeInsightsCache[cacheKey];
-            saveClaudeCacheToStorage(); // Persist cache deletion
+            saveClaudeCacheToStorage(claudeInsightsCache, () => getCurrentCacheKey(fileSelect, selectedFile, selectedSheet)); // Persist cache deletion
             
             // Trigger new analysis
             requestClaudeInsights();
@@ -3932,7 +3931,7 @@ Please analyze this dataset according to the request above.`;
                 // Now it's safe to clear the old cache and save the new one
                 delete claudeInsightsCache[cacheKey]; // Remove old version
                 claudeInsightsCache[cacheKey] = pendingClaudeAnalysis; // Add new version
-                saveClaudeCacheToStorage();
+                saveClaudeCacheToStorage(claudeInsightsCache, () => getCurrentCacheKey(fileSelect, selectedFile, selectedSheet));
                 
                 // Clear pending analysis
                 pendingClaudeAnalysis = null;
@@ -4020,7 +4019,7 @@ Please analyze this dataset according to the request above.`;
                 // Now it's safe to clear the old cache and save the new one
                 delete aiInsightsCache[cacheKey]; // Remove old version
                 aiInsightsCache[cacheKey] = pendingGeminiAnalysis; // Add new version
-                saveCacheToStorage();
+                saveCacheToStorage(aiInsightsCache, () => getCurrentCacheKey(fileSelect, selectedFile, selectedSheet));
                 
                 // Clear pending analysis
                 pendingGeminiAnalysis = null;
