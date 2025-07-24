@@ -2430,7 +2430,7 @@
             }
         }
 
-        function displayCachedGeminiInsights(cacheKey) {
+        async function displayCachedGeminiInsights(cacheKey) {
             const geminiInsightsBtn = document.getElementById('geminiInsightsBtn');
             const geminiInsightsText = document.getElementById('geminiInsightsText');
             const geminiRefreshBtn = document.getElementById('geminiRefreshBtn');
@@ -2449,7 +2449,7 @@
             // Display cached insights
             if (cachedData.success) {
                 console.log('Displaying successful cached Gemini analysis');
-                displayGeminiInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize, false);
+                await displaySharedGeminiInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize, false, cachedData.customPrompt || 'Standard data analysis prompt');
                 
                 // Update button to show cached status
                 const geminiInsightsText = document.getElementById('geminiInsightsText');
@@ -2468,7 +2468,7 @@
             }, 5000);
         }
         
-        function displayCachedClaudeInsights(cacheKey) {
+        async function displayCachedClaudeInsights(cacheKey) {
             const claudeInsightsBtn = document.getElementById('claudeInsightsBtn');
             const claudeInsightsText = document.getElementById('claudeInsightsText');
             const claudeRefreshBtn = document.getElementById('claudeRefreshBtn');
@@ -2487,7 +2487,7 @@
             // Display cached insights
             if (cachedData.success) {
                 console.log('Displaying successful cached Claude analysis');
-                displayClaudeInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize);
+                await displaySharedClaudeInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize, false, cachedData.customPrompt || 'Standard data analysis prompt');
                 
                 // Update button to show cached status
                 claudeInsightsBtn.disabled = false;
@@ -2791,7 +2791,7 @@ Keep the response structured and actionable for a data import workflow.`;
                     };
                     
                     // Display with Save/Cancel buttons
-                    displayGeminiInsights(analysisWithTokens, dataset.length, sampleSize, true);
+                    await displaySharedGeminiInsights(analysisWithTokens, dataset.length, sampleSize, true, 'Standard data analysis prompt');
                     
                     // Update button to pending state
                     geminiInsightsBtn.disabled = false;
@@ -3220,7 +3220,7 @@ Keep the response structured and actionable for a data import workflow.`;
                     };
                     
                     // Display with Save/Cancel buttons
-                    displayClaudeInsights(analysisWithTokens, dataset.length, sampleSize, true);
+                    await displaySharedClaudeInsights(analysisWithTokens, dataset.length, sampleSize, true, 'Standard data analysis prompt');
                     
                     // Update button to pending state
                     claudeInsightsBtn.disabled = false;
@@ -3919,7 +3919,7 @@ Please analyze this dataset according to the request above.`;
 
 
         // Save/Cancel functions for Claude analysis
-        function saveClaudeAnalysis() {
+        async function saveClaudeAnalysis() {
             if (pendingClaudeAnalysis) {
                 const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Saving Claude analysis to cache with key:', cacheKey);
@@ -3937,7 +3937,7 @@ Please analyze this dataset according to the request above.`;
                 pendingClaudeAnalysis = null;
                 
                 // Re-display without Save/Cancel buttons
-                displayClaudeInsights(claudeInsightsCache[cacheKey].analysis, claudeInsightsCache[cacheKey].totalRecords, claudeInsightsCache[cacheKey].sampleSize, false);
+                await displaySharedClaudeInsights(claudeInsightsCache[cacheKey].analysis, claudeInsightsCache[cacheKey].totalRecords, claudeInsightsCache[cacheKey].sampleSize, false, claudeInsightsCache[cacheKey].customPrompt || 'Standard data analysis prompt');
                 
                 // Update button text
                 const claudeInsightsText = document.getElementById('claudeInsightsText');
@@ -3955,7 +3955,7 @@ Please analyze this dataset according to the request above.`;
             }
         }
 
-        function cancelClaudeAnalysis() {
+        async function cancelClaudeAnalysis() {
             if (pendingClaudeAnalysis) {
                 const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Canceling Claude analysis, reverting to cached version');
@@ -3980,11 +3980,12 @@ Please analyze this dataset according to the request above.`;
                     });
                     
                     // Display the cached analysis
-                    displayClaudeInsights(
+                    await displaySharedClaudeInsights(
                         claudeInsightsCache[cacheKey].analysis, 
                         claudeInsightsCache[cacheKey].totalRecords, 
                         claudeInsightsCache[cacheKey].sampleSize, 
-                        false // Not a new analysis
+                        false, // Not a new analysis
+                        claudeInsightsCache[cacheKey].customPrompt || 'Standard data analysis prompt'
                     );
                     
                     // Update button states to show cached status
@@ -4007,7 +4008,7 @@ Please analyze this dataset according to the request above.`;
         }
 
         // Save/Cancel functions for Gemini analysis
-        function saveGeminiAnalysis() {
+        async function saveGeminiAnalysis() {
             if (pendingGeminiAnalysis) {
                 const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Saving Gemini analysis to cache with key:', cacheKey);
@@ -4025,7 +4026,7 @@ Please analyze this dataset according to the request above.`;
                 pendingGeminiAnalysis = null;
                 
                 // Re-display without Save/Cancel buttons
-                displayGeminiInsights(aiInsightsCache[cacheKey].analysis, aiInsightsCache[cacheKey].totalRecords, aiInsightsCache[cacheKey].sampleSize, false);
+                await displaySharedGeminiInsights(aiInsightsCache[cacheKey].analysis, aiInsightsCache[cacheKey].totalRecords, aiInsightsCache[cacheKey].sampleSize, false, aiInsightsCache[cacheKey].customPrompt || 'Standard data analysis prompt');
                 
                 // Update button text
                 const geminiInsightsText = document.getElementById('geminiInsightsText');
@@ -4043,7 +4044,7 @@ Please analyze this dataset according to the request above.`;
             }
         }
 
-        function cancelGeminiAnalysis() {
+        async function cancelGeminiAnalysis() {
             if (pendingGeminiAnalysis) {
                 const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
                 console.log('Canceling Gemini analysis, reverting to cached version');
@@ -4068,11 +4069,12 @@ Please analyze this dataset according to the request above.`;
                     });
                     
                     // Display the cached analysis
-                    displayGeminiInsights(
+                    await displaySharedGeminiInsights(
                         aiInsightsCache[cacheKey].analysis, 
                         aiInsightsCache[cacheKey].totalRecords, 
                         aiInsightsCache[cacheKey].sampleSize, 
-                        false // Not a new analysis
+                        false, // Not a new analysis
+                        aiInsightsCache[cacheKey].customPrompt || 'Standard data analysis prompt'
                     );
                     
                     // Update button states to show cached status
@@ -4208,7 +4210,7 @@ ${JSON.stringify(sampleData, null, 2)}`;
                     };
                     
                     // Display with Save/Cancel buttons
-                    displayClaudeInsights(analysisWithTokens, dataset.length, sampleSize, true);
+                    await displaySharedClaudeInsights(analysisWithTokens, dataset.length, sampleSize, true, customPrompt);
                     
                     // Update button to pending state
                     claudeInsightsBtn.disabled = false;
@@ -4351,7 +4353,7 @@ ${JSON.stringify(sampleData, null, 2)}`;
                     };
                     
                     // Display with Save/Cancel buttons
-                    displayGeminiInsights(analysisWithTokens, dataset.length, sampleSize, true);
+                    await displaySharedGeminiInsights(analysisWithTokens, dataset.length, sampleSize, true, customPrompt);
                     
                     // Update button to pending state
                     geminiInsightsBtn.disabled = false;
@@ -4438,19 +4440,19 @@ ${JSON.stringify(sampleData, null, 2)}`;
         }
         
         // Show rendered markdown from cached analysis
-        function showRenderedMarkdown(aiType) {
+        async function showRenderedMarkdown(aiType) {
             const cacheKey = getCurrentCacheKey(fileSelect, selectedFile, selectedSheet);
             let cachedData;
             
             if (aiType === 'claude') {
                 cachedData = claudeInsightsCache[cacheKey];
                 if (cachedData && cachedData.success) {
-                    displayClaudeInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize);
+                    await displaySharedClaudeInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize, false, cachedData.customPrompt || 'Standard data analysis prompt');
                 }
             } else if (aiType === 'gemini') {
                 cachedData = aiInsightsCache[cacheKey];
                 if (cachedData && cachedData.success) {
-                    displayGeminiInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize);
+                    await displaySharedGeminiInsights(cachedData.analysis, cachedData.totalRecords, cachedData.sampleSize, false, cachedData.customPrompt || 'Standard data analysis prompt');
                 }
             }
         }
