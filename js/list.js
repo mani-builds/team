@@ -1263,6 +1263,160 @@ function formatUnifiedPreviewData(loadResult, sourceName) {
 }
 
 // =============================================================================
+// SHARED AI INSIGHTS FUNCTIONS
+// =============================================================================
+
+// Shared AI Insights Display Functions
+function createSaveButtons(aiType, isNewAnalysis) {
+    if (!isNewAnalysis) return '';
+    
+    const aiTypeCap = aiType.charAt(0).toUpperCase() + aiType.slice(1);
+    return `
+        <div class="save-cancel-buttons" style="display: flex; gap: 12px; margin-bottom: 16px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="cancel${aiTypeCap}Analysis()">Don't Save</button>
+            <button class="btn btn-primary" onclick="save${aiTypeCap}Analysis()">Save Changes</button>
+        </div>
+    `;
+}
+
+function createPromptSection(promptText, aiType) {
+    const borderColor = aiType === 'claude' ? 'var(--accent-blue)' : 'var(--accent-green)';
+    return `
+        <div class="insight-section" style="background: var(--bg-tertiary); padding: 12px; border-radius: var(--radius-md); margin-bottom: 16px; border-left: 4px solid ${borderColor};">
+            <strong>📝 Analysis Prompt:</strong> <span style="font-style: italic; color: var(--text-secondary);">${promptText}</span>
+        </div>
+    `;
+}
+
+function appendTokenUsage(analysis, tokenUsage) {
+    if (!tokenUsage) return analysis;
+    
+    const tokenInfo = `\n\n---\n**Token Usage**: ${tokenUsage.total_tokens || 'N/A'} tokens (${tokenUsage.prompt_tokens || 'N/A'} prompt, ${tokenUsage.completion_tokens || 'N/A'} completion)`;
+    return analysis + tokenInfo;
+}
+
+async function displaySharedGeminiInsights(analysis, totalRecords, sampleSize, isNewAnalysis = false, customPrompt = 'Standard data analysis prompt') {
+    const insightsContent = document.getElementById('insightsContent');
+    if (!insightsContent) return;
+    
+    const saveButtonsHTML = createSaveButtons('gemini', isNewAnalysis);
+    const promptHTML = createPromptSection(customPrompt, 'gemini');
+    
+    // Check if this is cached data
+    const isCached = !isNewAnalysis;
+    
+    try {
+        // Use markdown processing similar to admin page
+        const processedHTML = await processSharedMarkdownContent(analysis);
+        
+        let html = `
+            <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
+                <strong>📊 Gemini Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
+                ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px; cursor: pointer; text-decoration: underline;" onclick="showRawMarkdown(\'gemini\')">💾 Cached Gemini Analysis</span>' : ''}
+                ${isNewAnalysis ? '<span style="color: var(--accent-green); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
+            </div>
+            ${saveButtonsHTML}
+            ${promptHTML}
+            <div class="insight-section readme-content">
+                ${processedHTML}
+            </div>
+        `;
+        
+        insightsContent.innerHTML = html;
+        
+        // Apply markdown styling if available
+        if (typeof applyMarkdownStyling === 'function') {
+            applyMarkdownStyling(insightsContent);
+        }
+        
+    } catch (error) {
+        console.error('Error processing Gemini markdown:', error);
+        // Fallback to simple text display
+        insightsContent.innerHTML = `
+            <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
+                <strong>📊 Gemini Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
+                ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">💾 Cached analysis</span>' : ''}
+                ${isNewAnalysis ? '<span style="color: var(--accent-green); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
+            </div>
+            ${saveButtonsHTML}
+            ${promptHTML}
+            <div class="insight-section">
+                <pre style="white-space: pre-wrap; font-family: inherit;">${escapeHtml(analysis)}</pre>
+            </div>
+        `;
+    }
+}
+
+async function displaySharedClaudeInsights(analysis, totalRecords, sampleSize, isNewAnalysis = false, customPrompt = 'Standard data analysis prompt') {
+    const insightsContent = document.getElementById('insightsContent');
+    if (!insightsContent) return;
+    
+    const saveButtonsHTML = createSaveButtons('claude', isNewAnalysis);
+    const promptHTML = createPromptSection(customPrompt, 'claude');
+    
+    // Check if this is cached data
+    const isCached = !isNewAnalysis;
+    
+    try {
+        // Use markdown processing similar to admin page
+        const processedHTML = await processSharedMarkdownContent(analysis);
+        
+        let html = `
+            <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
+                <strong>🤖 Claude Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
+                ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px; cursor: pointer; text-decoration: underline;" onclick="showRawMarkdown(\'claude\')">💾 Cached Claude Analysis</span>' : ''}
+                ${isNewAnalysis ? '<span style="color: var(--accent-blue); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
+            </div>
+            ${saveButtonsHTML}
+            ${promptHTML}
+            <div class="insight-section readme-content">
+                ${processedHTML}
+            </div>
+        `;
+        
+        insightsContent.innerHTML = html;
+        
+        // Apply markdown styling if available
+        if (typeof applyMarkdownStyling === 'function') {
+            applyMarkdownStyling(insightsContent);
+        }
+        
+    } catch (error) {
+        console.error('Error processing Claude markdown:', error);
+        // Fallback to simple text display
+        insightsContent.innerHTML = `
+            <div class="insight-section" style="border-bottom: 1px solid var(--border-light); padding-bottom: 12px; margin-bottom: 16px;">
+                <strong>🤖 Claude Analysis:</strong> ${sampleSize} records analyzed from a dataset of ${totalRecords}
+                ${isCached ? '<span style="color: var(--text-muted); font-size: 12px; margin-left: 8px;">💾 Cached analysis</span>' : ''}
+                ${isNewAnalysis ? '<span style="color: var(--accent-blue); font-size: 12px; margin-left: 8px;">✨ New Analysis</span>' : ''}
+            </div>
+            ${saveButtonsHTML}
+            ${promptHTML}
+            <div class="insight-section">
+                <pre style="white-space: pre-wrap; font-family: inherit;">${escapeHtml(analysis)}</pre>
+            </div>
+        `;
+    }
+}
+
+// Helper function for markdown processing (fallback if not available)
+async function processSharedMarkdownContent(markdown) {
+    // Try to use displayFile's markdown processing if available
+    if (typeof processReadmeMarkdown === 'function') {
+        return await processReadmeMarkdown(markdown);
+    }
+    
+    // Fallback to basic HTML conversion
+    return markdown
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/\n/g, '<br>');
+}
+
+// =============================================================================
 // EXPORT FOR MODULE USAGE (if needed)
 // =============================================================================
 
@@ -1325,6 +1479,13 @@ if (typeof module !== 'undefined' && module.exports) {
         
         // Unified data loading
         loadUnifiedData,
-        formatUnifiedPreviewData
+        formatUnifiedPreviewData,
+        
+        // Shared AI insights functions
+        displaySharedGeminiInsights,
+        displaySharedClaudeInsights,
+        createSaveButtons,
+        createPromptSection,
+        appendTokenUsage
     };
 }
