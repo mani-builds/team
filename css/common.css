@@ -271,7 +271,7 @@ h2 {
 .gemini-icon {
     width: 24px;
     height: 24px;
-    background: var(--accent-blue);
+    background: linear-gradient(45deg, #4C1D95, #8B5CF6);
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
