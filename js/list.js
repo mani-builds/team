@@ -631,7 +631,11 @@ function getURLHashParam(paramName) {
         if (key && val !== undefined) {
             // Decode only the key, leave value as-is to preserve commas
             const decodedKey = decodeURIComponent(key);
-            const decodedVal = decodeURIComponent(val);
+            let decodedVal = decodeURIComponent(val);
+            
+            // Remove spaces that immediately follow commas in hash values
+            decodedVal = decodedVal.replace(/,\s+/g, ',');
+            
             params.set(decodedKey, decodedVal);
         }
     });

@@ -565,6 +565,97 @@
             font-size: 16px;
         }
         
+        /* Snapshots Control */
+        .snapshots-control {
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border: 1px solid var(--border-light);
+        }
+        
+        .snapshots-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .snapshots-header h4 {
+            margin: 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .snapshots-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .snapshots-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .snapshot-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: var(--bg-secondary);
+            border-radius: 4px;
+            border: 1px solid var(--border-light);
+        }
+        
+        .snapshot-name {
+            flex: 1;
+            padding: 4px 8px;
+            border: 1px solid transparent;
+            background: transparent;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .snapshot-name:hover {
+            background: var(--bg-hover);
+        }
+        
+        .snapshot-name.editing {
+            border-color: var(--border-focus);
+            background: var(--bg-primary);
+            cursor: text;
+        }
+        
+        .snapshot-save-btn {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--accent-green);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .snapshot-save-btn:hover {
+            background: var(--accent-green-dark);
+        }
+        
+        .add-snapshot {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .add-snapshot input {
+            flex: 1;
+        }
+        
         /* Group Participants Control */
         .group-control {
             margin-bottom: 20px;
@@ -1343,6 +1434,12 @@
                         <div class="menu-item" id="export-csv-menu">
                             <span>Export CSV</span>
                         </div>
+                        <div class="menu-item" id="full-url-toggle">
+                            <span>Full URL</span>
+                        </div>
+                        <div class="menu-item" id="snapshots-toggle">
+                            <span>Snapshots</span>
+                        </div>
                         <div class="menu-item" id="list-feeds-toggle">
                             <span>All Lists</span>
                         </div>
@@ -1367,6 +1464,23 @@
         <div class="card" id="participants-table-card" style="display: none;">
             <div style="margin-bottom: 20px;">
                 <h2 class="card-title" id="list-title" style="margin: 0;">📊 Participants List</h2>
+            </div>
+            
+            <!-- Snapshots Control -->
+            <div class="snapshots-control" id="snapshots-control" style="display: none;">
+                <div class="snapshots-header">
+                    <h4>Filter Snapshots</h4>
+                    <button class="btn btn-sm" id="close-snapshots">×</button>
+                </div>
+                <div class="snapshots-content">
+                    <div class="snapshots-list" id="snapshots-list">
+                        <!-- Snapshots will be populated here -->
+                    </div>
+                    <div class="add-snapshot">
+                        <input type="text" id="new-snapshot-name" class="form-control" placeholder="Enter snapshot name...">
+                        <button class="btn btn-primary" id="add-snapshot-btn">Add Snapshot</button>
+                    </div>
+                </div>
             </div>
             
             <!-- Group Participants Control -->
@@ -2112,10 +2226,19 @@ ${JSON.stringify(analysisData, null, 2)}`,
 
         // Note: parseCSV function is now available from js/list.js
         
+        // Helper function to get list-specific localStorage key
+        function getListStorageKey(baseKey) {
+            const listId = getURLHashParam('list') || 'default';
+            return `${listId}_1_${baseKey}`;
+        }
+        
         // Current view mode and filtering
         let currentView = getURLHashParam('display') || 'column'; // Always default to column if absent from hash
-        let currentTeamFilter = localStorage.getItem('participantsTeamFilter') || null;
+        let currentTeamFilter = getURLHashParam('team') || localStorage.getItem(getListStorageKey('participantsTeamFilter')) || null;
         let initialTeamLegendGenerated = false;
+        
+        // Flag to prevent group parameter processing during status updates
+        let isUpdatingStatus = false;
         
         // File selection state
         const STORAGE_KEY = 'listObject';
@@ -2126,9 +2249,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
         let isFullscreen = JSON.parse(localStorage.getItem('isFullscreen') || 'false');
         let isCondensed = JSON.parse(localStorage.getItem('isCondensed') || 'false');
         
-        // Sort functionality - check URL hash first, then localStorage
-        let currentSortColumn = getURLHashParam('sortby') || localStorage.getItem('participantsSortColumn') || 'Rows';
-        let currentSortOrder = getURLHashParam('sortorder') || localStorage.getItem('participantsSortOrder') || 'asc';
+        // Sort functionality - only use localStorage (not in URL hash anymore)
+        let currentSortColumn = localStorage.getItem(getListStorageKey('participantsSortColumn')) || 'Rows';
+        let currentSortOrder = localStorage.getItem(getListStorageKey('participantsSortOrder')) || 'asc';
         
         // Pagination functionality
         let currentPage = 1;
@@ -2137,11 +2260,11 @@ ${JSON.stringify(analysisData, null, 2)}`,
         let originalDataOrder = [];
         
         // Status filtering - check URL hash first, then localStorage
-        let selectedStatuses = new Set(getURLHashParam('status') ? getURLHashParam('status').split(',') : JSON.parse(localStorage.getItem('participantsStatusFilter') || '["All"]'));
+        let selectedStatuses = new Set(getURLHashParam('status') ? getURLHashParam('status').split(',') : JSON.parse(localStorage.getItem(getListStorageKey('participantsStatusFilter')) || '["All"]'));
         let availableStatuses = [];
         
         // Group participants toggle state
-        let showOnlyGroup = JSON.parse(localStorage.getItem('showOnlyGroup') || 'false');
+        let showOnlyGroup = JSON.parse(localStorage.getItem(getListStorageKey('showOnlyGroup')) || 'false');
         
         // Team color mapping
         const teamColors = {
@@ -2598,8 +2721,11 @@ ${JSON.stringify(analysisData, null, 2)}`,
             
             currentTeamFilter = teamClass;
             
+            // Clear active snapshot since filters changed manually
+            clearActiveSnapshot();
+            
             // Save team filter preference to localStorage
-            localStorage.setItem('participantsTeamFilter', teamClass);
+            localStorage.setItem(getListStorageKey('participantsTeamFilter'), teamClass);
             
             // Update legend active state
             document.querySelectorAll('.legend-item').forEach(item => {
@@ -2620,8 +2746,11 @@ ${JSON.stringify(analysisData, null, 2)}`,
         function clearTeamFilter() {
             currentTeamFilter = null;
             
+            // Clear active snapshot since filters changed manually
+            clearActiveSnapshot();
+            
             // Remove team filter preference from localStorage
-            localStorage.removeItem('participantsTeamFilter');
+            localStorage.removeItem(getListStorageKey('participantsTeamFilter'));
             
             // Update legend active state
             document.querySelectorAll('.legend-item').forEach(item => {
@@ -2733,19 +2862,15 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 currentSortOrder = 'asc';
             }
             
-            // Save sort preferences
-            localStorage.setItem('participantsSortColumn', currentSortColumn);
-            localStorage.setItem('participantsSortOrder', currentSortOrder);
+            // Clear active snapshot since sort changed manually
+            clearActiveSnapshot();
             
-            // Update URL hash parameters
-            if (currentSortColumn === 'Rows' && currentSortOrder === 'asc') {
-                // Remove hash parameters for default sort
-                setURLHashParam('sortby', null);
-                setURLHashParam('sortorder', null);
-            } else {
-                setURLHashParam('sortby', currentSortColumn);
-                setURLHashParam('sortorder', currentSortOrder);
-            }
+            // Save sort preferences
+            localStorage.setItem(getListStorageKey('participantsSortColumn'), currentSortColumn);
+            localStorage.setItem(getListStorageKey('participantsSortOrder'), currentSortOrder);
+            
+            // Note: sortby and sortorder are no longer automatically added to URL hash
+            // They are only included in the "Full URL" feature
             
             // Apply sort to data
             applySortToData();
@@ -2856,6 +2981,12 @@ ${JSON.stringify(analysisData, null, 2)}`,
         }
         
         function handleStatusChange(status, isChecked) {
+            // Clear active snapshot since filters changed manually
+            clearActiveSnapshot();
+            
+            // Set flag to prevent group parameter processing during status update
+            isUpdatingStatus = true;
+            
             if (status === 'All') {
                 if (isChecked) {
                     // Check all statuses
@@ -2885,7 +3016,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
             }
             
             // Save to localStorage
-            localStorage.setItem('participantsStatusFilter', JSON.stringify(Array.from(selectedStatuses)));
+            localStorage.setItem(getListStorageKey('participantsStatusFilter'), JSON.stringify(Array.from(selectedStatuses)));
             
             // Update URL hash parameter
             const statusArray = Array.from(selectedStatuses);
@@ -2901,6 +3032,11 @@ ${JSON.stringify(analysisData, null, 2)}`,
             
             // Apply filters
             applyAllFilters();
+            
+            // Clear the flag after a short delay to allow hash changes to settle
+            setTimeout(() => {
+                isUpdatingStatus = false;
+            }, 100);
         }
         
         function updateStatusButtonText() {
@@ -3056,6 +3192,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
         function switchView(viewType) {
             currentView = viewType;
             
+            // Clear active snapshot since view changed manually
+            clearActiveSnapshot();
+            
             // Save view preference to localStorage
             localStorage.setItem('participantsViewMode', viewType);
             
@@ -3098,7 +3237,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
         function loadGroupParticipants() {
             // Check URL hash parameter first, then fallback to localStorage
             const hashGroup = getURLHashParam('group');
-            const stored = localStorage.getItem('groupParticipants');
+            const stored = localStorage.getItem(getListStorageKey('groupParticipants'));
             const groupInput = document.getElementById('group');
             
             let groupString = '';
@@ -3132,7 +3271,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 // Auto-activate group filter if loaded from hash parameter
                 if (hashGroup) {
                     showOnlyGroup = true;
-                    localStorage.setItem('showOnlyGroup', 'true');
+                    localStorage.setItem(getListStorageKey('showOnlyGroup'), 'true');
                     updateGroupToggleUI();
                     console.log('🔄 Automatically activated group filter from hash parameter');
                 } else if (stored) {
@@ -3167,7 +3306,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
         
         function saveGroupParticipants() {
             const groupList = Array.from(groupParticipants).join(', ');
-            localStorage.setItem('groupParticipants', groupList);
+            localStorage.setItem(getListStorageKey('groupParticipants'), groupList);
             // Don't overwrite the input field value to preserve user's typing
             
             // Update visibility since we now have stored group participants
@@ -3208,6 +3347,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
         function processGroupInput() {
             const input = document.getElementById('group');
             const value = input.value;
+            
+            // Clear active snapshot since group participants changed manually
+            clearActiveSnapshot();
             
             // Parse names from input
             groupParticipants = new Set();
@@ -3310,18 +3452,14 @@ ${JSON.stringify(analysisData, null, 2)}`,
         function toggleGroupFilter() {
             showOnlyGroup = !showOnlyGroup;
             
-            // Save state to localStorage
-            localStorage.setItem('showOnlyGroup', JSON.stringify(showOnlyGroup));
+            // Clear active snapshot since filter changed manually
+            clearActiveSnapshot();
             
-            // If turning off the filter, clear the hash parameter
-            if (!showOnlyGroup) {
-                setURLHashParam('group', null);
-                console.log('🔄 Cleared group hash parameter - filter deactivated');
-            } else {
-                // If turning on the filter, update the hash parameter
-                updateGroupHashParam();
-                console.log('🔄 Updated group hash parameter - filter activated');
-            }
+            // Save state to localStorage
+            localStorage.setItem(getListStorageKey('showOnlyGroup'), JSON.stringify(showOnlyGroup));
+            
+            // Note: Group toggle button does not alter URL hash
+            // Hash is only updated when group participants are manually edited
             
             updateGroupToggleUI();
             
@@ -3352,7 +3490,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
                                 hashParams.toLowerCase().includes('list=modelteam');
             
             // Check if there are already stored group participants
-            const storedGroup = localStorage.getItem('groupParticipants');
+            const storedGroup = localStorage.getItem(getListStorageKey('groupParticipants'));
             const hasStoredGroup = storedGroup && storedGroup.trim() !== '';
             
             return hasTeamInUrl || hasStoredGroup;
@@ -3689,6 +3827,310 @@ ${JSON.stringify(analysisData, null, 2)}`,
             exportParticipantsCSV();
         }
         
+        // Snapshot functionality
+        let currentActiveSnapshot = null;
+        
+        function getSnapshotsStorageKey() {
+            const listId = getURLHashParam('list') || 'default';
+            return `${listId}_1_snapshots`;
+        }
+        
+        function loadSnapshots() {
+            const snapshots = JSON.parse(localStorage.getItem(getSnapshotsStorageKey()) || '{}');
+            return snapshots;
+        }
+        
+        function saveSnapshots(snapshots) {
+            localStorage.setItem(getSnapshotsStorageKey(), JSON.stringify(snapshots));
+        }
+        
+        function getCurrentFilterState() {
+            return {
+                sortColumn: currentSortColumn,
+                sortOrder: currentSortOrder,
+                teamFilter: currentTeamFilter,
+                displayMode: currentView,
+                statusFilter: Array.from(selectedStatuses),
+                groupParticipants: Array.from(groupParticipants),
+                showOnlyGroup: showOnlyGroup
+            };
+        }
+        
+        function applyFilterState(filterState) {
+            // Apply sort
+            currentSortColumn = filterState.sortColumn || 'Rows';
+            currentSortOrder = filterState.sortOrder || 'asc';
+            localStorage.setItem(getListStorageKey('participantsSortColumn'), currentSortColumn);
+            localStorage.setItem(getListStorageKey('participantsSortOrder'), currentSortOrder);
+            applySortToData();
+            generateSortDropdown();
+            
+            // Apply team filter
+            currentTeamFilter = filterState.teamFilter || null;
+            if (currentTeamFilter) {
+                localStorage.setItem(getListStorageKey('participantsTeamFilter'), currentTeamFilter);
+            } else {
+                localStorage.removeItem(getListStorageKey('participantsTeamFilter'));
+            }
+            
+            // Apply display mode
+            if (filterState.displayMode && filterState.displayMode !== currentView) {
+                switchView(filterState.displayMode);
+            }
+            
+            // Apply status filter
+            selectedStatuses = new Set(filterState.statusFilter || ['All']);
+            localStorage.setItem(getListStorageKey('participantsStatusFilter'), JSON.stringify(Array.from(selectedStatuses)));
+            updateStatusButtonText();
+            generateStatusDropdown();
+            
+            // Apply group participants
+            groupParticipants = new Set(filterState.groupParticipants || []);
+            showOnlyGroup = filterState.showOnlyGroup || false;
+            localStorage.setItem(getListStorageKey('showOnlyGroup'), JSON.stringify(showOnlyGroup));
+            
+            const groupInput = document.getElementById('group');
+            if (groupInput) {
+                groupInput.value = Array.from(groupParticipants).join(', ');
+            }
+            updateGroupCount();
+            updateGroupToggleUI();
+            
+            // Apply all filters
+            applyAllFilters();
+        }
+        
+        function saveSnapshot(name) {
+            const snapshots = loadSnapshots();
+            const filterState = getCurrentFilterState();
+            snapshots[name] = filterState;
+            saveSnapshots(snapshots);
+            renderSnapshotsList();
+        }
+        
+        function loadSnapshot(name) {
+            const snapshots = loadSnapshots();
+            if (snapshots[name]) {
+                currentActiveSnapshot = name;
+                applyFilterState(snapshots[name]);
+                updateListTitle();
+            }
+        }
+        
+        function deleteSnapshot(name) {
+            const snapshots = loadSnapshots();
+            delete snapshots[name];
+            saveSnapshots(snapshots);
+            if (currentActiveSnapshot === name) {
+                currentActiveSnapshot = null;
+                updateListTitle();
+            }
+            renderSnapshotsList();
+        }
+        
+        function renderSnapshotsList() {
+            const snapshots = loadSnapshots();
+            const snapshotsList = document.getElementById('snapshots-list');
+            
+            snapshotsList.innerHTML = '';
+            
+            Object.keys(snapshots).forEach(name => {
+                const snapshotItem = document.createElement('div');
+                snapshotItem.className = 'snapshot-item';
+                
+                snapshotItem.innerHTML = `
+                    <input type="text" class="snapshot-name" value="${name}" readonly>
+                    <button class="snapshot-save-btn" title="Save current filters">■</button>
+                `;
+                
+                const nameInput = snapshotItem.querySelector('.snapshot-name');
+                const saveBtn = snapshotItem.querySelector('.snapshot-save-btn');
+                
+                // Click snapshot name to load it
+                nameInput.addEventListener('click', () => {
+                    if (!nameInput.classList.contains('editing')) {
+                        loadSnapshot(name);
+                        toggleSnapshots();
+                    }
+                });
+                
+                // Double-click to edit name
+                nameInput.addEventListener('dblclick', () => {
+                    nameInput.classList.add('editing');
+                    nameInput.readOnly = false;
+                    nameInput.select();
+                });
+                
+                // Save name on blur or enter
+                nameInput.addEventListener('blur', () => saveSnapshotName(nameInput, name));
+                nameInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveSnapshotName(nameInput, name);
+                    }
+                });
+                
+                // Save button - save current filter state to this snapshot
+                saveBtn.addEventListener('click', () => {
+                    saveSnapshot(name);
+                    // Set as current active snapshot and update title
+                    currentActiveSnapshot = name;
+                    updateListTitle();
+                    alert(`Snapshot "${name}" updated with current filters and activated!`);
+                });
+                
+                snapshotsList.appendChild(snapshotItem);
+            });
+        }
+        
+        function saveSnapshotName(input, oldName) {
+            const newName = input.value.trim();
+            if (newName && newName !== oldName) {
+                const snapshots = loadSnapshots();
+                snapshots[newName] = snapshots[oldName];
+                delete snapshots[oldName];
+                saveSnapshots(snapshots);
+                
+                if (currentActiveSnapshot === oldName) {
+                    currentActiveSnapshot = newName;
+                    updateListTitle();
+                }
+                
+                renderSnapshotsList();
+            } else {
+                input.value = oldName;
+            }
+            input.classList.remove('editing');
+            input.readOnly = true;
+        }
+        
+        function toggleSnapshots() {
+            const snapshotsControl = document.getElementById('snapshots-control');
+            const isVisible = snapshotsControl.style.display === 'block';
+            
+            if (isVisible) {
+                snapshotsControl.style.display = 'none';
+            } else {
+                snapshotsControl.style.display = 'block';
+                renderSnapshotsList();
+            }
+            
+            // Close menu
+            document.getElementById('menu-toggle').classList.remove('active');
+            document.getElementById('menu-dropdown').classList.remove('active');
+        }
+        
+        function addNewSnapshot() {
+            const nameInput = document.getElementById('new-snapshot-name');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                alert('Please enter a snapshot name');
+                return;
+            }
+            
+            const snapshots = loadSnapshots();
+            if (snapshots[name]) {
+                if (!confirm(`Snapshot "${name}" already exists. Overwrite?`)) {
+                    return;
+                }
+            }
+            
+            saveSnapshot(name);
+            // Set as current active snapshot and update title
+            currentActiveSnapshot = name;
+            updateListTitle();
+            nameInput.value = '';
+            alert(`Snapshot "${name}" saved and activated!`);
+        }
+        
+        function updateListTitle() {
+            const listTitle = document.getElementById('list-title');
+            const baseTitle = listTitle.textContent.split(' - ')[0]; // Remove existing snapshot name
+            
+            if (currentActiveSnapshot) {
+                listTitle.textContent = `${baseTitle} - ${currentActiveSnapshot}`;
+            } else {
+                listTitle.textContent = baseTitle;
+            }
+        }
+        
+        function clearActiveSnapshot() {
+            if (currentActiveSnapshot) {
+                currentActiveSnapshot = null;
+                updateListTitle();
+                console.log('🔄 Cleared active snapshot due to manual filter change');
+            }
+        }
+        
+        function loadSnapshotOnPageLoad() {
+            const snapshots = loadSnapshots();
+            if (snapshots['1']) {
+                loadSnapshot('1');
+            }
+        }
+        
+        function generateFullURL() {
+            // Close menu first
+            document.getElementById('menu-toggle').classList.remove('active');
+            document.getElementById('menu-dropdown').classList.remove('active');
+            
+            // Start with current URL without hash
+            const baseUrl = window.location.origin + window.location.pathname + window.location.search;
+            const params = new URLSearchParams();
+            
+            // Add current hash parameters
+            const currentHash = window.location.hash.substring(1);
+            if (currentHash) {
+                const hashParams = new URLSearchParams(currentHash);
+                hashParams.forEach((value, key) => {
+                    params.set(key, value);
+                });
+            }
+            
+            // Add sort parameters from localStorage
+            if (currentSortColumn && currentSortColumn !== 'Rows') {
+                params.set('sortby', currentSortColumn);
+            }
+            if (currentSortOrder && currentSortOrder !== 'asc') {
+                params.set('sortorder', currentSortOrder);
+            }
+            
+            // Add team filter if active
+            if (currentTeamFilter) {
+                params.set('team', currentTeamFilter);
+            }
+            
+            // Add display mode if not default
+            if (currentView && currentView !== 'column') {
+                params.set('display', currentView);
+            }
+            
+            // Add status filter if not "All"
+            const statusArray = Array.from(selectedStatuses);
+            if (!statusArray.includes('All') && statusArray.length > 0) {
+                params.set('status', statusArray.join(','));
+            }
+            
+            // Add group participants if any
+            if (groupParticipants.size > 0) {
+                params.set('group', Array.from(groupParticipants).join(','));
+            }
+            
+            // Generate full URL
+            const fullUrl = params.toString() ? `${baseUrl}#${params.toString()}` : baseUrl;
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                // Show success message
+                alert('Full URL copied to clipboard!\n\nThe URL includes all current filters:\n- Sort settings\n- Team filter\n- Status filter\n- Group participants\n- Display mode');
+                console.log('📋 Full URL copied to clipboard:', fullUrl);
+            }).catch(err => {
+                // Fallback for older browsers
+                console.error('Failed to copy to clipboard:', err);
+                alert('Full URL:\n\n' + fullUrl + '\n\n(Please copy manually)');
+            });
+        }
+        
         function exportParticipantsCSV() {
             console.log('exportParticipantsCSV called');
             console.log('window.participantsData:', window.participantsData);
@@ -3960,16 +4402,16 @@ ${JSON.stringify(analysisData, null, 2)}`,
         function clearAllFilters() {
             // Clear team filter
             currentTeamFilter = null;
-            localStorage.removeItem('participantsTeamFilter');
+            localStorage.removeItem(getListStorageKey('participantsTeamFilter'));
             
             // Clear status filter - reset to "All"
             selectedStatuses.clear();
             selectedStatuses.add('All');
-            localStorage.setItem('participantsStatusFilter', JSON.stringify(['All']));
+            localStorage.setItem(getListStorageKey('participantsStatusFilter'), JSON.stringify(['All']));
             
             // Clear group participants filter
             showOnlyGroup = false;
-            localStorage.setItem('showOnlyGroup', 'false');
+            localStorage.setItem(getListStorageKey('showOnlyGroup'), 'false');
             const groupInput = document.getElementById('group');
             if (groupInput) {
                 groupInput.value = '';
@@ -3980,10 +4422,8 @@ ${JSON.stringify(analysisData, null, 2)}`,
             // Hide validation message
             hideGroupValidationMessage();
             
-            // Clear all URL hash parameters
+            // Clear URL hash parameters (sortby/sortorder are not in hash anymore)
             setURLHashParam('group', null);
-            setURLHashParam('sortby', null);
-            setURLHashParam('sortorder', null);
             setURLHashParam('status', null);
             
             // Reset team legend flag to allow regeneration
@@ -4555,6 +4995,12 @@ ${JSON.stringify(analysisData, null, 2)}`,
             
             // Listen for URL changes to handle group parameter changes
             window.addEventListener('hashchange', function() {
+                // Skip group parameter processing if we're currently updating status
+                if (isUpdatingStatus) {
+                    console.log('🔄 Skipping group parameter processing during status update');
+                    return;
+                }
+                
                 const groupParam = getURLHashParam('group');
                 const groupInput = document.getElementById('group');
                 const currentValue = groupInput.value.split(',').map(n => n.trim()).filter(n => n).join(',');
@@ -4575,11 +5021,12 @@ ${JSON.stringify(analysisData, null, 2)}`,
                         
                         // Automatically activate group filter when hash parameter is present
                         showOnlyGroup = true;
-                        localStorage.setItem('showOnlyGroup', 'true');
+                        localStorage.setItem(getListStorageKey('showOnlyGroup'), 'true');
                         updateGroupToggleUI();
                         console.log('🔄 Automatically activated group filter from hash change');
-                    } else if (currentValue !== '') {
-                        // Only clear the field if it currently has a value (hash parameter was actually removed)
+                    } else if (currentValue !== '' && !groupParam) {
+                        // Only clear the field if it currently has a value AND the hash parameter was explicitly removed
+                        // (not just missing due to a status change)
                         console.log('🔗 Group hash parameter removed, asking user about clearing cached names');
                         
                         const shouldClearCached = confirm('Group hash parameter was removed.\nAlso clear the cached names?');
@@ -4588,17 +5035,17 @@ ${JSON.stringify(analysisData, null, 2)}`,
                             // Clear everything including localStorage
                             groupInput.value = '';
                             groupParticipants = new Set();
-                            localStorage.removeItem('groupParticipants');
+                            localStorage.removeItem(getListStorageKey('groupParticipants'));
                             
                             // Deactivate group filter
                             showOnlyGroup = false;
-                            localStorage.setItem('showOnlyGroup', 'false');
+                            localStorage.setItem(getListStorageKey('showOnlyGroup'), 'false');
                             updateGroupToggleUI();
                             hideGroupValidationMessage();
                             console.log('🔄 Cleared field and cached names - hash parameter removed');
                         } else {
                             // Keep cached names, restore from localStorage
-                            const stored = localStorage.getItem('groupParticipants');
+                            const stored = localStorage.getItem(getListStorageKey('groupParticipants'));
                             if (stored && stored.trim()) {
                                 const formattedStored = stored.replace(/,/g, ', ');
                                 groupInput.value = formattedStored;
@@ -4608,7 +5055,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
                                 groupInput.value = '';
                                 groupParticipants = new Set();
                                 showOnlyGroup = false;
-                                localStorage.setItem('showOnlyGroup', 'false');
+                                localStorage.setItem(getListStorageKey('showOnlyGroup'), 'false');
                                 updateGroupToggleUI();
                             }
                         }
@@ -4624,26 +5071,24 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 }
             });
             
-            // Listen for URL changes to handle sort parameter changes
+            // Note: Sort parameters are no longer in URL hash, only in localStorage
+            
+            // Listen for URL changes to handle team parameter changes
             window.addEventListener('hashchange', function() {
-                const sortByParam = getURLHashParam('sortby');
-                const sortOrderParam = getURLHashParam('sortorder');
-                const newSortColumn = sortByParam || 'Rows';
-                const newSortOrder = sortOrderParam || 'asc';
-                
-                // Only update if the sort has actually changed to avoid infinite loops
-                if (currentSortColumn !== newSortColumn || currentSortOrder !== newSortOrder) {
-                    console.log('🔗 Sort parameters changed in URL hash:', { sortby: sortByParam, sortorder: sortOrderParam });
-                    currentSortColumn = newSortColumn;
-                    currentSortOrder = newSortOrder;
+                const teamParam = getURLHashParam('team');
+                if (teamParam !== currentTeamFilter) {
+                    console.log('🔗 Team parameter changed in URL hash:', teamParam);
+                    currentTeamFilter = teamParam;
                     
                     // Save to localStorage
-                    localStorage.setItem('participantsSortColumn', currentSortColumn);
-                    localStorage.setItem('participantsSortOrder', currentSortOrder);
+                    if (currentTeamFilter) {
+                        localStorage.setItem(getListStorageKey('participantsTeamFilter'), currentTeamFilter);
+                    } else {
+                        localStorage.removeItem(getListStorageKey('participantsTeamFilter'));
+                    }
                     
-                    // Apply sort and update UI
-                    applySortToData();
-                    generateSortDropdown();
+                    // Apply filters
+                    applyAllFilters();
                 }
             });
             
@@ -4659,7 +5104,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
                     selectedStatuses = new Set(newStatuses);
                     
                     // Save to localStorage
-                    localStorage.setItem('participantsStatusFilter', JSON.stringify(Array.from(selectedStatuses)));
+                    localStorage.setItem(getListStorageKey('participantsStatusFilter'), JSON.stringify(Array.from(selectedStatuses)));
                     
                     // Update UI
                     updateStatusButtonText();
@@ -4679,6 +5124,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
             setTimeout(() => {
                 console.log('🕐 Loading group participants after DOM is ready');
                 loadGroupParticipants();
+                
+                // Load snapshot 1 if it exists
+                loadSnapshotOnPageLoad();
             }, 100);
             
             // Check for list=all in URL hash to auto-load meta list
@@ -4705,6 +5153,19 @@ ${JSON.stringify(analysisData, null, 2)}`,
             document.getElementById('condensed-toggle').addEventListener('click', toggleCondensed);
             document.getElementById('raw-data-toggle').addEventListener('click', toggleRawData);
             document.getElementById('export-csv-menu').addEventListener('click', exportCSVFromMenu);
+            document.getElementById('full-url-toggle').addEventListener('click', generateFullURL);
+            document.getElementById('snapshots-toggle').addEventListener('click', toggleSnapshots);
+            
+            // Snapshots event listeners
+            document.getElementById('close-snapshots').addEventListener('click', () => {
+                document.getElementById('snapshots-control').style.display = 'none';
+            });
+            document.getElementById('add-snapshot-btn').addEventListener('click', addNewSnapshot);
+            document.getElementById('new-snapshot-name').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    addNewSnapshot();
+                }
+            });
             
             // Add event listeners for condensed view controls
             document.getElementById('filters-toggle').addEventListener('click', toggleFiltersDropdown);
@@ -4771,16 +5232,23 @@ ${JSON.stringify(analysisData, null, 2)}`,
             if (!resultsCount) return;
             
             totalRecords = filteredData.length;
+            const originalTotal = allParticipantsData ? allParticipantsData.length : totalRecords;
             const totalPages = Math.ceil(totalRecords / recordsPerPage);
             const startRecord = Math.min((currentPage - 1) * recordsPerPage + 1, totalRecords);
             const endRecord = Math.min(currentPage * recordsPerPage, totalRecords);
             
             if (totalRecords === 0) {
-                resultsCount.textContent = '0 results';
+                resultsCount.textContent = `0 results in ${originalTotal} total`;
             } else if (totalRecords <= recordsPerPage) {
-                resultsCount.textContent = `${totalRecords} result${totalRecords !== 1 ? 's' : ''} in ${totalRecords} total`;
+                if (totalRecords === originalTotal) {
+                    // No filtering applied
+                    resultsCount.textContent = `${totalRecords} result${totalRecords !== 1 ? 's' : ''}`;
+                } else {
+                    // Filtering applied
+                    resultsCount.textContent = `${totalRecords} result${totalRecords !== 1 ? 's' : ''} in ${originalTotal} total`;
+                }
             } else {
-                resultsCount.textContent = `${startRecord} to ${endRecord} results in ${totalRecords} total`;
+                resultsCount.textContent = `${startRecord} to ${endRecord} results in ${originalTotal} total`;
             }
             
             updatePaginationControls();
