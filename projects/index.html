@@ -2126,9 +2126,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
         let isFullscreen = JSON.parse(localStorage.getItem('isFullscreen') || 'false');
         let isCondensed = JSON.parse(localStorage.getItem('isCondensed') || 'false');
         
-        // Sort functionality
-        let currentSortColumn = localStorage.getItem('participantsSortColumn') || 'Rows';
-        let currentSortOrder = localStorage.getItem('participantsSortOrder') || 'asc';
+        // Sort functionality - check URL hash first, then localStorage
+        let currentSortColumn = getURLHashParam('sortby') || localStorage.getItem('participantsSortColumn') || 'Rows';
+        let currentSortOrder = getURLHashParam('sortorder') || localStorage.getItem('participantsSortOrder') || 'asc';
         
         // Pagination functionality
         let currentPage = 1;
@@ -2136,8 +2136,8 @@ ${JSON.stringify(analysisData, null, 2)}`,
         let totalRecords = 0;
         let originalDataOrder = [];
         
-        // Status filtering
-        let selectedStatuses = new Set(JSON.parse(localStorage.getItem('participantsStatusFilter') || '["All"]'));
+        // Status filtering - check URL hash first, then localStorage
+        let selectedStatuses = new Set(getURLHashParam('status') ? getURLHashParam('status').split(',') : JSON.parse(localStorage.getItem('participantsStatusFilter') || '["All"]'));
         let availableStatuses = [];
         
         // Group participants toggle state
@@ -2732,6 +2732,16 @@ ${JSON.stringify(analysisData, null, 2)}`,
             localStorage.setItem('participantsSortColumn', currentSortColumn);
             localStorage.setItem('participantsSortOrder', currentSortOrder);
             
+            // Update URL hash parameters
+            if (currentSortColumn === 'Rows' && currentSortOrder === 'asc') {
+                // Remove hash parameters for default sort
+                setURLHashParam('sortby', null);
+                setURLHashParam('sortorder', null);
+            } else {
+                setURLHashParam('sortby', currentSortColumn);
+                setURLHashParam('sortorder', currentSortOrder);
+            }
+            
             // Apply sort to data
             applySortToData();
             
@@ -2871,6 +2881,15 @@ ${JSON.stringify(analysisData, null, 2)}`,
             
             // Save to localStorage
             localStorage.setItem('participantsStatusFilter', JSON.stringify(Array.from(selectedStatuses)));
+            
+            // Update URL hash parameter
+            const statusArray = Array.from(selectedStatuses);
+            if (statusArray.includes('All') || statusArray.length === 0) {
+                // Remove hash parameter for default "All" status
+                setURLHashParam('status', null);
+            } else {
+                setURLHashParam('status', statusArray.join(','));
+            }
             
             // Update button text
             updateStatusButtonText();
@@ -3851,8 +3870,12 @@ ${JSON.stringify(analysisData, null, 2)}`,
             }
             groupParticipants = new Set();
             updateGroupCount();
-            // Clear URL hash parameter
+            
+            // Clear all URL hash parameters
             setURLHashParam('group', null);
+            setURLHashParam('sortby', null);
+            setURLHashParam('sortorder', null);
+            setURLHashParam('status', null);
             
             // Reset team legend flag to allow regeneration
             initialTeamLegendGenerated = false;
@@ -4458,6 +4481,52 @@ ${JSON.stringify(analysisData, null, 2)}`,
                     saveGroupParticipants();
                     
                     // Apply filters since group filter state changed
+                    applyAllFilters();
+                }
+            });
+            
+            // Listen for URL changes to handle sort parameter changes
+            window.addEventListener('hashchange', function() {
+                const sortByParam = getURLHashParam('sortby');
+                const sortOrderParam = getURLHashParam('sortorder');
+                const newSortColumn = sortByParam || 'Rows';
+                const newSortOrder = sortOrderParam || 'asc';
+                
+                // Only update if the sort has actually changed to avoid infinite loops
+                if (currentSortColumn !== newSortColumn || currentSortOrder !== newSortOrder) {
+                    console.log('🔗 Sort parameters changed in URL hash:', { sortby: sortByParam, sortorder: sortOrderParam });
+                    currentSortColumn = newSortColumn;
+                    currentSortOrder = newSortOrder;
+                    
+                    // Save to localStorage
+                    localStorage.setItem('participantsSortColumn', currentSortColumn);
+                    localStorage.setItem('participantsSortOrder', currentSortOrder);
+                    
+                    // Apply sort and update UI
+                    applySortToData();
+                    generateSortDropdown();
+                }
+            });
+            
+            // Listen for URL changes to handle status parameter changes
+            window.addEventListener('hashchange', function() {
+                const statusParam = getURLHashParam('status');
+                const newStatuses = statusParam ? statusParam.split(',') : ['All'];
+                const currentStatusArray = Array.from(selectedStatuses);
+                
+                // Only update if the status selection has actually changed to avoid infinite loops
+                if (JSON.stringify(currentStatusArray.sort()) !== JSON.stringify(newStatuses.sort())) {
+                    console.log('🔗 Status parameter changed in URL hash:', statusParam);
+                    selectedStatuses = new Set(newStatuses);
+                    
+                    // Save to localStorage
+                    localStorage.setItem('participantsStatusFilter', JSON.stringify(Array.from(selectedStatuses)));
+                    
+                    // Update UI
+                    updateStatusButtonText();
+                    generateStatusDropdown();
+                    
+                    // Apply filters
                     applyAllFilters();
                 }
             });
