@@ -565,8 +565,8 @@
             font-size: 16px;
         }
         
-        /* Present Participants Control */
-        .present-control {
+        /* Group Participants Control */
+        .group-control {
             margin-bottom: 20px;
             padding: 16px;
             background: var(--bg-tertiary);
@@ -574,62 +574,62 @@
             border: 1px solid var(--border-light);
         }
         
-        .present-input-group {
+        .group-input-group {
             display: flex;
             gap: 8px;
             margin-bottom: 8px;
         }
         
-        .present-input-group input {
+        .group-input-group input {
             flex: 1;
         }
         
-        #present {
+        #group {
             text-align: right;
             caret-color: var(--text-primary) !important;
             padding-right: 18px !important; /* Extra padding to ensure cursor visibility */
             box-sizing: border-box;
         }
         
-        #present:focus {
+        #group:focus {
             caret-color: var(--accent-blue) !important;
         }
         
-        #present-toggle {
+        #group-toggle {
             white-space: nowrap;
             min-width: 100px;
         }
         
-        #present-toggle.active {
+        #group-toggle.active {
             background: var(--accent-green);
             color: white;
             border-color: var(--accent-green);
         }
         
-        /* Present participant highlighting */
-        .participant-present {
+        /* Group participant highlighting */
+        .participant-group {
             border: 3px solid var(--accent-green) !important;
             box-shadow: 0 0 0 1px var(--accent-green) !important;
         }
         
-        .participant-present .participant-name {
+        .participant-group .participant-name {
             color: var(--accent-green) !important;
             font-weight: 700 !important;
         }
         
-        /* Keep gallery names white when present border is added */
-        .participant-present .gallery-name {
+        /* Keep gallery names white when group border is added */
+        .participant-group .gallery-name {
             color: white !important;
             font-weight: 700 !important;
         }
         
         /* Table row highlighting */
-        .participants-table tr.participant-present {
+        .participants-table tr.participant-group {
             background: rgba(16, 185, 129, 0.1) !important;
             border-left: 4px solid var(--accent-green) !important;
         }
         
-        .participants-table tr.participant-present td:first-child {
+        .participants-table tr.participant-group td:first-child {
             color: var(--accent-green) !important;
             font-weight: 600 !important;
         }
@@ -1369,17 +1369,17 @@
                 <h2 class="card-title" id="list-title" style="margin: 0;">📊 Participants List</h2>
             </div>
             
-            <!-- Present Participants Control -->
-            <div class="present-control" id="present-control">
-                <label class="form-label">Present Participants</label>
-                <div class="present-input-group">
-                    <input type="text" id="present" class="form-control" placeholder="Enter names separated by commas (e.g., Loren, Ivy, Gary)...">
-                    <button class="btn btn-secondary" id="present-toggle">
-                        <span id="present-toggle-text">Present</span>
-                        <span id="present-count">(0)</span>
+            <!-- Group Participants Control -->
+            <div class="group-control" id="group-control">
+                <label class="form-label">Group Participants</label>
+                <div class="group-input-group">
+                    <input type="text" id="group" class="form-control" placeholder="Enter names separated by commas (e.g., Loren, Ivy, Gary)...">
+                    <button class="btn btn-secondary" id="group-toggle">
+                        <span id="group-toggle-text">Group</span>
+                        <span id="group-count">(0)</span>
                     </button>
                 </div>
-                <small class="form-help">Type names and press comma or enter to highlight. Click "Present" to show only marked participants.</small>
+                <small class="form-help">Type names and press comma or enter to highlight. Click "Group" to show only marked participants.</small>
             </div>
             
             <!-- Raw Data Editor -->
@@ -2120,7 +2120,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
         // File selection state
         const STORAGE_KEY = 'listObject';
         let allParticipantsData = [];
-        let presentParticipants = new Set();
+        let groupParticipants = new Set();
         
         // Layout state
         let isFullscreen = JSON.parse(localStorage.getItem('isFullscreen') || 'false');
@@ -2140,8 +2140,8 @@ ${JSON.stringify(analysisData, null, 2)}`,
         let selectedStatuses = new Set(JSON.parse(localStorage.getItem('participantsStatusFilter') || '["All"]'));
         let availableStatuses = [];
         
-        // Present participants toggle state
-        let showOnlyPresent = JSON.parse(localStorage.getItem('showOnlyPresent') || 'false');
+        // Group participants toggle state
+        let showOnlyGroup = JSON.parse(localStorage.getItem('showOnlyGroup') || 'false');
         
         // Team color mapping
         const teamColors = {
@@ -2212,12 +2212,12 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 initialTeamLegendGenerated = true;
             }
             
-            // Load present participants from storage and apply highlighting
-            loadPresentParticipants();
-            updatePresentHighlighting();
+            // Load group participants from storage and apply highlighting
+            loadGroupParticipants();
+            updateGroupHighlighting();
             
-            // Update present participants panel visibility
-            updatePresentParticipantsVisibility();
+            // Update group participants panel visibility
+            updateGroupParticipantsVisibility();
             
             // Render will be handled by applyAllFilters after setTimeout
             
@@ -2229,10 +2229,10 @@ ${JSON.stringify(analysisData, null, 2)}`,
             // Update status button text
             updateStatusButtonText();
             
-            // Restore present toggle UI state
-            updatePresentToggleUI();
+            // Restore group toggle UI state
+            updateGroupToggleUI();
             
-            // Apply all saved filters (team + status + present)
+            // Apply all saved filters (team + status + group)
             console.log('displayParticipantsTable: Scheduling applyAllFilters with setTimeout...');
             setTimeout(() => {
                 console.log('displayParticipantsTable: setTimeout callback executing, calling applyAllFilters...');
@@ -2913,7 +2913,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 console.warn('⚠️ applyAllFilters called but allParticipantsData is empty or undefined');
                 console.log('🔍 Current state - selectedStatuses:', selectedStatuses);
                 console.log('🔍 Current state - currentTeamFilter:', currentTeamFilter);
-                console.log('🔍 Current state - showOnlyPresent:', showOnlyPresent);
+                console.log('🔍 Current state - showOnlyGroup:', showOnlyGroup);
                 return;
             }
             
@@ -2955,23 +2955,23 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 console.log('⏭️ Skipping team filter (no team selected)');
             }
             
-            // Apply present participants filter if active
-            if (showOnlyPresent) {
-                console.log('🔍 Applying present participants filter. Present participants:', Array.from(presentParticipants));
-                const beforePresentFilter = filteredData.length;
+            // Apply group participants filter if active
+            if (showOnlyGroup) {
+                console.log('🔍 Applying group participants filter. Group participants:', Array.from(groupParticipants));
+                const beforeGroupFilter = filteredData.length;
                 filteredData = filteredData.filter(participant => {
                     const name = getParticipantName(participant);
-                    const passes = Array.from(presentParticipants).some(presentName => 
-                        presentName.toLowerCase() === name.toLowerCase()
+                    const passes = Array.from(groupParticipants).some(groupName => 
+                        groupName.toLowerCase() === name.toLowerCase()
                     );
                     if (!passes) {
-                        console.log('❌ Participant filtered out by present status:', name);
+                        console.log('❌ Participant filtered out by group status:', name);
                     }
                     return passes;
                 });
-                console.log('📊 Present filter result:', beforePresentFilter, '→', filteredData.length);
+                console.log('📊 Group filter result:', beforeGroupFilter, '→', filteredData.length);
             } else {
-                console.log('⏭️ Skipping present participants filter (not active)');
+                console.log('⏭️ Skipping group participants filter (not active)');
             }
             
             // Update results count with pagination
@@ -3013,15 +3013,15 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 console.error('Stack trace:', error.stack);
             }
             
-            // Reapply present highlighting
-            console.log('⏰ Scheduling present highlighting update in 100ms...');
+            // Reapply group highlighting
+            console.log('⏰ Scheduling group highlighting update in 100ms...');
             setTimeout(() => {
-                console.log('🎨 Executing present highlighting update...');
+                console.log('🎨 Executing group highlighting update...');
                 try {
-                    updatePresentHighlighting();
-                    console.log('✅ Present highlighting updated successfully');
+                    updateGroupHighlighting();
+                    console.log('✅ Group highlighting updated successfully');
                 } catch (error) {
-                    console.error('❌ Error updating present highlighting:', error);
+                    console.error('❌ Error updating group highlighting:', error);
                 }
             }, 100);
             
@@ -3059,8 +3059,8 @@ ${JSON.stringify(analysisData, null, 2)}`,
             // Update button states for condensed view
             updateCondensedViewButtons();
             
-            // Apply present highlighting after view switch
-            setTimeout(() => updatePresentHighlighting(), 100);
+            // Apply group highlighting after view switch
+            setTimeout(() => updateGroupHighlighting(), 100);
             
             // If switching to gallery view and there's a saved team filter, restore it
             if (viewType === 'gallery' && currentTeamFilter && allParticipantsData.length > 0) {
@@ -3070,99 +3070,146 @@ ${JSON.stringify(analysisData, null, 2)}`,
             }
         }
         
-        // Present participants functionality
-        function loadPresentParticipants() {
-            const stored = localStorage.getItem('presentParticipants');
-            if (stored) {
-                // Only populate the field if it's currently empty (page load scenario)
-                const presentInput = document.getElementById('present');
-                if (!presentInput.value.trim()) {
-                    presentInput.value = stored;
-                    // Scroll to the right to show the end of the text
-                    setTimeout(() => scrollPresentInputToRight(), 100);
-                }
-                presentParticipants = new Set(stored.split(',').map(name => name.trim()).filter(name => name));
+        // Group participants functionality
+        function loadGroupParticipants() {
+            // Check URL hash parameter first, then fallback to localStorage
+            const hashGroup = getURLHashParam('group');
+            const stored = localStorage.getItem('groupParticipants');
+            const groupInput = document.getElementById('group');
+            
+            let groupString = '';
+            if (hashGroup) {
+                // URL hash parameter takes priority
+                groupString = hashGroup;
+                console.log('🔗 Loading group participants from URL hash:', hashGroup);
+            } else if (stored) {
+                // Fallback to localStorage
+                groupString = stored;
+                console.log('💾 Loading group participants from localStorage:', stored);
             }
-            updatePresentCount();
+            
+            if (groupString && groupInput) {
+                // Only populate the field if it's currently empty (page load scenario)
+                if (!groupInput.value.trim()) {
+                    groupInput.value = groupString;
+                    console.log('✅ Populated group input field with:', groupString);
+                    // Scroll to the right to show the end of the text
+                    setTimeout(() => scrollGroupInputToRight(), 100);
+                }
+                groupParticipants = new Set(groupString.split(',').map(name => name.trim()).filter(name => name));
+                
+                // If loaded from hash parameter, automatically activate the group filter
+                if (hashGroup) {
+                    showOnlyGroup = true;
+                    localStorage.setItem('showOnlyGroup', 'true');
+                    updateGroupToggleUI();
+                    console.log('🔄 Automatically activated group filter from hash parameter');
+                }
+            } else if (groupString && !groupInput) {
+                console.log('⚠️ Group string found but input element not available:', groupString);
+            }
+            updateGroupCount();
         }
         
-        function scrollPresentInputToRight() {
-            const presentInput = document.getElementById('present');
-            presentInput.scrollLeft = presentInput.scrollWidth - presentInput.clientWidth;
+        function scrollGroupInputToRight() {
+            const groupInput = document.getElementById('group');
+            groupInput.scrollLeft = groupInput.scrollWidth - groupInput.clientWidth;
         }
         
-        function savePresentParticipants() {
-            const presentList = Array.from(presentParticipants).join(', ');
-            localStorage.setItem('presentParticipants', presentList);
+        function saveGroupParticipants() {
+            const groupList = Array.from(groupParticipants).join(', ');
+            localStorage.setItem('groupParticipants', groupList);
             // Don't overwrite the input field value to preserve user's typing
             
-            // Update visibility since we now have stored present participants
-            updatePresentParticipantsVisibility();
+            // Update visibility since we now have stored group participants
+            updateGroupParticipantsVisibility();
         }
         
-        function updatePresentCount() {
-            const count = presentParticipants.size;
-            document.getElementById('present-count').textContent = `(${count})`;
+        function updateGroupHashParam() {
+            const groupList = Array.from(groupParticipants).join(',');
+            if (groupList.trim()) {
+                setURLHashParam('group', groupList);
+            } else {
+                setURLHashParam('group', null); // Remove parameter if empty
+            }
         }
         
-        function updatePresentHighlighting() {
+        function updateGroupCount() {
+            const count = groupParticipants.size;
+            document.getElementById('group-count').textContent = `(${count})`;
+        }
+        
+        function updateGroupHighlighting() {
             // Remove existing highlighting
-            document.querySelectorAll('.participant-present').forEach(el => {
-                el.classList.remove('participant-present');
+            document.querySelectorAll('.participant-group').forEach(el => {
+                el.classList.remove('participant-group');
             });
             
-            // Apply highlighting to present participants
-            presentParticipants.forEach(name => {
+            // Apply highlighting to group participants
+            groupParticipants.forEach(name => {
                 const elements = document.querySelectorAll(`[data-participant-name]`);
                 elements.forEach(el => {
                     if (el.dataset.participantName.toLowerCase() === name.toLowerCase()) {
-                        el.classList.add('participant-present');
+                        el.classList.add('participant-group');
                     }
                 });
             });
         }
         
-        function processPresentInput() {
-            const input = document.getElementById('present');
+        function processGroupInput() {
+            const input = document.getElementById('group');
             const value = input.value;
             
             // Parse names from input
-            presentParticipants = new Set();
+            groupParticipants = new Set();
             value.split(',').forEach(name => {
                 const trimmed = name.trim();
                 if (trimmed) {
-                    presentParticipants.add(trimmed);
+                    groupParticipants.add(trimmed);
                 }
             });
             
-            // Save to storage
-            savePresentParticipants();
-            updatePresentCount();
-            updatePresentHighlighting();
+            // Save to storage and update URL hash
+            saveGroupParticipants();
+            updateGroupCount();
+            updateGroupHighlighting();
             
-            // If present filter is active, refresh the list to show/hide participants
-            if (showOnlyPresent) {
+            // Update URL hash parameter
+            updateGroupHashParam();
+            
+            // If group filter is active, refresh the list to show/hide participants
+            if (showOnlyGroup) {
                 applyAllFilters();
             }
         }
         
-        function togglePresentFilter() {
-            showOnlyPresent = !showOnlyPresent;
+        function toggleGroupFilter() {
+            showOnlyGroup = !showOnlyGroup;
             
             // Save state to localStorage
-            localStorage.setItem('showOnlyPresent', JSON.stringify(showOnlyPresent));
+            localStorage.setItem('showOnlyGroup', JSON.stringify(showOnlyGroup));
             
-            updatePresentToggleUI();
+            // If turning off the filter, clear the hash parameter
+            if (!showOnlyGroup) {
+                setURLHashParam('group', null);
+                console.log('🔄 Cleared group hash parameter - filter deactivated');
+            } else {
+                // If turning on the filter, update the hash parameter
+                updateGroupHashParam();
+                console.log('🔄 Updated group hash parameter - filter activated');
+            }
             
-            // Apply all filters (includes present participant filtering)
+            updateGroupToggleUI();
+            
+            // Apply all filters (includes group participant filtering)
             applyAllFilters();
         }
         
-        function updatePresentToggleUI() {
-            const toggle = document.getElementById('present-toggle');
-            const toggleText = document.getElementById('present-toggle-text');
+        function updateGroupToggleUI() {
+            const toggle = document.getElementById('group-toggle');
+            const toggleText = document.getElementById('group-toggle-text');
             
-            if (showOnlyPresent) {
+            if (showOnlyGroup) {
                 toggle.classList.add('active');
                 toggleText.textContent = 'All';
             } else {
@@ -3171,7 +3218,7 @@ ${JSON.stringify(analysisData, null, 2)}`,
             }
         }
         
-        function shouldShowPresentParticipants() {
+        function shouldShowGroupParticipants() {
             // Check if URL contains #list=team or any variant with "team"
             const urlParams = new URLSearchParams(window.location.search);
             const listParam = urlParams.get('list');
@@ -3180,20 +3227,20 @@ ${JSON.stringify(analysisData, null, 2)}`,
                                 hashParams.toLowerCase().includes('list=team') ||
                                 hashParams.toLowerCase().includes('list=modelteam');
             
-            // Check if there are already stored present participants
-            const storedPresent = localStorage.getItem('presentParticipants');
-            const hasStoredPresent = storedPresent && storedPresent.trim() !== '';
+            // Check if there are already stored group participants
+            const storedGroup = localStorage.getItem('groupParticipants');
+            const hasStoredGroup = storedGroup && storedGroup.trim() !== '';
             
-            return hasTeamInUrl || hasStoredPresent;
+            return hasTeamInUrl || hasStoredGroup;
         }
         
-        function updatePresentParticipantsVisibility() {
-            const presentControl = document.getElementById('present-control');
-            if (presentControl) {
-                if (shouldShowPresentParticipants()) {
-                    presentControl.style.display = 'block';
+        function updateGroupParticipantsVisibility() {
+            const groupControl = document.getElementById('group-control');
+            if (groupControl) {
+                if (shouldShowGroupParticipants()) {
+                    groupControl.style.display = 'block';
                 } else {
-                    presentControl.style.display = 'none';
+                    groupControl.style.display = 'none';
                 }
             }
         }
@@ -3566,15 +3613,15 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 filename = `meetup-participants-${statusList.join('-')}-${dateString}.csv`;
             }
             
-            // If showing only present participants, export only those
-            if (showOnlyPresent) {
+            // If showing only group participants, export only those
+            if (showOnlyGroup) {
                 dataToExport = dataToExport.filter(participant => {
                     const name = getParticipantName(participant);
-                    return Array.from(presentParticipants).some(presentName => 
-                        presentName.toLowerCase() === name.toLowerCase()
+                    return Array.from(groupParticipants).some(groupName => 
+                        groupName.toLowerCase() === name.toLowerCase()
                     );
                 });
-                filename = `meetup-participants-present-${dateString}.csv`;
+                filename = `meetup-participants-group-${dateString}.csv`;
             }
             
             if (dataToExport.length === 0) {
@@ -3658,9 +3705,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
             }
         });
         
-        // Present participants event listeners
-        const presentInput = document.getElementById('present');
-        presentInput.addEventListener('input', function(e) {
+        // Group participants event listeners
+        const groupInput = document.getElementById('group');
+        groupInput.addEventListener('input', function(e) {
             const value = e.target.value;
             // Process input when comma is typed, but preserve the comma
             if (value.endsWith(',')) {
@@ -3670,35 +3717,38 @@ ${JSON.stringify(analysisData, null, 2)}`,
                     // Process the names before the comma
                     const names = beforeComma.split(',').map(name => name.trim()).filter(name => name);
                     names.forEach(name => {
-                        if (name) presentParticipants.add(name);
+                        if (name) groupParticipants.add(name);
                     });
                     
                     // Save to storage and update highlighting
-                    savePresentParticipants();
-                    updatePresentCount();
-                    updatePresentHighlighting();
+                    saveGroupParticipants();
+                    updateGroupCount();
+                    updateGroupHighlighting();
+                    
+                    // Update URL hash parameter
+                    updateGroupHashParam();
                 }
             }
         });
         
-        presentInput.addEventListener('keydown', function(e) {
+        groupInput.addEventListener('keydown', function(e) {
             // Process input when Enter is pressed
             if (e.key === 'Enter') {
                 e.preventDefault();
-                processPresentInput();
+                processGroupInput();
             }
         });
         
-        presentInput.addEventListener('blur', function() {
+        groupInput.addEventListener('blur', function() {
             // Process input when field loses focus
-            processPresentInput();
+            processGroupInput();
             // Only scroll to the right if already near the right edge
-            if (presentInput.scrollLeft >= presentInput.scrollWidth - presentInput.clientWidth - 10) {
-                setTimeout(() => scrollPresentInputToRight(), 10); // Very fast, 10th of 10th
+            if (groupInput.scrollLeft >= groupInput.scrollWidth - groupInput.clientWidth - 10) {
+                setTimeout(() => scrollGroupInputToRight(), 10); // Very fast, 10th of 10th
             }
         });
         
-        document.getElementById('present-toggle').addEventListener('click', togglePresentFilter);
+        document.getElementById('group-toggle').addEventListener('click', toggleGroupFilter);
         
         // Raw data event listeners
         document.getElementById('apply-raw-data').addEventListener('click', applyRawDataChanges);
@@ -3790,13 +3840,17 @@ ${JSON.stringify(analysisData, null, 2)}`,
             selectedStatuses.add('All');
             localStorage.setItem('participantsStatusFilter', JSON.stringify(['All']));
             
-            // Clear present participants filter
-            showOnlyPresent = false;
-            localStorage.setItem('showOnlyPresent', 'false');
-            const presentInput = document.getElementById('present');
-            if (presentInput) {
-                presentInput.value = '';
+            // Clear group participants filter
+            showOnlyGroup = false;
+            localStorage.setItem('showOnlyGroup', 'false');
+            const groupInput = document.getElementById('group');
+            if (groupInput) {
+                groupInput.value = '';
             }
+            groupParticipants = new Set();
+            updateGroupCount();
+            // Clear URL hash parameter
+            setURLHashParam('group', null);
             
             // Reset team legend flag to allow regeneration
             initialTeamLegendGenerated = false;
@@ -4305,14 +4359,17 @@ ${JSON.stringify(analysisData, null, 2)}`,
             // Initialize condensed view buttons
             updateCondensedViewButtons();
             
-            // Check and update present participants panel visibility on page load
-            updatePresentParticipantsVisibility();
+            // Load group participants from URL hash or localStorage on page load
+            loadGroupParticipants();
+            
+            // Check and update group participants panel visibility on page load
+            updateGroupParticipantsVisibility();
             
             // Set initial header visibility based on current hash
             updateHeaderVisibility();
             
             // Listen for URL changes to update visibility
-            window.addEventListener('hashchange', updatePresentParticipantsVisibility);
+            window.addEventListener('hashchange', updateGroupParticipantsVisibility);
             
             // Listen for URL changes to handle list parameter changes
             window.addEventListener('hashchange', function() {
@@ -4360,6 +4417,44 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 const displayParam = getURLHashParam('display') || 'column'; // Default to column if absent
                 if (['column', 'table', 'gallery'].includes(displayParam) && displayParam !== currentView) {
                     switchView(displayParam);
+                }
+            });
+            
+            // Listen for URL changes to handle group parameter changes
+            window.addEventListener('hashchange', function() {
+                const groupParam = getURLHashParam('group');
+                const groupInput = document.getElementById('group');
+                const currentValue = groupInput.value.split(',').map(n => n.trim()).filter(n => n).join(',');
+                const newValue = groupParam ? groupParam.split(',').map(n => n.trim()).filter(n => n).join(',') : '';
+                
+                // Only update if the value has actually changed to avoid infinite loops
+                if (currentValue !== newValue) {
+                    console.log('🔗 Group parameter changed in URL hash:', groupParam);
+                    if (groupParam) {
+                        groupInput.value = groupParam;
+                        groupParticipants = new Set(groupParam.split(',').map(name => name.trim()).filter(name => name));
+                        
+                        // Automatically activate group filter when hash parameter is present
+                        showOnlyGroup = true;
+                        localStorage.setItem('showOnlyGroup', 'true');
+                        updateGroupToggleUI();
+                        console.log('🔄 Automatically activated group filter from hash change');
+                    } else {
+                        groupInput.value = '';
+                        groupParticipants = new Set();
+                        
+                        // Optionally deactivate group filter when hash parameter is removed
+                        showOnlyGroup = false;
+                        localStorage.setItem('showOnlyGroup', 'false');
+                        updateGroupToggleUI();
+                        console.log('🔄 Deactivated group filter - hash parameter removed');
+                    }
+                    updateGroupCount();
+                    updateGroupHighlighting();
+                    saveGroupParticipants();
+                    
+                    // Apply filters since group filter state changed
+                    applyAllFilters();
                 }
             });
             

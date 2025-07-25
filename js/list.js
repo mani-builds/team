@@ -620,20 +620,56 @@ function formatTimestamp(timestamp) {
 // =============================================================================
 
 function getURLHashParam(paramName) {
-    const urlParams = new URLSearchParams(window.location.hash.substring(1));
-    return urlParams.get(paramName);
+    const hash = window.location.hash.substring(1);
+    
+    if (!hash) return null;
+    
+    // Parse hash manually to avoid URLSearchParams encoding
+    const params = new Map();
+    hash.split('&').forEach(pair => {
+        const [key, val] = pair.split('=');
+        if (key && val !== undefined) {
+            // Decode only the key, leave value as-is to preserve commas
+            const decodedKey = decodeURIComponent(key);
+            const decodedVal = decodeURIComponent(val);
+            params.set(decodedKey, decodedVal);
+        }
+    });
+    
+    return params.get(paramName) || null;
 }
 
 function setURLHashParam(paramName, value) {
-    const urlParams = new URLSearchParams(window.location.hash.substring(1));
-    if (value) {
-        urlParams.set(paramName, value);
-    } else {
-        urlParams.delete(paramName);
+    const hash = window.location.hash.substring(1);
+    const params = new Map();
+    
+    // Parse existing parameters manually
+    if (hash) {
+        hash.split('&').forEach(pair => {
+            const [key, val] = pair.split('=');
+            if (key && val !== undefined) {
+                params.set(decodeURIComponent(key), decodeURIComponent(val));
+            }
+        });
     }
     
-    // Update the URL without triggering a page reload
-    const newHash = urlParams.toString();
+    // Update or remove the parameter
+    if (value) {
+        params.set(paramName, value);
+    } else {
+        params.delete(paramName);
+    }
+    
+    // Build new hash string manually without encoding commas
+    const hashPairs = [];
+    params.forEach((val, key) => {
+        // Only encode the key and special characters in value, but preserve commas
+        const encodedKey = encodeURIComponent(key);
+        const encodedValue = val.replace(/[&=]/g, match => encodeURIComponent(match));
+        hashPairs.push(`${encodedKey}=${encodedValue}`);
+    });
+    
+    const newHash = hashPairs.join('&');
     window.location.hash = newHash ? `#${newHash}` : '';
 }
 

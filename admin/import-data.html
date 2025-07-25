@@ -4532,9 +4532,8 @@ ${JSON.stringify(sampleData, null, 2)}`;
             // Add "All Lists" option after dynamic options are loaded
             addAllListsOption();
             
-            // Check for hash parameters
-            const urlParams = new URLSearchParams(window.location.hash.substring(1));
-            const mode = urlParams.get('m');
+            // Check for hash parameters (use manual parsing to avoid comma encoding)
+            const mode = getURLHashParam('m');
             const listParam = getURLHashParam('list');
             
             // If there's a list parameter, try to select it
