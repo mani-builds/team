@@ -697,6 +697,22 @@
             border-color: var(--accent-green);
         }
         
+        #group-toggle-text[contenteditable="true"] {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            padding: 2px 4px;
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 1px;
+        }
+        
+        #group-toggle-text {
+            cursor: pointer;
+        }
+        
+        #group-toggle-text:hover {
+            text-decoration: underline;
+        }
+        
         /* Group participant highlighting */
         .participant-group {
             border: 3px solid var(--accent-green) !important;
@@ -3268,12 +3284,18 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 // Validate names from any source (hash or localStorage)
                 validateGroupNames(parsedNames);
                 
-                // Auto-activate group filter if loaded from hash parameter
+                // When loading from hash parameter, respect the user's cached toggle preference
                 if (hashGroup) {
-                    showOnlyGroup = true;
-                    localStorage.setItem(getListStorageKey('showOnlyGroup'), 'true');
+                    // Only auto-activate if the user's last choice was to show the group filter
+                    // Otherwise, populate the field but respect their preference to show all
+                    if (showOnlyGroup) {
+                        // User's cached preference is to show group filter, so update hash
+                        updateGroupHashParam();
+                        console.log('🔄 Hash parameter loaded, group filter active per user preference');
+                    } else {
+                        console.log('🔄 Hash parameter loaded, but group filter inactive per user preference');
+                    }
                     updateGroupToggleUI();
-                    console.log('🔄 Automatically activated group filter from hash parameter');
                 } else if (stored) {
                     // When loading from localStorage, check if the group filter was previously active
                     // and restore that state (showOnlyGroup is already loaded from localStorage at startup)
@@ -3471,12 +3493,16 @@ ${JSON.stringify(analysisData, null, 2)}`,
             const toggle = document.getElementById('group-toggle');
             const toggleText = document.getElementById('group-toggle-text');
             
+            // Get cached text choices or use defaults
+            const cachedActiveText = localStorage.getItem(getListStorageKey('groupToggleActiveText')) || 'All';
+            const cachedInactiveText = localStorage.getItem(getListStorageKey('groupToggleInactiveText')) || 'Present';
+            
             if (showOnlyGroup) {
                 toggle.classList.add('active');
-                toggleText.textContent = 'All';
+                toggleText.textContent = cachedActiveText;
             } else {
                 toggle.classList.remove('active');
-                toggleText.textContent = 'Present';
+                toggleText.textContent = cachedInactiveText;
             }
         }
         
@@ -4319,6 +4345,56 @@ ${JSON.stringify(analysisData, null, 2)}`,
         
         document.getElementById('group-toggle').addEventListener('click', toggleGroupFilter);
         
+        // Group toggle text editing functionality
+        const groupToggleText = document.getElementById('group-toggle-text');
+        
+        // Make toggle text editable on double-click
+        groupToggleText.addEventListener('dblclick', function() {
+            const currentText = this.textContent;
+            this.contentEditable = true;
+            this.focus();
+            
+            // Select all text for easy editing
+            const range = document.createRange();
+            range.selectNodeContents(this);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        });
+        
+        // Save changes when editing is complete
+        groupToggleText.addEventListener('blur', function() {
+            this.contentEditable = false;
+            const newText = this.textContent.trim();
+            
+            if (newText) {
+                // Save the new text based on current toggle state
+                if (showOnlyGroup) {
+                    localStorage.setItem(getListStorageKey('groupToggleActiveText'), newText);
+                } else {
+                    localStorage.setItem(getListStorageKey('groupToggleInactiveText'), newText);
+                }
+                console.log(`💾 Saved group toggle text: "${newText}" for ${showOnlyGroup ? 'active' : 'inactive'} state`);
+            } else {
+                // Restore previous text if empty
+                updateGroupToggleUI();
+            }
+        });
+        
+        // Save changes when Enter is pressed
+        groupToggleText.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.blur(); // Trigger blur event to save
+            }
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                // Restore original text and exit editing
+                updateGroupToggleUI();
+                this.contentEditable = false;
+            }
+        });
+        
         // Raw data event listeners
         document.getElementById('apply-raw-data').addEventListener('click', applyRawDataChanges);
         document.getElementById('revert-raw-data').addEventListener('click', revertRawData);
@@ -5019,11 +5095,14 @@ ${JSON.stringify(analysisData, null, 2)}`,
                         // Validate names from hash parameter
                         validateGroupNames(hashNames);
                         
-                        // Automatically activate group filter when hash parameter is present
-                        showOnlyGroup = true;
-                        localStorage.setItem(getListStorageKey('showOnlyGroup'), 'true');
+                        // Only activate group filter if user's cached preference allows it
+                        // Don't override the user's last choice about showing all vs group only
                         updateGroupToggleUI();
-                        console.log('🔄 Automatically activated group filter from hash change');
+                        if (showOnlyGroup) {
+                            console.log('🔄 Group parameter from hash change, filter active per user preference');
+                        } else {
+                            console.log('🔄 Group parameter from hash change, but filter inactive per user preference');
+                        }
                     } else if (currentValue !== '' && !groupParam) {
                         // Only clear the field if it currently has a value AND the hash parameter was explicitly removed
                         // (not just missing due to a status change)
