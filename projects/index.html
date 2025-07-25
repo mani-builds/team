@@ -3117,10 +3117,12 @@ ${JSON.stringify(analysisData, null, 2)}`,
                     // Scroll to the right to show the end of the text
                     setTimeout(() => scrollGroupInputToRight(), 100);
                 }
-                groupParticipants = new Set(groupString.split(',').map(name => name.trim()).filter(name => name));
+                const parsedNames = groupString.split(',').map(name => name.trim()).filter(name => name);
+                groupParticipants = new Set(parsedNames);
                 
-                // If loaded from hash parameter, automatically activate the group filter
+                // Validate names if loaded from hash parameter
                 if (hashGroup) {
+                    validateGroupNames(parsedNames);
                     showOnlyGroup = true;
                     localStorage.setItem('showOnlyGroup', 'true');
                     updateGroupToggleUI();
@@ -3183,12 +3185,17 @@ ${JSON.stringify(analysisData, null, 2)}`,
             
             // Parse names from input
             groupParticipants = new Set();
+            const inputNames = [];
             value.split(',').forEach(name => {
                 const trimmed = name.trim();
                 if (trimmed) {
+                    inputNames.push(trimmed);
                     groupParticipants.add(trimmed);
                 }
             });
+            
+            // Validate names against dataset
+            validateGroupNames(inputNames);
             
             // Save to storage and update URL hash
             saveGroupParticipants();
@@ -3201,6 +3208,75 @@ ${JSON.stringify(analysisData, null, 2)}`,
             // If group filter is active, refresh the list to show/hide participants
             if (showOnlyGroup) {
                 applyAllFilters();
+            }
+        }
+        
+        function validateGroupNames(inputNames) {
+            if (!allParticipantsData || allParticipantsData.length === 0) {
+                return;
+            }
+            
+            if (inputNames.length === 0) {
+                // Hide message if no names to validate
+                hideGroupValidationMessage();
+                return;
+            }
+            
+            // Get all participant names from the dataset
+            const datasetNames = allParticipantsData.map(participant => getParticipantName(participant));
+            const datasetNamesLower = datasetNames.map(name => name.toLowerCase());
+            
+            // Find names that don't exist in the dataset
+            const notFoundNames = inputNames.filter(inputName => {
+                const inputNameLower = inputName.toLowerCase();
+                return !datasetNamesLower.includes(inputNameLower);
+            });
+            
+            // Show message if there are names not found
+            if (notFoundNames.length > 0) {
+                const message = `Not found in dataset: ${notFoundNames.join(', ')}`;
+                console.warn('⚠️ ' + message);
+                
+                // Show a message to the user
+                showGroupValidationMessage(message);
+            } else {
+                // Hide message if all names are valid
+                hideGroupValidationMessage();
+            }
+        }
+        
+        function showGroupValidationMessage(message) {
+            // Create or update validation message element
+            let messageEl = document.getElementById('group-validation-message');
+            if (!messageEl) {
+                messageEl = document.createElement('div');
+                messageEl.id = 'group-validation-message';
+                messageEl.style.cssText = `
+                    color: #d97706;
+                    font-size: 12px;
+                    margin-top: 4px;
+                    padding: 4px 8px;
+                    background: #fef3c7;
+                    border: 1px solid #f59e0b;
+                    border-radius: 4px;
+                    display: none;
+                `;
+                
+                // Insert after the group control
+                const groupControl = document.getElementById('group-control');
+                if (groupControl && groupControl.parentNode) {
+                    groupControl.parentNode.insertBefore(messageEl, groupControl.nextSibling);
+                }
+            }
+            
+            messageEl.textContent = message;
+            messageEl.style.display = 'block';
+        }
+        
+        function hideGroupValidationMessage() {
+            const messageEl = document.getElementById('group-validation-message');
+            if (messageEl) {
+                messageEl.style.display = 'none';
             }
         }
         
@@ -3741,6 +3817,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
                         if (name) groupParticipants.add(name);
                     });
                     
+                    // Validate names against dataset
+                    validateGroupNames(names);
+                    
                     // Save to storage and update highlighting
                     saveGroupParticipants();
                     updateGroupCount();
@@ -3870,6 +3949,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
             }
             groupParticipants = new Set();
             updateGroupCount();
+            
+            // Hide validation message
+            hideGroupValidationMessage();
             
             // Clear all URL hash parameters
             setURLHashParam('group', null);
@@ -4459,7 +4541,11 @@ ${JSON.stringify(analysisData, null, 2)}`,
                         // Format the group string with proper spacing (replace commas with ", ")
                         const formattedGroupParam = groupParam.replace(/,/g, ', ');
                         groupInput.value = formattedGroupParam;
-                        groupParticipants = new Set(groupParam.split(',').map(name => name.trim()).filter(name => name));
+                        const hashNames = groupParam.split(',').map(name => name.trim()).filter(name => name);
+                        groupParticipants = new Set(hashNames);
+                        
+                        // Validate names from hash parameter
+                        validateGroupNames(hashNames);
                         
                         // Automatically activate group filter when hash parameter is present
                         showOnlyGroup = true;
