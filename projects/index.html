@@ -3091,8 +3091,10 @@ ${JSON.stringify(analysisData, null, 2)}`,
             if (groupString && groupInput) {
                 // Only populate the field if it's currently empty (page load scenario)
                 if (!groupInput.value.trim()) {
-                    groupInput.value = groupString;
-                    console.log('✅ Populated group input field with:', groupString);
+                    // Format the group string with proper spacing (replace commas with ", ")
+                    const formattedGroupString = groupString.replace(/,/g, ', ');
+                    groupInput.value = formattedGroupString;
+                    console.log('✅ Populated group input field with:', formattedGroupString);
                     // Scroll to the right to show the end of the text
                     setTimeout(() => scrollGroupInputToRight(), 100);
                 }
@@ -4431,7 +4433,9 @@ ${JSON.stringify(analysisData, null, 2)}`,
                 if (currentValue !== newValue) {
                     console.log('🔗 Group parameter changed in URL hash:', groupParam);
                     if (groupParam) {
-                        groupInput.value = groupParam;
+                        // Format the group string with proper spacing (replace commas with ", ")
+                        const formattedGroupParam = groupParam.replace(/,/g, ', ');
+                        groupInput.value = formattedGroupParam;
                         groupParticipants = new Set(groupParam.split(',').map(name => name.trim()).filter(name => name));
                         
                         // Automatically activate group filter when hash parameter is present
