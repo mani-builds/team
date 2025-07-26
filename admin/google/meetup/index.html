@@ -536,7 +536,24 @@
             
             try {
                 const response = await fetch(`${GEMINI_API_BASE}/config/env`);
-                const data = await response.json();
+                
+                // Check if the response is ok before trying to parse JSON
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server returned ${response.status}: ${errorText || 'Unknown error'}`);
+                }
+                
+                // Get response text first to check if it's valid JSON
+                const responseText = await response.text();
+                
+                // Try to parse JSON, with fallback for empty or invalid responses
+                let data;
+                try {
+                    data = responseText ? JSON.parse(responseText) : {};
+                } catch (jsonError) {
+                    // If JSON parsing fails, provide the raw response for debugging
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`);
+                }
                 
                 // Update form fields if values exist in .env
                 if (data.google_project_id) {
@@ -617,7 +634,7 @@
             btn.innerHTML = '<span class="loading-spinner" style="display: inline-block;"></span> Saving...';
             
             try {
-                const response = await fetch(`${GEMINI_API_BASE}/config/save-env`, {
+                const response = await fetch(`${GEMINI_API_BASE}/config/env`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -631,7 +648,23 @@
                     })
                 });
                 
-                const data = await response.json();
+                // Check if the response is ok before trying to parse JSON
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server returned ${response.status}: ${errorText || 'Unknown error'}`);
+                }
+                
+                // Get response text first to check if it's valid JSON
+                const responseText = await response.text();
+                
+                // Try to parse JSON, with fallback for empty or invalid responses
+                let data;
+                try {
+                    data = responseText ? JSON.parse(responseText) : { success: false, error: 'Empty response from server' };
+                } catch (jsonError) {
+                    // If JSON parsing fails, provide the raw response for debugging
+                    throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}`);
+                }
                 
                 if (data.success) {
                     // Update global variables

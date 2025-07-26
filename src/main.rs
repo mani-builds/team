@@ -556,7 +556,15 @@ async fn save_env_config(req: web::Json<SaveEnvConfigRequest>) -> Result<HttpRes
                 // Find and update existing key, or mark for addition
                 let mut found = false;
                 for line in env_lines.iter_mut() {
-                    if line.starts_with(&format!("{key} = ")) {
+                    // Skip empty lines and comments
+                    if line.trim().is_empty() || line.trim().starts_with('#') {
+                        continue;
+                    }
+                    
+                    // Check if line starts with the key followed by = (with optional whitespace)
+                    let line_trimmed = line.trim();
+                    if line_trimmed.starts_with(&format!("{key}=")) || 
+                       line_trimmed.starts_with(&format!("{key} =")) {
                         *line = new_line.clone();
                         found = true;
                         break;
