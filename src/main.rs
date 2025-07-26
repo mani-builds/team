@@ -261,6 +261,16 @@ struct CreateProjectRequest {
     estimated_end_date: Option<String>,
 }
 
+// Google Cloud project creation request
+#[derive(Debug, Serialize, Deserialize)]
+struct CreateGoogleProjectRequest {
+    project_id: String,
+    user_email: String,
+    org_id: Option<String>,
+    billing_id: Option<String>,
+    service_key: String,
+}
+
 #[derive(Debug, Serialize)]
 struct TableInfo {
     name: String,
@@ -659,6 +669,86 @@ async fn create_env_config(req: web::Json<CreateEnvConfigRequest>) -> Result<Htt
             })))
         }
     }
+}
+
+// Create Google Cloud project via API
+async fn create_google_project(req: web::Json<CreateGoogleProjectRequest>) -> Result<HttpResponse> {
+    // Validate required fields
+    if req.project_id.is_empty() {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "success": false,
+            "error": "Project ID is required"
+        })));
+    }
+    
+    if req.user_email.is_empty() {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "success": false,
+            "error": "User email is required"
+        })));
+    }
+    
+    if req.service_key.is_empty() {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "success": false,
+            "error": "Service account key is required for API access"
+        })));
+    }
+    
+    // Validate service key is valid JSON
+    if let Err(_) = serde_json::from_str::<serde_json::Value>(&req.service_key) {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "success": false,
+            "error": "Service account key must be valid JSON",
+            "help": {
+                "title": "How to Get Your Google Service Account Key",
+                "style": "info", // This will trigger light blue background in frontend
+                "google_console_url": "https://console.cloud.google.com/iam-admin/serviceaccounts",
+                "steps": [
+                    "1. Go to Google Cloud Console → IAM & Admin → Service Accounts",
+                    "2. Click 'Create Service Account' or select existing one", 
+                    "3. Grant 'Cloud Resource Manager Admin' role (required for project creation)",
+                    "4. Click 'Keys' tab → 'Add Key' → 'Create New Key'",
+                    "5. Choose 'JSON' format and download the file",
+                    "6. Copy the entire JSON content into the 'Service Account Key' field above"
+                ],
+                "billing_info": {
+                    "required_for": "Creating new Google Cloud projects via API",
+                    "not_required_for": "Accessing Google Meet/Calendar APIs on existing projects",
+                    "note": "For Google Meetup participant feeds, billing is typically not required unless you exceed free tier limits"
+                },
+                "json_format_example": "Should start with: {\"type\":\"service_account\",\"project_id\":\"...\",\"private_key_id\":\"...\"}"
+            }
+        })));
+    }
+    
+    // For now, return a placeholder response indicating the feature is not fully implemented
+    // In a real implementation, this would:
+    // 1. Parse the service account key
+    // 2. Authenticate with Google Cloud Resource Manager API
+    // 3. Create the project using the Google Cloud API
+    // 4. Set up billing if billing_id is provided
+    // 5. Add the user email to the project IAM
+    
+    Ok(HttpResponse::Ok().json(json!({
+        "success": false,
+        "error": "Google Cloud Project API integration is not yet implemented. Please use the manual method for now.",
+        "message": "To manually create the project, click 'Via Google Page' and follow the instructions.",
+        "troubleshooting": {
+            "manual_steps": [
+                "1. Click 'Via Google Page' button",
+                "2. Follow the Google Cloud Console instructions",
+                "3. Use the provided project ID and billing information",
+                "4. Return here and click 'Project Created' when done"
+            ],
+            "api_implementation_needed": [
+                "Google Cloud Resource Manager API integration",
+                "Service account authentication",
+                "Project creation and billing setup",
+                "IAM role assignment"
+            ]
+        }
+    })))
 }
 
 // Fetch CSV data from external URL (proxy for CORS)
@@ -1932,8 +2022,12 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
                             .route("/analyze", web::post().to(gemini_insights::analyze_with_gemini))
                     )
                     .service(
-                        web::scope("/google/gemini")
-                            .route("/analyze", web::post().to(gemini_insights::analyze_with_gemini))
+                        web::scope("/google")
+                            .route("/create-project", web::post().to(create_google_project))
+                            .service(
+                                web::scope("/gemini")
+                                    .route("/analyze", web::post().to(gemini_insights::analyze_with_gemini))
+                            )
                     )
                     .service(
                         web::scope("/config")

@@ -812,7 +812,18 @@
                     })
                 });
                 
-                const data = await response.json();
+                // Check if response is ok first, then parse JSON
+                let data;
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    try {
+                        data = JSON.parse(errorText);
+                    } catch {
+                        throw new Error(`Server returned ${response.status}: ${errorText}`);
+                    }
+                } else {
+                    data = await response.json();
+                }
                 
                 if (data.success) {
                     status.className = 'status-message success';
@@ -830,23 +841,73 @@
                     document.getElementById('enable-apis').disabled = false;
                     
                 } else {
-                    throw new Error(data.error || 'Failed to create project');
+                    // Throw an error with the full data object for enhanced error handling
+                    const error = new Error(data.error || 'Failed to create project');
+                    error.responseData = data;
+                    throw error;
                 }
                 
                 // Update feather icons
                 if (window.feather) feather.replace();
                 
             } catch (error) {
-                status.className = 'status-message error';
-                status.style.display = 'block';
-                status.innerHTML = `
-                    <strong>API Creation Failed:</strong><br>
-                    ${error.message}<br><br>
-                    <strong>Troubleshooting:</strong><br>
-                    • Ensure service account has Cloud Resource Manager Admin role<br>
-                    • Check that the JSON key is valid<br>
-                    • Verify organization/billing permissions if using those fields
-                `;
+                // Check if we have enhanced error data from the API response
+                const errorData = error.responseData;
+                
+                // Display enhanced error message if available
+                if (errorData && errorData.help) {
+                    status.className = 'status-message info'; // Light blue background
+                    status.style.display = 'block';
+                    status.innerHTML = `
+                        <div style="background: var(--accent-blue); color: white; padding: 8px; border-radius: 4px; margin-bottom: 12px;">
+                            <strong>Get your Google Service Account Key</strong>
+                        </div>
+                        
+                        <div style="background: #E3F2FD; border: 1px solid #90CAF9; border-radius: 6px; padding: 12px;">
+                            <h4 style="color: #1565C0; margin: 0 0 8px 0;">
+                                <i data-feather="info" style="width: 16px; height: 16px;"></i> 
+                                ${errorData.help.title}
+                            </h4>
+                            
+                            <p style="margin: 8px 0;"><strong>
+                                <a href="${errorData.help.google_console_url}" target="_blank" style="color: var(--accent-blue); text-decoration: underline;">
+                                    → Open Google Cloud Console
+                                </a>
+                            </strong></p>
+                            
+                            <ol style="margin: 8px 0; padding-left: 18px;">
+                                ${errorData.help.steps.map(step => {
+                                    // Remove the number prefix since <ol> will add its own numbering
+                                    const cleanStep = step.replace(/^\d+\.\s*/, '');
+                                    return `<li style="margin: 4px 0;">${cleanStep}</li>`;
+                                }).join('')}
+                            </ol>
+                            
+                            <div style="background: #F3F4F6; padding: 8px; border-radius: 4px; margin: 8px 0; font-size: 13px;">
+                                <strong>JSON Format:</strong> ${errorData.help.json_format_example}
+                            </div>
+                            
+                            <div style="margin-top: 12px; font-size: 14px;">
+                                <strong style="color: #1565C0;">Billing Account Info:</strong><br>
+                                <span style="color: #2E7D32;">✓ Required:</span> ${errorData.help.billing_info.required_for}<br>
+                                <span style="color: #F57C00;">○ Optional:</span> ${errorData.help.billing_info.not_required_for}<br>
+                                <em style="color: #424242;">${errorData.help.billing_info.note}</em>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Fallback to original error display
+                    status.className = 'status-message error';
+                    status.style.display = 'block';
+                    status.innerHTML = `
+                        <strong>API Creation Failed:</strong><br>
+                        ${error.message}<br><br>
+                        <strong>Troubleshooting:</strong><br>
+                        • Ensure service account has Cloud Resource Manager Admin role<br>
+                        • Check that the JSON key is valid<br>
+                        • Verify organization/billing permissions if using those fields
+                    `;
+                }
                 
                 btn.disabled = false;
                 btn.innerHTML = '<i data-feather="zap"></i> Create via API';
