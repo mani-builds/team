@@ -370,6 +370,7 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            font-weight: bolder;
             transition: all 0.2s;
         }
         
@@ -3191,41 +3192,8 @@ ${JSON.stringify(completeAnalysisData, null, 2)}`,
             let filteredData = [...allParticipantsData];
             console.log('📋 Initial filteredData length:', filteredData.length);
             
-            // Apply status filter
-            if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
-                console.log('🔍 Applying status filter. Selected statuses:', Array.from(selectedStatuses));
-                const beforeStatusFilter = filteredData.length;
-                filteredData = filteredData.filter(participant => {
-                    const status = participant.Status || 'Unknown';
-                    const passes = selectedStatuses.has(status);
-                    if (!passes) {
-                        console.log('❌ Participant filtered out by status:', participant.Name || participant.name, 'Status:', status);
-                    }
-                    return passes;
-                });
-                console.log('📊 Status filter result:', beforeStatusFilter, '→', filteredData.length);
-            } else {
-                console.log('⏭️ Skipping status filter (All selected or no selection)');
-            }
-            
-            // Apply team filter if active
-            if (currentTeamFilter) {
-                console.log('🔍 Applying team filter:', currentTeamFilter);
-                const beforeTeamFilter = filteredData.length;
-                filteredData = filteredData.filter(participant => {
-                    const participantTeamClasses = getAllTeamClasses(participant.Team);
-                    const passes = participantTeamClasses.includes(currentTeamFilter);
-                    if (!passes) {
-                        console.log('❌ Participant filtered out by team:', participant.Name || participant.name, 'Team:', participant.Team, 'Classes:', participantTeamClasses);
-                    }
-                    return passes;
-                });
-                console.log('📊 Team filter result:', beforeTeamFilter, '→', filteredData.length);
-            } else {
-                console.log('⏭️ Skipping team filter (no team selected)');
-            }
-            
-            // Apply group participants filter if active
+            // Apply group participants filter first if active
+            // This ensures team filtering can work on the group subset
             if (showOnlyGroup) {
                 console.log('🔍 Applying group participants filter. Group participants:', Array.from(groupParticipants));
                 const beforeGroupFilter = filteredData.length;
@@ -3242,6 +3210,41 @@ ${JSON.stringify(completeAnalysisData, null, 2)}`,
                 console.log('📊 Group filter result:', beforeGroupFilter, '→', filteredData.length);
             } else {
                 console.log('⏭️ Skipping group participants filter (not active)');
+            }
+            
+            // Apply team filter if active (works on group-filtered results if group filter is active)
+            if (currentTeamFilter) {
+                console.log('🔍 Applying team filter:', currentTeamFilter);
+                console.log(`🔍 Team filtering ${showOnlyGroup ? 'within group participants' : 'all participants'}`);
+                const beforeTeamFilter = filteredData.length;
+                filteredData = filteredData.filter(participant => {
+                    const participantTeamClasses = getAllTeamClasses(participant.Team);
+                    const passes = participantTeamClasses.includes(currentTeamFilter);
+                    if (!passes) {
+                        console.log('❌ Participant filtered out by team:', participant.Name || participant.name, 'Team:', participant.Team, 'Classes:', participantTeamClasses);
+                    }
+                    return passes;
+                });
+                console.log('📊 Team filter result:', beforeTeamFilter, '→', filteredData.length);
+            } else {
+                console.log('⏭️ Skipping team filter (no team selected)');
+            }
+            
+            // Apply status filter last
+            if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
+                console.log('🔍 Applying status filter. Selected statuses:', Array.from(selectedStatuses));
+                const beforeStatusFilter = filteredData.length;
+                filteredData = filteredData.filter(participant => {
+                    const status = participant.Status || 'Unknown';
+                    const passes = selectedStatuses.has(status);
+                    if (!passes) {
+                        console.log('❌ Participant filtered out by status:', participant.Name || participant.name, 'Status:', status);
+                    }
+                    return passes;
+                });
+                console.log('📊 Status filter result:', beforeStatusFilter, '→', filteredData.length);
+            } else {
+                console.log('⏭️ Skipping status filter (All selected or no selection)');
             }
             
             // Update results count with pagination
