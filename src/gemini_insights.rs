@@ -102,7 +102,7 @@ pub async fn analyze_with_gemini(
         })),
         Err(e) => {
             // Log detailed error for debugging
-            eprintln!("Gemini API Error: {:?}", e);
+            eprintln!("Gemini API Error: {e:?}");
             
             // Extract GeminiErrorDetails if available
             let error_details = e.chain()
@@ -124,8 +124,7 @@ pub async fn analyze_with_gemini(
 async fn call_gemini_api(api_key: &str, prompt: &str) -> anyhow::Result<(String, Option<TokenUsage>)> {
     let client = reqwest::Client::new();
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={}",
-        api_key
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={api_key}"
     );
     
     let request_body = json!({
@@ -148,7 +147,7 @@ async fn call_gemini_api(api_key: &str, prompt: &str) -> anyhow::Result<(String,
     
     let start_time = std::time::Instant::now();
     
-    println!("Making Gemini API request - Size: {} bytes, URL: {}", request_size, url);
+    println!("Making Gemini API request - Size: {request_size} bytes, URL: {url}");
     
     let response = client
         .post(&url)
@@ -163,7 +162,7 @@ async fn call_gemini_api(api_key: &str, prompt: &str) -> anyhow::Result<(String,
     let status = response.status();
     let status_code = status.as_u16();
     
-    println!("Gemini API response - Status: {}, Duration: {:?}", status, duration);
+    println!("Gemini API response - Status: {status}, Duration: {duration:?}");
     
     if !status.is_success() {
         let error_text = response.text().await.unwrap_or_else(|_| "Unable to read error response".to_string());
@@ -187,10 +186,10 @@ async fn call_gemini_api(api_key: &str, prompt: &str) -> anyhow::Result<(String,
             api_endpoint: url.clone(),
         };
         
-        println!("Gemini API Error Details: {:?}", error_details);
+        println!("Gemini API Error Details: {error_details:?}");
         
         return Err(anyhow::Error::new(error_details)
-            .context(format!("Gemini API error {}: {}", status, error_text)));
+            .context(format!("Gemini API error {status}: {error_text}")));
     }
     
     let response_json: serde_json::Value = response.json().await
@@ -233,4 +232,68 @@ async fn call_gemini_api(api_key: &str, prompt: &str) -> anyhow::Result<(String,
     }
     
     Ok((text.to_string(), token_usage))
+}
+
+// Test Gemini API key and connection
+pub async fn test_gemini_api(
+    data: web::Data<std::sync::Arc<ApiState>>,
+) -> Result<HttpResponse> {
+    let (api_key_present, gemini_api_key) = {
+        let config_guard = data.config.lock().unwrap();
+        let api_key_present = !config_guard.gemini_api_key.is_empty() 
+            && config_guard.gemini_api_key != "dummy_key"
+            && config_guard.gemini_api_key != "get-key-at-aistudio.google.com";
+        (api_key_present, config_guard.gemini_api_key.clone())
+    };
+    
+    if !api_key_present {
+        return Ok(HttpResponse::Ok().json(GeminiTestResponse {
+            success: false,
+            message: "Gemini API key not configured".to_string(),
+            api_key_present: false,
+            api_key_preview: None,
+            error: Some("Please configure GEMINI_API_KEY in your .env file".to_string()),
+        }));
+    }
+    
+    // Create API key preview (first 4 + "..." + last 4 characters)
+    let api_key_preview = if gemini_api_key.len() >= 8 {
+        format!("{}...{}", 
+                &gemini_api_key[..4], 
+                &gemini_api_key[gemini_api_key.len()-4..])
+    } else {
+        "****".to_string()
+    };
+    
+    // Test the API with a simple prompt
+    match call_gemini_api(&gemini_api_key, "Hello, please respond with 'API test successful'").await {
+        Ok((response, _)) => {
+            if response.to_lowercase().contains("api test successful") {
+                Ok(HttpResponse::Ok().json(GeminiTestResponse {
+                    success: true,
+                    message: "Gemini API connection successful".to_string(),
+                    api_key_present: true,
+                    api_key_preview: Some(api_key_preview),
+                    error: None,
+                }))
+            } else {
+                Ok(HttpResponse::Ok().json(GeminiTestResponse {
+                    success: true,
+                    message: "Gemini API responded but with unexpected content".to_string(),
+                    api_key_present: true,
+                    api_key_preview: Some(api_key_preview),
+                    error: Some(format!("Expected test response, got: {}", response.chars().take(100).collect::<String>())),
+                }))
+            }
+        },
+        Err(e) => {
+            Ok(HttpResponse::Ok().json(GeminiTestResponse {
+                success: false,
+                message: "Gemini API key present but API call failed".to_string(),
+                api_key_present: true,
+                api_key_preview: Some(api_key_preview),
+                error: Some(e.to_string()),
+            }))
+        }
+    }
 }

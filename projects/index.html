@@ -1827,6 +1827,45 @@
             currentPromptAI = null;
         }
         
+        // Function to get currently filtered and sorted data for AI analysis
+        function getCurrentlyDisplayedData() {
+            // Start with the sorted data (allParticipantsData has sort order applied)
+            if (!allParticipantsData || allParticipantsData.length === 0) {
+                console.warn('⚠️ getCurrentlyDisplayedData called but allParticipantsData is empty');
+                return [];
+            }
+            
+            let filteredData = [...allParticipantsData];
+            
+            // Apply status filter (same logic as in applyAllFilters)
+            if (!selectedStatuses.has('All') && selectedStatuses.size > 0) {
+                filteredData = filteredData.filter(participant => {
+                    const status = participant.Status || 'Unknown';
+                    return selectedStatuses.has(status);
+                });
+            }
+            
+            // Apply team filter if active
+            if (currentTeamFilter) {
+                filteredData = filteredData.filter(participant => {
+                    const participantTeamClasses = getAllTeamClasses(participant.Team);
+                    return participantTeamClasses.includes(currentTeamFilter);
+                });
+            }
+            
+            // Apply group participants filter if active
+            if (showOnlyGroup) {
+                filteredData = filteredData.filter(participant => {
+                    const name = getParticipantName(participant);
+                    return Array.from(groupParticipants).some(groupName => 
+                        groupName.toLowerCase() === name.toLowerCase()
+                    );
+                });
+            }
+            
+            return filteredData;
+        }
+
         async function submitPrompt() {
             const prompt = document.getElementById('promptInput').value;
             const aiType = currentPromptAI;
@@ -1843,9 +1882,29 @@
             content.innerHTML = '<div style="padding: 20px; text-align: center;">🔄 Generating insights...</div>';
             
             try {
-                // Prepare data for analysis
+                // Get currently filtered and sorted data instead of raw data
+                const currentlyDisplayedData = getCurrentlyDisplayedData();
                 const maxRows = parseInt(document.getElementById('maxRowsInput')?.value || 20);
-                const analysisData = window.participantsData.slice(0, maxRows);
+                const analysisData = currentlyDisplayedData.slice(0, maxRows);
+                
+                // Get all available headers from the original data to include complete row information
+                const allHeaders = window.participantsData.length > 0 ? Object.keys(window.participantsData[0]) : [];
+                
+                console.log(`📊 AI Analysis Data Summary:
+- Original dataset: ${window.participantsData.length} records
+- After filters: ${currentlyDisplayedData.length} records  
+- Sent for analysis: ${analysisData.length} records
+- All available columns: ${allHeaders.length} (${allHeaders.join(', ')})
+- Current sort: ${currentSortColumn || 'none'} ${currentSortOrder || ''}`);
+                
+                // Ensure analysis data includes all columns, not just visible ones
+                const completeAnalysisData = analysisData.map(row => {
+                    const completeRow = {};
+                    allHeaders.forEach(header => {
+                        completeRow[header] = row[header] || null;
+                    });
+                    return completeRow;
+                });
                 
                 const endpoint = aiType === 'claude' ? '/claude/analyze' : '/gemini/analyze';
                 const response = await fetch(`${GEMINI_API_BASE}${endpoint}`, {
@@ -1857,20 +1916,45 @@
                         prompt: prompt,
                         dataset_info: {
                             record_count: window.participantsData.length,
-                            sample_data: analysisData,
-                            headers: Object.keys(analysisData[0] || {})
+                            filtered_count: currentlyDisplayedData.length,
+                            sample_data: completeAnalysisData,
+                            headers: allHeaders,
+                            sort_info: {
+                                column: currentSortColumn || null,
+                                order: currentSortOrder || null
+                            },
+                            filter_info: {
+                                status_filter: selectedStatuses.size > 0 && !selectedStatuses.has('All') ? Array.from(selectedStatuses) : null,
+                                team_filter: currentTeamFilter || null,
+                                group_filter: showOnlyGroup || false
+                            }
                         }
                     } : {
-                        // For Gemini, include dataset directly in prompt
+                        // For Gemini, include dataset directly in prompt with filter/sort context
                         prompt: `${prompt}
 
 **Dataset Context:**
--- Total Records: ${window.participantsData.length}
--- Sample Size: ${analysisData.length}
--- Headers: ${Object.keys(analysisData[0] || {}).join(', ')}
+-- Original Total Records: ${window.participantsData.length}
+-- After Filters Applied: ${currentlyDisplayedData.length}
+-- Sample Size for Analysis: ${completeAnalysisData.length}
+-- All Available Headers: ${allHeaders.join(', ')}
+-- Current Sort Order: ${currentSortColumn ? `${currentSortColumn} (${currentSortOrder})` : 'Default order'}
+-- Active Filters: ${(() => {
+    const filters = [];
+    if (selectedStatuses.size > 0 && !selectedStatuses.has('All')) {
+        filters.push(`Status: ${Array.from(selectedStatuses).join(', ')}`);
+    }
+    if (currentTeamFilter) {
+        filters.push(`Team: ${currentTeamFilter}`);
+    }
+    if (showOnlyGroup) {
+        filters.push('Group participants only');
+    }
+    return filters.length > 0 ? filters.join('; ') : 'None';
+})()}
 
-**Sample Data (JSON format):**
-${JSON.stringify(analysisData, null, 2)}`,
+**Sample Data (JSON format - filtered/sorted as displayed):**
+${JSON.stringify(completeAnalysisData, null, 2)}`,
                         data_context: null
                     })
                 });
@@ -1889,20 +1973,30 @@ ${JSON.stringify(analysisData, null, 2)}`,
                         success: true,
                         analysis: analysisWithTokens,
                         totalRecords: window.participantsData.length,
-                        sampleSize: analysisData.length,
+                        filteredRecords: currentlyDisplayedData.length,
+                        sampleSize: completeAnalysisData.length,
                         timestamp: new Date().toISOString(),
-                        customPrompt: prompt
+                        customPrompt: prompt,
+                        sortInfo: {
+                            column: currentSortColumn || null,
+                            order: currentSortOrder || null
+                        },
+                        filterInfo: {
+                            status: selectedStatuses.size > 0 && !selectedStatuses.has('All') ? Array.from(selectedStatuses) : null,
+                            team: currentTeamFilter || null,
+                            groupOnly: showOnlyGroup || false
+                        }
                     };
                     
                     if (aiType === 'claude') {
                         pendingClaudeAnalysis = pendingData;
-                        // Display with Save/Cancel buttons
-                        await displaySharedClaudeInsights(analysisWithTokens, window.participantsData.length, analysisData.length, true, prompt);
+                        // Display with Save/Cancel buttons - show filtered count in UI
+                        await displaySharedClaudeInsights(analysisWithTokens, currentlyDisplayedData.length, completeAnalysisData.length, true, prompt);
                         loadingStatus.textContent = '✅ Claude analysis complete! Choose Save to keep or Cancel to revert.';
                     } else {
                         pendingGeminiAnalysis = pendingData;
-                        // Display with Save/Cancel buttons
-                        await displaySharedGeminiInsights(analysisWithTokens, window.participantsData.length, analysisData.length, true, prompt);
+                        // Display with Save/Cancel buttons - show filtered count in UI
+                        await displaySharedGeminiInsights(analysisWithTokens, currentlyDisplayedData.length, completeAnalysisData.length, true, prompt);
                         loadingStatus.textContent = '✅ Gemini analysis complete! Choose Save to keep or Cancel to revert.';
                     }
                     

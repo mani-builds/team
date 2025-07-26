@@ -98,7 +98,7 @@ impl Config {
             std::env::var("COMMONS_PASSWORD")
         ) {
             let ssl_mode = std::env::var("COMMONS_SSL_MODE").unwrap_or_else(|_| "require".to_string());
-            format!("postgres://{}:{}@{}:{}/{}?sslmode={}", user, password, host, port, name, ssl_mode)
+            format!("postgres://{user}:{password}@{host}:{port}/{name}?sslmode={ssl_mode}")
         } else if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
             std::env::var("DB_HOST"),
             std::env::var("DB_PORT"),
@@ -108,7 +108,7 @@ impl Config {
         ) {
             // Fall back to generic DB_ variables
             let ssl_mode = std::env::var("DB_SSL_MODE").unwrap_or_else(|_| "require".to_string());
-            format!("postgres://{}:{}@{}:{}/{}?sslmode={}", user, password, host, port, name, ssl_mode)
+            format!("postgres://{user}:{password}@{host}:{port}/{name}?sslmode={ssl_mode}")
         } else {
             // Fall back to full DATABASE_URL
             std::env::var("DATABASE_URL")
@@ -221,7 +221,7 @@ fn start_env_watcher(config: SharedConfig) -> anyhow::Result<()> {
                                             }
                                         }
                                         Err(e) => {
-                                            log::error!("Failed to reload configuration: {}", e);
+                                            log::error!("Failed to reload configuration: {e}");
                                         }
                                     }
                                 }
@@ -235,7 +235,7 @@ fn start_env_watcher(config: SharedConfig) -> anyhow::Result<()> {
                         }
                     }
                     Err(e) => {
-                        log::error!("File watcher error: {}", e);
+                        log::error!("File watcher error: {e}");
                         break;
                     }
                 }
@@ -379,12 +379,12 @@ async fn get_env_config() -> Result<HttpResponse> {
     
     // Helper function to build config from components
     let build_config_from_components = |prefix: &str| -> Option<(String, EnvDatabaseConfig)> {
-        let host_key = format!("{}_HOST", prefix);
-        let port_key = format!("{}_PORT", prefix);
-        let name_key = format!("{}_NAME", prefix);
-        let user_key = format!("{}_USER", prefix);
-        let password_key = format!("{}_PASSWORD", prefix);
-        let ssl_key = format!("{}_SSL_MODE", prefix);
+        let host_key = format!("{prefix}_HOST");
+        let port_key = format!("{prefix}_PORT");
+        let name_key = format!("{prefix}_NAME");
+        let user_key = format!("{prefix}_USER");
+        let password_key = format!("{prefix}_PASSWORD");
+        let ssl_key = format!("{prefix}_SSL_MODE");
         
         if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(_password)) = (
             std::env::var(&host_key),
@@ -398,7 +398,7 @@ async fn get_env_config() -> Result<HttpResponse> {
             let ssl = ssl_mode == "require";
             
             let config = EnvDatabaseConfig {
-                server: format!("{}:{}", host, port_num),
+                server: format!("{host}:{port_num}"),
                 database: name.clone(),
                 username: user.clone(),
                 port: port_num,
@@ -408,7 +408,7 @@ async fn get_env_config() -> Result<HttpResponse> {
             let display_name = match prefix {
                 "COMMONS" => "MemberCommons Database (Default)".to_string(),
                 "EXIOBASE" => "EXIOBASE Database".to_string(),
-                _ => format!("{} Database", prefix.replace("_", " ")),
+                _ => format!("{} Database", prefix.replace('_', " ")),
             };
             
             Some((display_name, config))
@@ -542,7 +542,7 @@ async fn save_env_config(req: web::Json<SaveEnvConfigRequest>) -> Result<HttpRes
     // Read existing .env file if it exists
     if let Ok(file) = std::fs::File::open(env_path) {
         let reader = BufReader::new(file);
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             env_lines.push(line);
         }
     }
@@ -551,12 +551,12 @@ async fn save_env_config(req: web::Json<SaveEnvConfigRequest>) -> Result<HttpRes
     let update_env_var = |env_lines: &mut Vec<String>, updated_keys: &mut std::collections::HashSet<String>, key: &str, value: &Option<String>| {
         if let Some(val) = value {
             if !val.is_empty() {
-                let new_line = format!("{}={}", key, val);
+                let new_line = format!("{key}={val}");
                 
                 // Find and update existing key, or mark for addition
                 let mut found = false;
                 for line in env_lines.iter_mut() {
-                    if line.starts_with(&format!("{} = ", key)) {
+                    if line.starts_with(&format!("{key} = ")) {
                         *line = new_line.clone();
                         found = true;
                         break;
@@ -588,8 +588,8 @@ async fn save_env_config(req: web::Json<SaveEnvConfigRequest>) -> Result<HttpRes
     {
         Ok(mut file) => {
             for line in env_lines {
-                writeln!(file, "{}", line).map_err(|e| {
-                    actix_web::error::ErrorInternalServerError(format!("Failed to write to .env file: {}", e))
+                writeln!(file, "{line}").map_err(|e| {
+                    actix_web::error::ErrorInternalServerError(format!("Failed to write to .env file: {e}"))
                 })?;
             }
             
@@ -618,7 +618,7 @@ async fn save_env_config(req: web::Json<SaveEnvConfigRequest>) -> Result<HttpRes
         Err(e) => {
             Ok(HttpResponse::InternalServerError().json(json!({
                 "success": false,
-                "error": format!("Failed to write .env file: {}", e)
+                "error": format!("Failed to write .env file: {e}")
             })))
         }
     }
@@ -647,7 +647,7 @@ async fn create_env_config(req: web::Json<CreateEnvConfigRequest>) -> Result<Htt
         Err(e) => {
             Ok(HttpResponse::InternalServerError().json(json!({
                 "success": false,
-                "error": format!("Failed to create .env file: {}", e)
+                "error": format!("Failed to create .env file: {e}")
             })))
         }
     }
@@ -685,7 +685,7 @@ async fn fetch_csv(req: web::Json<FetchCsvRequest>) -> Result<HttpResponse> {
                     Err(e) => {
                         Ok(HttpResponse::Ok().json(json!({
                             "success": false,
-                            "error": format!("Failed to read response data: {}", e)
+                            "error": format!("Failed to read response data: {e}")
                         })))
                     }
                 }
@@ -699,7 +699,7 @@ async fn fetch_csv(req: web::Json<FetchCsvRequest>) -> Result<HttpResponse> {
         Err(e) => {
             Ok(HttpResponse::Ok().json(json!({
                 "success": false,
-                "error": format!("Network error: {}", e)
+                "error": format!("Network error: {e}")
             })))
         }
     }
@@ -814,21 +814,21 @@ async fn proxy_external_request(req: web::Json<ProxyRequest>) -> Result<HttpResp
                     }
                 }
                 Err(parse_error) => {
-                    eprintln!("Failed to parse response as text: {}", parse_error);
+                    eprintln!("Failed to parse response as text: {parse_error}");
                     Ok(HttpResponse::InternalServerError().json(ProxyResponse {
                         success: false,
                         data: None,
-                        error: Some(format!("Failed to parse response: {}", parse_error)),
+                        error: Some(format!("Failed to parse response: {parse_error}")),
                     }))
                 }
             }
         }
         Err(request_error) => {
-            eprintln!("Proxy request failed: {}", request_error);
+            eprintln!("Proxy request failed: {request_error}");
             Ok(HttpResponse::InternalServerError().json(ProxyResponse {
                 success: false,
                 data: None,
-                error: Some(format!("Request failed: {}", request_error)),
+                error: Some(format!("Request failed: {request_error}")),
             }))
         }
     }
@@ -844,12 +844,12 @@ async fn get_tables(data: web::Data<Arc<ApiState>>, query: web::Query<std::colle
             url
         } else {
             // Try component-based configuration
-            let host_key = format!("{}_HOST", connection_name);
-            let port_key = format!("{}_PORT", connection_name);
-            let name_key = format!("{}_NAME", connection_name);
-            let user_key = format!("{}_USER", connection_name);
-            let password_key = format!("{}_PASSWORD", connection_name);
-            let ssl_key = format!("{}_SSL_MODE", connection_name);
+            let host_key = format!("{connection_name}_HOST");
+            let port_key = format!("{connection_name}_PORT");
+            let name_key = format!("{connection_name}_NAME");
+            let user_key = format!("{connection_name}_USER");
+            let password_key = format!("{connection_name}_PASSWORD");
+            let ssl_key = format!("{connection_name}_SSL_MODE");
             
             if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
                 std::env::var(&host_key),
@@ -859,7 +859,7 @@ async fn get_tables(data: web::Data<Arc<ApiState>>, query: web::Query<std::colle
                 std::env::var(&password_key)
             ) {
                 let ssl_mode = std::env::var(&ssl_key).unwrap_or_else(|_| "require".to_string());
-                format!("postgres://{}:{}@{}:{}/{}?sslmode={}", user, password, host, port, name, ssl_mode)
+                format!("postgres://{user}:{password}@{host}:{port}/{name}?sslmode={ssl_mode}")
             } else {
                 return Ok(HttpResponse::BadRequest().json(json!({
                     "error": format!("Connection '{}' not found in environment variables", connection_name)
@@ -947,7 +947,7 @@ async fn db_test_connection(data: web::Data<Arc<ApiState>>) -> Result<HttpRespon
         Err(e) => Ok(HttpResponse::InternalServerError().json(DatabaseResponse {
             success: false,
             message: None,
-            error: Some(format!("Connection failed: {}", e)),
+            error: Some(format!("Connection failed: {e}")),
             data: None,
         })),
     }
@@ -969,7 +969,7 @@ async fn db_list_tables(
         Err(e) => Ok(HttpResponse::InternalServerError().json(DatabaseResponse {
             success: false,
             message: None,
-            error: Some(format!("Failed to list tables: {}", e)),
+            error: Some(format!("Failed to list tables: {e}")),
             data: None,
         })),
     }
@@ -991,12 +991,12 @@ async fn db_get_table_info(
             url
         } else {
             // Try component-based configuration
-            let host_key = format!("{}_HOST", connection_name);
-            let port_key = format!("{}_PORT", connection_name);
-            let name_key = format!("{}_NAME", connection_name);
-            let user_key = format!("{}_USER", connection_name);
-            let password_key = format!("{}_PASSWORD", connection_name);
-            let ssl_key = format!("{}_SSL_MODE", connection_name);
+            let host_key = format!("{connection_name}_HOST");
+            let port_key = format!("{connection_name}_PORT");
+            let name_key = format!("{connection_name}_NAME");
+            let user_key = format!("{connection_name}_USER");
+            let password_key = format!("{connection_name}_PASSWORD");
+            let ssl_key = format!("{connection_name}_SSL_MODE");
             
             if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
                 std::env::var(&host_key),
@@ -1006,12 +1006,12 @@ async fn db_get_table_info(
                 std::env::var(&password_key)
             ) {
                 let ssl_mode = std::env::var(&ssl_key).unwrap_or_else(|_| "require".to_string());
-                format!("postgres://{}:{}@{}:{}/{}?sslmode={}", user, password, host, port, name, ssl_mode)
+                format!("postgres://{user}:{password}@{host}:{port}/{name}?sslmode={ssl_mode}")
             } else {
                 return Ok(HttpResponse::BadRequest().json(DatabaseResponse {
                     success: false,
                     message: None,
-                    error: Some(format!("Connection '{}' not found in environment variables", connection_name)),
+                    error: Some(format!("Connection '{connection_name}' not found in environment variables")),
                     data: None,
                 }));
             }
@@ -1024,7 +1024,7 @@ async fn db_get_table_info(
                 return Ok(HttpResponse::InternalServerError().json(DatabaseResponse {
                     success: false,
                     message: None,
-                    error: Some(format!("Failed to connect to {}: {}", connection_name, e)),
+                    error: Some(format!("Failed to connect to {connection_name}: {e}")),
                     data: None,
                 }));
             }
@@ -1037,14 +1037,14 @@ async fn db_get_table_info(
     match get_table_details(&pool, &table_name).await {
         Ok(info) => Ok(HttpResponse::Ok().json(DatabaseResponse {
             success: true,
-            message: Some(format!("Table {} found", table_name)),
+            message: Some(format!("Table {table_name} found")),
             error: None,
             data: Some(serde_json::to_value(info).unwrap()),
         })),
         Err(e) => Ok(HttpResponse::InternalServerError().json(DatabaseResponse {
             success: false,
             message: None,
-            error: Some(format!("Failed to get table info: {}", e)),
+            error: Some(format!("Failed to get table info: {e}")),
             data: None,
         })),
     }
@@ -1075,12 +1075,12 @@ async fn db_execute_query(
             url
         } else {
             // Try component-based configuration
-            let host_key = format!("{}_HOST", connection_name);
-            let port_key = format!("{}_PORT", connection_name);
-            let name_key = format!("{}_NAME", connection_name);
-            let user_key = format!("{}_USER", connection_name);
-            let password_key = format!("{}_PASSWORD", connection_name);
-            let ssl_key = format!("{}_SSL_MODE", connection_name);
+            let host_key = format!("{connection_name}_HOST");
+            let port_key = format!("{connection_name}_PORT");
+            let name_key = format!("{connection_name}_NAME");
+            let user_key = format!("{connection_name}_USER");
+            let password_key = format!("{connection_name}_PASSWORD");
+            let ssl_key = format!("{connection_name}_SSL_MODE");
             
             if let (Ok(host), Ok(port), Ok(name), Ok(user), Ok(password)) = (
                 std::env::var(&host_key),
@@ -1090,12 +1090,12 @@ async fn db_execute_query(
                 std::env::var(&password_key)
             ) {
                 let ssl_mode = std::env::var(&ssl_key).unwrap_or_else(|_| "require".to_string());
-                format!("postgres://{}:{}@{}:{}/{}?sslmode={}", user, password, host, port, name, ssl_mode)
+                format!("postgres://{user}:{password}@{host}:{port}/{name}?sslmode={ssl_mode}")
             } else {
                 return Ok(HttpResponse::BadRequest().json(DatabaseResponse {
                     success: false,
                     message: None,
-                    error: Some(format!("Connection '{}' not found in environment variables", connection_name)),
+                    error: Some(format!("Connection '{connection_name}' not found in environment variables")),
                     data: None,
                 }));
             }
@@ -1108,7 +1108,7 @@ async fn db_execute_query(
                 return Ok(HttpResponse::InternalServerError().json(DatabaseResponse {
                     success: false,
                     message: None,
-                    error: Some(format!("Failed to connect to {}: {}", connection_name, e)),
+                    error: Some(format!("Failed to connect to {connection_name}: {e}")),
                     data: None,
                 }));
             }
@@ -1128,7 +1128,7 @@ async fn db_execute_query(
         Err(e) => Ok(HttpResponse::InternalServerError().json(DatabaseResponse {
             success: false,
             message: None,
-            error: Some(format!("Query failed: {}", e)),
+            error: Some(format!("Query failed: {e}")),
             data: None,
         })),
     }
@@ -1162,7 +1162,7 @@ async fn get_projects(data: web::Data<Arc<ApiState>>) -> Result<HttpResponse> {
             })))
         },
         Err(e) => {
-            println!("Error fetching projects: {}", e);
+            println!("Error fetching projects: {e}");
             // Return empty array if database query fails
             Ok(HttpResponse::Ok().json(json!({
                 "success": true,
@@ -1677,9 +1677,8 @@ async fn get_database_tables(pool: &Pool<Postgres>, limit: Option<i32>) -> Resul
             WHERE table_schema = 'public' 
                 AND table_type = 'BASE TABLE'
             ORDER BY table_name
-            LIMIT {}
-            "#,
-            limit_val
+            LIMIT {limit_val}
+            "#
         )
     } else {
         r#"
@@ -1858,7 +1857,7 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
     
     // Start watching .env file for changes
     if let Err(e) = start_env_watcher(shared_config.clone()) {
-        log::warn!("Failed to start .env file watcher: {}", e);
+        log::warn!("Failed to start .env file watcher: {e}");
     }
     
     let state = Arc::new(ApiState {
@@ -1875,7 +1874,7 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
         (config_guard.server_host.clone(), config_guard.server_port)
     };
     
-    println!("Starting API server on {}:{}", server_host, server_port);
+    println!("Starting API server on {server_host}:{server_port}");
     let session_manager_clone = claude_session_manager.clone();
     
     HttpServer::new(move || {
@@ -1934,6 +1933,7 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
                             .route("/env", web::get().to(get_env_config))
                             .route("/env", web::post().to(save_env_config))
                             .route("/env/create", web::post().to(create_env_config))
+                            .route("/gemini", web::get().to(gemini_insights::test_gemini_api))
                             .route("/restart", web::post().to(restart_server))
                     )
                     .service(
@@ -1971,9 +1971,9 @@ async fn get_claude_cli_usage_persistent(session_manager: ClaudeSessionManager) 
     let current_prompt_count = session.prompt_count;
     
     // Send a small prompt to get current usage data
-    let prompt = format!("This is prompt #{} in our persistent session. What is 2+2?", current_prompt_count);
+    let prompt = format!("This is prompt #{current_prompt_count} in our persistent session. What is 2+2?");
     
-    println!("Sending prompt #{} to Claude CLI persistent session...", current_prompt_count);
+    println!("Sending prompt #{current_prompt_count} to Claude CLI persistent session...");
     
     // Execute Claude CLI command with JSON output
     let output = Command::new("claude")
@@ -1986,7 +1986,7 @@ async fn get_claude_cli_usage_persistent(session_manager: ClaudeSessionManager) 
     
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("Claude CLI command failed: {}", stderr));
+        return Err(anyhow::anyhow!("Claude CLI command failed: {stderr}"));
     }
     
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -2000,7 +2000,7 @@ async fn get_claude_cli_usage_persistent(session_manager: ClaudeSessionManager) 
     if let Ok(json_data) = serde_json::from_str::<serde_json::Value>(stdout_str) {
         // Extract usage information if available
         if let Some(usage) = json_data.get("usage") {
-            println!("Found usage data in Claude CLI response: {:?}", usage);
+            println!("Found usage data in Claude CLI response: {usage:?}");
             
             // Update session tracking with new usage data
             if let Some(input_tokens) = usage.get("input_tokens").and_then(|v| v.as_u64()) {
@@ -2043,12 +2043,12 @@ async fn get_claude_cli_usage_persistent(session_manager: ClaudeSessionManager) 
             "note": "Claude CLI is connected and working, but usage data is not available through the CLI"
         });
         
-        println!("Claude CLI persistent session active, returning status: {:?}", usage_data);
+        println!("Claude CLI persistent session active, returning status: {usage_data:?}");
         return Ok(usage_data);
     }
     
     // If JSON parsing fails, Claude CLI might not be working properly
-    return Err(anyhow::anyhow!("Claude CLI response could not be parsed as JSON: {}", stdout_str))
+    Err(anyhow::anyhow!("Claude CLI response could not be parsed as JSON: {stdout_str}"))
 }
 
 // Fallback function for non-persistent usage (keeping for compatibility)
@@ -2065,7 +2065,7 @@ async fn get_claude_cli_usage() -> anyhow::Result<serde_json::Value> {
     
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(anyhow::anyhow!("Claude CLI command failed: {}", stderr));
+        return Err(anyhow::anyhow!("Claude CLI command failed: {stderr}"));
     }
     
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -2090,7 +2090,7 @@ async fn get_claude_usage_cli(session_manager: web::Data<ClaudeSessionManager>) 
         }))),
         Err(e) => {
             // Fall back to one-time request if persistent session fails
-            println!("Persistent session failed, falling back to one-time request: {}", e);
+            println!("Persistent session failed, falling back to one-time request: {e}");
             match get_claude_cli_usage().await {
                 Ok(fallback_data) => Ok(HttpResponse::Ok().json(json!({
                     "success": true,
@@ -2098,7 +2098,7 @@ async fn get_claude_usage_cli(session_manager: web::Data<ClaudeSessionManager>) 
                 }))),
                 Err(fallback_e) => Ok(HttpResponse::Ok().json(json!({
                     "success": false,
-                    "error": format!("Failed to get Claude CLI usage: {}", fallback_e)
+                    "error": format!("Failed to get Claude CLI usage: {fallback_e}")
                 })))
             }
         }
@@ -2114,7 +2114,7 @@ async fn get_claude_usage_website(session_manager: web::Data<ClaudeSessionManage
         }))),
         Err(e) => {
             // Fall back to one-time request if persistent session fails  
-            println!("Persistent session failed, falling back to one-time request: {}", e);
+            println!("Persistent session failed, falling back to one-time request: {e}");
             match get_claude_cli_usage().await {
                 Ok(fallback_data) => Ok(HttpResponse::Ok().json(json!({
                     "success": true,
@@ -2122,7 +2122,7 @@ async fn get_claude_usage_website(session_manager: web::Data<ClaudeSessionManage
                 }))),
                 Err(fallback_e) => Ok(HttpResponse::Ok().json(json!({
                     "success": false,
-                    "error": format!("Failed to get Claude usage: {}", fallback_e)
+                    "error": format!("Failed to get Claude usage: {fallback_e}")
                 })))
             }
         }

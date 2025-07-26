@@ -35,7 +35,7 @@ pub async fn analyze_with_claude_cli(
             token_usage,
         })),
         Err(e) => {
-            eprintln!("Claude Code CLI Error: {:?}", e);
+            eprintln!("Claude Code CLI Error: {e:?}");
             
             // Provide estimated token usage even when Claude CLI fails
             let prompt_len = req.prompt.len();
@@ -52,7 +52,7 @@ pub async fn analyze_with_claude_cli(
             Ok(HttpResponse::InternalServerError().json(ClaudeAnalysisResponse {
                 success: false,
                 analysis: None,
-                error: Some(format!("Claude Code CLI execution failed: {}", e)),
+                error: Some(format!("Claude Code CLI execution failed: {e}")),
                 token_usage: fallback_token_usage,
             }))
         }

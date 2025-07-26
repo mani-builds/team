@@ -111,9 +111,9 @@ pub async fn import_excel_data(
 
     let message = if errors.is_empty() {
         if skipped_count > 0 {
-            format!("Successfully imported {} records, skipped {} duplicates", inserted_count, skipped_count)
+            format!("Successfully imported {inserted_count} records, skipped {skipped_count} duplicates")
         } else {
-            format!("Successfully imported {} records", inserted_count)
+            format!("Successfully imported {inserted_count} records")
         }
     } else {
         format!("Imported {} of {} records with {} errors, skipped {} duplicates", 
@@ -168,7 +168,7 @@ pub async fn get_excel_sheets(
 ) -> Result<HttpResponse> {
     let file_path = match req.get("file_path").and_then(|v| v.as_str()) {
         Some(path) => {
-            println!("Sheets request - file_path: {}", path);
+            println!("Sheets request - file_path: {path}");
             path
         },
         None => {
@@ -193,7 +193,7 @@ pub async fn get_excel_sheets(
 
 fn read_excel_file(file_path: &str, sheet_name: Option<&str>) -> Result<Vec<ProjectRecord>, Box<dyn std::error::Error>> {
     let mut workbook: Xlsx<_> = open_workbook(file_path)
-        .map_err(|e| format!("File not found at: {} - {}", file_path, e))?;
+        .map_err(|e| format!("File not found at: {file_path} - {e}"))?;
     
     let sheet_name = match sheet_name {
         Some(name) => name.to_string(),
@@ -201,7 +201,7 @@ fn read_excel_file(file_path: &str, sheet_name: Option<&str>) -> Result<Vec<Proj
     };
 
     let range = workbook.worksheet_range(&sheet_name)
-        .map_err(|e| format!("Error reading sheet: {}", e))?;
+        .map_err(|e| format!("Error reading sheet: {e}"))?;
 
     let mut records = Vec::new();
     let mut headers = HashMap::new();
@@ -273,7 +273,7 @@ fn read_excel_file(file_path: &str, sheet_name: Option<&str>) -> Result<Vec<Proj
 
 fn get_excel_sheet_names(file_path: &str) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let workbook: Xlsx<_> = open_workbook(file_path)
-        .map_err(|e| format!("File not found at: {} - {}", file_path, e))?;
+        .map_err(|e| format!("File not found at: {file_path} - {e}"))?;
     Ok(workbook.sheet_names().clone())
 }
 
@@ -322,27 +322,27 @@ async fn insert_project_record(
     }
     
     if let Some(dept) = &record.department {
-        description_parts.push(format!("Department: {}", dept));
+        description_parts.push(format!("Department: {dept}"));
     }
     
     if let Some(region) = &record.region {
-        description_parts.push(format!("Region: {}", region));
+        description_parts.push(format!("Region: {region}"));
     }
     
     if let Some(country) = &record.country {
-        description_parts.push(format!("Country: {}", country));
+        description_parts.push(format!("Country: {country}"));
     }
     
     if let Some(framework) = &record.framework {
-        description_parts.push(format!("Framework: {}", framework));
+        description_parts.push(format!("Framework: {framework}"));
     }
     
     if let Some(naics) = &record.naics_sector {
-        description_parts.push(format!("NAICS Sector: {}", naics));
+        description_parts.push(format!("NAICS Sector: {naics}"));
     }
     
     if let Some(url) = &record.project_profile_url {
-        description_parts.push(format!("Profile URL: {}", url));
+        description_parts.push(format!("Profile URL: {url}"));
     }
     
     let description = if description_parts.is_empty() {
@@ -423,7 +423,7 @@ pub async fn import_data(
                     },
                     Err(e) => {
                         let error_msg = format!("Row {}: {}", index + 1, e);
-                        println!("Import error: {}", error_msg);
+                        println!("Import error: {error_msg}");
                         errors.push(error_msg);
                     }
                 }
@@ -446,7 +446,7 @@ pub async fn import_data(
                     },
                     Err(e) => {
                         let error_msg = format!("Row {}: {}", index + 1, e);
-                        println!("Import error: {}", error_msg);
+                        println!("Import error: {error_msg}");
                         errors.push(error_msg);
                     }
                 }
@@ -558,11 +558,11 @@ async fn import_account_record(
     if existing_count > 0 {
         // Record already exists, skip insertion
         let fields_used = if industry.is_some() {
-            format!("Name + Industry: {} (Industry: {:?})", name, industry)
+            format!("Name + Industry: {name} (Industry: {industry:?})")
         } else {
-            format!("Name: {}", name)
+            format!("Name: {name}")
         };
-        println!("Skipping duplicate account: {}", fields_used);
+        println!("Skipping duplicate account: {fields_used}");
         return Ok((InsertResult::Skipped, duplicate_check_fields));
     }
 
@@ -613,7 +613,7 @@ async fn import_project_record_from_json(
     // Truncate name to fit database constraint (50 characters max)
     let name = if raw_name.len() > 50 {
         let truncated = &raw_name[..47]; // Leave room for "..."
-        format!("{}...", truncated)
+        format!("{truncated}...")
     } else {
         raw_name.to_string()
     };
@@ -634,7 +634,7 @@ async fn import_project_record_from_json(
     .await?;
 
     if existing_count > 0 {
-        println!("Skipping duplicate project: {}", name);
+        println!("Skipping duplicate project: {name}");
         return Ok((InsertResult::Skipped, "Name".to_string()));
     }
 
@@ -689,9 +689,9 @@ pub async fn import_democracylab_projects(
 
     let message = if errors.is_empty() {
         if skipped_count > 0 {
-            format!("Successfully imported {} projects, skipped {} duplicates", inserted_count, skipped_count)
+            format!("Successfully imported {inserted_count} projects, skipped {skipped_count} duplicates")
         } else {
-            format!("Successfully imported {} projects", inserted_count)
+            format!("Successfully imported {inserted_count} projects")
         }
     } else {
         format!("Imported {} of {} projects with {} errors, skipped {} duplicates",
@@ -737,7 +737,7 @@ async fn insert_democracylab_project(
         description_parts.push(desc.clone());
     }
     if let Some(url) = &project.url {
-        description_parts.push(format!("Project URL: {}", url));
+        description_parts.push(format!("Project URL: {url}"));
     }
     let description = if description_parts.is_empty() {
         None
