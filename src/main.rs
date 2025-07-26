@@ -17,6 +17,12 @@ use url::Url;
 use notify::{Watcher, RecursiveMode, RecommendedWatcher, Config as NotifyConfig};
 use std::sync::mpsc::channel;
 
+// Google Sheets API imports (TODO: Fix version conflicts)
+// use google_sheets4::{Sheets, api::ValueRange};
+// use google_apis_common::oauth2::{ServiceAccountAuthenticator, ServiceAccountKey};
+// use hyper::Client;
+// use hyper_rustls::HttpsConnectorBuilder;
+
 mod import;
 mod gemini_insights;
 mod claude_insights;
@@ -269,6 +275,29 @@ struct CreateGoogleProjectRequest {
     org_id: Option<String>,
     billing_id: Option<String>,
     service_key: String,
+}
+
+// Google OAuth verification request
+#[derive(Debug, Serialize, Deserialize)]
+struct GoogleAuthRequest {
+    credential: String,
+}
+
+// Google OAuth verification response
+#[derive(Debug, Serialize, Deserialize)]
+struct GoogleAuthResponse {
+    success: bool,
+    name: String,
+    email: String,
+    picture: Option<String>,
+}
+
+// Google Sheets member data request
+#[derive(Debug, Serialize, Deserialize)]
+struct GoogleSheetsMemberRequest {
+    data: std::collections::HashMap<String, String>,
+    email: String,
+    update_existing: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -749,6 +778,304 @@ async fn create_google_project(req: web::Json<CreateGoogleProjectRequest>) -> Re
             ]
         }
     })))
+}
+
+// Google OAuth verification handler
+async fn verify_google_auth(_req: web::Json<GoogleAuthRequest>) -> Result<HttpResponse> {
+    // For now, return a placeholder response indicating OAuth integration is needed
+    // In a real implementation, this would:
+    // 1. Verify the JWT credential with Google's API
+    // 2. Extract user information (name, email, picture)
+    // 3. Return user data for frontend use
+    
+    Ok(HttpResponse::Ok().json(json!({
+        "success": false,
+        "error": "Google OAuth verification is not yet implemented.",
+        "message": "This feature requires Google OAuth2 integration. Please use the 'Via Google Page' method for now.",
+        "implementation_needed": [
+            "JWT token verification with Google",
+            "User profile data extraction",
+            "Secure session management"
+        ]
+    })))
+}
+
+// Google Sheets Helper Functions (Placeholder implementations)
+// TODO: Complete the Google Sheets API integration by resolving dependency version conflicts
+
+async fn get_sheets_config_data() -> anyhow::Result<serde_json::Value> {
+    let config_path = "admin/google/form/config.json";
+    let config_content = std::fs::read_to_string(config_path)
+        .context("Failed to read sheets config file")?;
+    
+    let config: serde_json::Value = serde_json::from_str(&config_content)
+        .context("Failed to parse sheets config JSON")?;
+    
+    Ok(config)
+}
+
+// Placeholder function - TODO: Implement with actual Google Sheets API
+async fn validate_sheets_credentials() -> anyhow::Result<bool> {
+    // Check if service account key exists and is valid JSON
+    let service_key_json = std::env::var("GOOGLE_SERVICE_KEY")
+        .context("GOOGLE_SERVICE_KEY not found in environment")?;
+    
+    // Try to parse as JSON to validate format
+    let _service_account_key: serde_json::Value = serde_json::from_str(&service_key_json)
+        .context("Failed to parse service account key JSON")?;
+    
+    // TODO: Actually validate credentials with Google API
+    Ok(true)
+}
+
+// Get Google Sheets configuration
+async fn get_sheets_config() -> Result<HttpResponse> {
+    // Try to read configuration from file
+    let config_path = "admin/google/form/config.json";
+    
+    match std::fs::read_to_string(config_path) {
+        Ok(config_content) => {
+            match serde_json::from_str::<serde_json::Value>(&config_content) {
+                Ok(config) => {
+                    Ok(HttpResponse::Ok().json(json!({
+                        "success": true,
+                        "config": config
+                    })))
+                }
+                Err(e) => {
+                    Ok(HttpResponse::InternalServerError().json(json!({
+                        "success": false,
+                        "error": format!("Failed to parse configuration: {}", e)
+                    })))
+                }
+            }
+        }
+        Err(_) => {
+            // Return default configuration
+            Ok(HttpResponse::Ok().json(json!({
+                "success": true,
+                "config": {
+                    "googleSheets": {
+                        "spreadsheetId": "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID",
+                        "worksheetName": "Members",
+                        "headerRow": 1,
+                        "dataStartRow": 2
+                    },
+                    "oauth": {
+                        "clientId": "REPLACE_WITH_YOUR_GOOGLE_OAUTH_CLIENT_ID"
+                    },
+                    "appearance": {
+                        "title": "Member Registration",
+                        "subtitle": "Join our community of developers and contributors working on sustainable impact projects",
+                        "primaryColor": "#3B82F6",
+                        "accentColor": "#10B981"
+                    },
+                    "messages": {
+                        "welcomeNew": "Welcome to MemberCommons! Please fill out the registration form to join our community of developers working on sustainable impact projects.",
+                        "welcomeReturning": "Welcome back! Your existing information has been loaded. Please review and update any details as needed."
+                    },
+                    "behavior": {
+                        "allowDuplicates": false,
+                        "requireGithub": true,
+                        "showProgress": true,
+                        "enablePreview": true
+                    },
+                    "links": {
+                        "membersPage": "https://model.earth/community/members",
+                        "projectsPage": "https://model.earth/projects"
+                    },
+                    "message": "Default configuration loaded. Please update config.json with your Google Sheets details."
+                }
+            })))
+        }
+    }
+}
+
+// Save Google Sheets configuration
+async fn save_sheets_config(req: web::Json<serde_json::Value>) -> Result<HttpResponse> {
+    let config_path = "admin/google/form/config.json";
+    
+    // Create directory if it doesn't exist
+    if let Some(parent) = std::path::Path::new(config_path).parent() {
+        if let Err(e) = std::fs::create_dir_all(parent) {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "success": false,
+                "error": format!("Failed to create config directory: {}", e)
+            })));
+        }
+    }
+    
+    // Pretty print the JSON configuration
+    match serde_json::to_string_pretty(&*req) {
+        Ok(config_json) => {
+            match std::fs::write(config_path, config_json) {
+                Ok(_) => {
+                    Ok(HttpResponse::Ok().json(json!({
+                        "success": true,
+                        "message": "Form configuration saved successfully to config.json"
+                    })))
+                }
+                Err(e) => {
+                    Ok(HttpResponse::InternalServerError().json(json!({
+                        "success": false,
+                        "error": format!("Failed to write configuration file: {}", e)
+                    })))
+                }
+            }
+        }
+        Err(e) => {
+            Ok(HttpResponse::BadRequest().json(json!({
+                "success": false,
+                "error": format!("Invalid JSON configuration: {}", e)
+            })))
+        }
+    }
+}
+
+// Get member data by email from Google Sheets
+async fn get_member_by_email(path: web::Path<String>) -> Result<HttpResponse> {
+    let email = path.into_inner();
+    
+    // Get configuration
+    let config = match get_sheets_config_data().await {
+        Ok(config) => config,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "success": false,
+                "error": format!("Failed to load sheets configuration: {}", e),
+                "email": email
+            })));
+        }
+    };
+    
+    // Extract sheet details from config
+    let spreadsheet_id = config["googleSheets"]["spreadsheetId"]
+        .as_str()
+        .unwrap_or("REPLACE_WITH_YOUR_GOOGLE_SHEET_ID");
+    
+    if spreadsheet_id == "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID" {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "success": false,
+            "error": "Google Sheets not configured. Please update spreadsheetId in config.json",
+            "email": email,
+            "setup_required": {
+                "steps": [
+                    "1. Create a Google Sheet with member data",
+                    "2. Add the spreadsheet ID to admin/google/form/config.json",
+                    "3. Add your Google Service Account Key to .env as GOOGLE_SERVICE_KEY",
+                    "4. The backend will automatically connect to your sheet"
+                ],
+                "config_file": "admin/google/form/config.json",
+                "env_variable": "GOOGLE_SERVICE_KEY"
+            }
+        })));
+    }
+    
+    // Check if credentials are configured
+    match validate_sheets_credentials().await {
+        Ok(_) => {
+            // TODO: Replace with actual Google Sheets API call
+            // For now, return a message indicating the integration is ready but not fully implemented
+            Ok(HttpResponse::Ok().json(json!({
+                "success": false,
+                "error": "Google Sheets API integration ready but not fully implemented",
+                "email": email,
+                "message": "Configuration validated. Waiting for Google Sheets API implementation to complete.",
+                "status": "credentials_valid_api_pending",
+                "next_steps": [
+                    "Resolve Google API dependency version conflicts",
+                    "Complete the find_member_row_by_email implementation",
+                    "Test with real Google Sheets data"
+                ]
+            })))
+        }
+        Err(e) => {
+            return Ok(HttpResponse::BadRequest().json(json!({
+                "success": false,
+                "error": format!("Google Sheets credentials invalid: {}", e),
+                "email": email,
+                "setup_required": {
+                    "env_variable": "GOOGLE_SERVICE_KEY",
+                    "format": "Valid JSON service account key from Google Cloud Console"
+                }
+            })));
+        }
+    }
+}
+
+// Create or update member data in Google Sheets
+async fn save_member_data(req: web::Json<GoogleSheetsMemberRequest>) -> Result<HttpResponse> {
+    // Get configuration
+    let config = match get_sheets_config_data().await {
+        Ok(config) => config,
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "success": false,
+                "error": format!("Failed to load sheets configuration: {}", e),
+                "email": req.email
+            })));
+        }
+    };
+    
+    // Extract sheet details from config
+    let spreadsheet_id = config["googleSheets"]["spreadsheetId"]
+        .as_str()
+        .unwrap_or("REPLACE_WITH_YOUR_GOOGLE_SHEET_ID");
+    
+    if spreadsheet_id == "REPLACE_WITH_YOUR_GOOGLE_SHEET_ID" {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "success": false,
+            "error": "Google Sheets not configured. Please update spreadsheetId in config.json",
+            "email": req.email,
+            "setup_required": {
+                "steps": [
+                    "1. Create a Google Sheet with member data columns",
+                    "2. Add the spreadsheet ID to admin/google/form/config.json",
+                    "3. Add your Google Service Account Key to .env as GOOGLE_SERVICE_KEY",
+                    "4. The backend will automatically save data to your sheet"
+                ],
+                "config_file": "admin/google/form/config.json",
+                "env_variable": "GOOGLE_SERVICE_KEY"
+            }
+        })));
+    }
+    
+    // Check if credentials are configured
+    match validate_sheets_credentials().await {
+        Ok(_) => {
+            // TODO: Replace with actual Google Sheets API call
+            // For now, simulate success to allow form testing
+            Ok(HttpResponse::Ok().json(json!({
+                "success": false,
+                "error": "Google Sheets API integration ready but not fully implemented",
+                "email": req.email,
+                "update_existing": req.update_existing,
+                "message": "Form data received and validated. Google Sheets integration pending.",
+                "status": "credentials_valid_api_pending",
+                "data_received": {
+                    "fields_count": req.data.len(),
+                    "sample_fields": req.data.keys().take(5).collect::<Vec<_>>(),
+                    "operation": if req.update_existing { "update" } else { "create" }
+                },
+                "next_steps": [
+                    "Resolve Google API dependency version conflicts",
+                    "Complete the append_member_row/update_member_row implementations",
+                    "Test with real Google Sheets data"
+                ]
+            })))
+        }
+        Err(e) => {
+            return Ok(HttpResponse::BadRequest().json(json!({
+                "success": false,
+                "error": format!("Google Sheets credentials invalid: {}", e),
+                "email": req.email,
+                "setup_required": {
+                    "env_variable": "GOOGLE_SERVICE_KEY",
+                    "format": "Valid JSON service account key from Google Cloud Console"
+                }
+            })));
+        }
+    }
 }
 
 // Fetch CSV data from external URL (proxy for CORS)
@@ -2024,6 +2351,18 @@ async fn run_api_server(config: Config) -> anyhow::Result<()> {
                     .service(
                         web::scope("/google")
                             .route("/create-project", web::post().to(create_google_project))
+                            .service(
+                                web::scope("/auth")
+                                    .route("/verify", web::post().to(verify_google_auth))
+                            )
+                            .service(
+                                web::scope("/sheets")
+                                    .route("/config", web::get().to(get_sheets_config))
+                                    .route("/config", web::post().to(save_sheets_config))
+                                    .route("/member/{email}", web::get().to(get_member_by_email))
+                                    .route("/member", web::post().to(save_member_data))
+                                    .route("/member", web::put().to(save_member_data))
+                            )
                             .service(
                                 web::scope("/gemini")
                                     .route("/analyze", web::post().to(gemini_insights::analyze_with_gemini))

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="../../../img/logo/neighborhood/favicon.png">
+    <title>Member Registration - MemberCommons</title>
+
+    <link rel="stylesheet" href="../../../css/common.css">
+    <link rel="stylesheet" href="../../../css/shared-styles.css">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css">
+    
+    <!-- Standalone Navigation -->
+    <link rel="stylesheet" href="../../../css/standalone-nav.css">
+    <script src="../../../js/standalone-nav.js"></script>
+    <script src="../../../js/common.js"></script>
+    
+    <link rel="stylesheet" href="../../../css/claude.css">
+
+    <!-- Google OAuth -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <style>
+        :root {
+            --bg-primary: #F9FAFB;
+            --bg-secondary: #FFFFFF;
+            --bg-tertiary: #F3F4F6;
+            --text-primary: #1A1A1A;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+            --accent-green: #10B981;
+            --accent-blue: #3B82F6;
+            --accent-orange: #F59E0B;
+            --accent-purple: #8B5CF6;
+            --border-light: #E5E7EB;
+            --border-medium: #D1D5DB;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --radius-md: 8px;
+            --radius-lg: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-light);
+        }
+
+        .card-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            font-size: 1rem;
+        }
+
+        .auth-section {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .auth-required {
+            display: block;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+        }
+
+        .user-info {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--border-light);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .required::after {
+            content: " *";
+            color: #EF4444;
+        }
+
+        .form-help {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 14px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            transition: all 0.2s ease;
+        }
+
+        .checkbox-item:hover {
+            background: var(--border-light);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .custom-input {
+            margin-top: 8px;
+            padding: 8px 12px;
+            border: 1px dashed var(--border-medium);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #2563EB;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-light);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: var(--border-light);
+        }
+
+        .btn-success {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+        }
+
+        .status-message {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin: 16px 0;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #ECFDF5;
+            color: #047857;
+            border: 1px solid #A7F3D0;
+        }
+
+        .status-message.error {
+            background: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #FECACA;
+        }
+
+        .status-message.info {
+            background: #EFF6FF;
+            color: #1D4ED8;
+            border: 1px solid #BFDBFE;
+        }
+
+        .progress-indicator {
+            background: var(--bg-tertiary);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 24px;
+        }
+
+        .progress-bar {
+            background: var(--border-light);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-blue);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .field-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 10;
+            display: none;
+        }
+
+        .suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: flex-end;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Authentication Section -->
+        <div class="card auth-section auth-required">
+            <h1 class="card-title">
+                <i data-feather="users"></i>
+                Member Registration
+            </h1>
+            <p class="card-subtitle">
+                Join our community of developers and contributors working on sustainable impact projects
+            </p>
+            
+            <div style="margin: 32px 0;">
+                <p style="margin-bottom: 24px; color: var(--text-secondary);">
+                    Please sign in with your Google account to access the member registration form.
+                    If you're already registered, your existing information will be pre-loaded for editing.
+                </p>
+                
+                <div id="g_id_onload"
+                     data-client_id=""
+                     data-context="signin"
+                     data-ux_mode="popup"
+                     data-callback="handleCredentialResponse"
+                     data-auto_prompt="false">
+                </div>
+                
+                <div class="g_id_signin"
+                     data-type="standard"
+                     data-shape="rectangular"
+                     data-theme="outline"
+                     data-text="signin_with"
+                     data-size="large"
+                     data-locale="en"
+                     data-logo_alignment="left">
+                </div>
+            </div>
+            
+            <div id="auth-status" class="status-message"></div>
+        </div>
+
+        <!-- Member Registration Form -->
+        <div class="card form-section" id="member-form">
+            <div class="user-info" id="user-info" style="display: none;">
+                <img id="user-avatar" class="user-avatar" src="" alt="User Avatar">
+                <div>
+                    <div style="font-weight: 500;" id="user-name"></div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);" id="user-email"></div>
+                </div>
+                <div style="margin-left: auto;">
+                    <button class="btn btn-secondary" onclick="signOut()">
+                        <i data-feather="log-out"></i>
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+
+            <div class="progress-indicator">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 500;">Registration Progress</span>
+                    <span id="progress-text">0% complete</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+
+            <form id="registration-form">
+                <div class="form-grid">
+                    <!-- Basic Information -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Name</label>
+                            <input type="text" id="name" name="name" class="form-control" placeholder="First and Last name" required>
+                            <div class="form-help">Only your first name will be listed on our participants page: model.earth/community/members</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Handle</label>
+                            <input type="text" id="handle" name="handle" class="form-control" placeholder="Your first name, Discord name or Github name">
+                            <div class="form-help">Your handle will appear on our member list as your unique identifier.</div>
+                        </div>
+                    </div>
+
+                    <!-- Team Selection -->
+                    <div class="form-group full-width">
+                        <label class="form-label required">Team</label>
+                        <div class="form-help" style="margin-bottom: 12px;">Which programming teams are you interested in?</div>
+                        <div class="checkbox-group" id="team-checkboxes">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-js" name="team" value="JS">
+                                <label for="team-js">JS - Javascript using Claude Code CLI</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-ml" name="team" value="ML">
+                                <label for="team-ml">ML - Machine Learning / Python</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-react" name="team" value="React">
+                                <label for="team-react">React - Next JS using Claude Code CLI</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-ai" name="team" value="AI">
+                                <label for="team-ai">AI - Insights UX using Claude Code CLI</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-flask" name="team" value="Flask">
+                                <label for="team-flask">Flask - Python with UX on Google Cloud</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-io" name="team" value="IO">
+                                <label for="team-io">IO - Multi-Region Input-Output impact models</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-discord" name="team" value="Discord">
+                                <label for="team-discord">Discord - Team API tools</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-auth" name="team" value="Auth">
+                                <label for="team-auth">Auth - CyberSecurity</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-suite" name="team" value="Suite">
+                                <label for="team-suite">Suite - CRM Partner and Team Admin Tools</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="team-other" name="team" value="Other">
+                                <label for="team-other">Other:</label>
+                            </div>
+                        </div>
+                        <div class="custom-input" id="team-other-input" style="display: none;">
+                            <input type="text" id="team-other-text" placeholder="Specify other team interest..." class="form-control">
+                        </div>
+                    </div>
+
+                    <!-- Focus and Projects -->
+                    <div class="form-group full-width">
+                        <label class="form-label">Focus</label>
+                        <textarea id="focus" name="focus" class="form-control" placeholder="What specific processes or projects would you like to work on? model.earth/projects"></textarea>
+                    </div>
+
+                    <!-- UN Goals -->
+                    <div class="form-group full-width">
+                        <label class="form-label required">UN Goal</label>
+                        <div class="form-help" style="margin-bottom: 12px;">Select UN goal areas for which you're interested in contributing to data visualizations and ML reports.</div>
+                        <div class="checkbox-group" id="un-goals">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-jobs" name="un_goals" value="Great Jobs">
+                                <label for="goal-jobs">Great Jobs</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-food" name="un_goals" value="Healthy Food">
+                                <label for="goal-food">Healthy Food</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-health" name="un_goals" value="Excellent Health">
+                                <label for="goal-health">Excellent Health</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-education" name="un_goals" value="Quality Education">
+                                <label for="goal-education">Quality Education</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-gender" name="un_goals" value="Gender Equality">
+                                <label for="goal-gender">Gender Equality</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-water" name="un_goals" value="Clean Water">
+                                <label for="goal-water">Clean Water</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-energy" name="un_goals" value="Energy">
+                                <label for="goal-energy">Energy</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-economy" name="un_goals" value="Vibrant Economies">
+                                <label for="goal-economy">Vibrant Economies</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-innovation" name="un_goals" value="Local Innovation">
+                                <label for="goal-innovation">Local Innovation</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-inclusion" name="un_goals" value="Inclusion">
+                                <label for="goal-inclusion">Inclusion</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-biodiversity" name="un_goals" value="Biodiversity">
+                                <label for="goal-biodiversity">Biodiversity</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-conservation" name="un_goals" value="Conservation">
+                                <label for="goal-conservation">Conservation</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-climate" name="un_goals" value="Air and Climate">
+                                <label for="goal-climate">Air and Climate</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-aquatic" name="un_goals" value="Aquatic Life">
+                                <label for="goal-aquatic">Aquatic Life</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-wildlife" name="un_goals" value="Abundant Wildlife">
+                                <label for="goal-wildlife">Abundant Wildlife</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-peace" name="un_goals" value="Peace and Justice">
+                                <label for="goal-peace">Peace and Justice</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-partnerships" name="un_goals" value="Partnerships">
+                                <label for="goal-partnerships">Partnerships</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-budgets" name="un_goals" value="Balanced Budgets">
+                                <label for="goal-budgets">Balanced Budgets</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-transit" name="un_goals" value="Fast Reliable Transit">
+                                <label for="goal-transit">Fast Reliable Transit</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-internet" name="un_goals" value="High Speed Internet">
+                                <label for="goal-internet">High Speed Internet</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="goal-zones" name="un_goals" value="Expanding Livable Zones">
+                                <label for="goal-zones">Expanding Livable Zones</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Education Information -->
+                    <div class="form-group full-width">
+                        <label class="form-label">School and Degree Program</label>
+                        <input type="text" id="school" name="school" class="form-control" placeholder="Include your most recent school, even if you haven't graduated">
+                        <div class="form-help">This and the following four fields are for our OPT student participants. Otherwise you can skip these.</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date Degree Completed</label>
+                            <input type="date" id="degree_date" name="degree_date" class="form-control">
+                            <div class="form-help">If you have not graduated yet, please enter the anticipated date. Leave blank if you don't anticipate completing a degree.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">OPT University Department</label>
+                            <input type="text" id="opt_department" name="opt_department" class="form-control" placeholder="Department name">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">OPT University Department Email/Phone</label>
+                            <input type="text" id="opt_contact" name="opt_contact" class="form-control" placeholder="Email and/or phone">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Hours/week contributing</label>
+                            <input type="number" id="hours_per_week" name="hours_per_week" class="form-control" placeholder="22" min="1" max="40">
+                            <div class="form-help">For OPT participants. 22 hours per week meets OPT requirements.</div>
+                        </div>
+                    </div>
+
+                    <!-- Location and Status -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Your Location</label>
+                            <input type="text" id="location" name="location" class="form-control" placeholder="City, State (2-char)" required>
+                            <div class="form-help">Where you'll be while participating. (Omit the address and zip code.)</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label required">Status</label>
+                            <select id="status" name="status" class="form-control" required>
+                                <option value="">Select status...</option>
+                                <option value="New">New</option>
+                                <option value="Existing">Existing</option>
+                                <option value="Returning">Returning</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- GitHub and Contact -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Github</label>
+                            <input type="text" id="github" name="github" class="form-control" placeholder="username" required>
+                            <div class="form-help">Your Github username. (Not the full URL) If you don't have a GitHub account yet, please create one before submitting.</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" id="phone" name="phone" class="form-control" placeholder="(555) 123-4567">
+                        </div>
+                    </div>
+
+                    <!-- Dates -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required">Start Date</label>
+                            <input type="date" id="start_date" name="start_date" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">End Date</label>
+                            <input type="date" id="end_date" name="end_date" class="form-control">
+                            <div class="form-help">You can indicate an end date over a year away. If you are unable to contribute weekly or find a new gig, please let Loren know right away.</div>
+                        </div>
+                    </div>
+
+                    <!-- Website and Job Title -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Your Website</label>
+                            <input type="url" id="website" name="website" class="form-control" placeholder="https://example.com">
+                            <div class="form-help">Share a link that highlights your work creations, resume or a site you've worked on.</div>
+                        </div>
+                        <div class="form-group" style="position: relative;">
+                            <label class="form-label required">Job Title</label>
+                            <input type="text" id="job_title" name="job_title" class="form-control" placeholder="Data Scientist / Software Engineer" required>
+                            <div class="form-help">Position to include on your Welcome Letter.</div>
+                            <div class="field-suggestions" id="job-title-suggestions"></div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden Email Field (auto-populated from Google auth) -->
+                    <input type="hidden" id="email" name="email">
+                    <input type="hidden" id="timestamp" name="timestamp">
+
+                    <!-- Projects and Todos -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Projects</label>
+                            <textarea id="projects" name="projects" class="form-control" placeholder="List current or planned projects..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">ToDos</label>
+                            <textarea id="todos" name="todos" class="form-control" placeholder="Current tasks or goals..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Note -->
+                    <div class="form-group full-width">
+                        <label class="form-label">Note</label>
+                        <textarea id="note" name="note" class="form-control" placeholder="Include anything extra. This field is not publicly published."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="previewData()">
+                        <i data-feather="eye"></i>
+                        Preview
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        <i data-feather="save"></i>
+                        Save Registration
+                    </button>
+                </div>
+            </form>
+
+            <div id="form-status" class="status-message"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="form.js"></script>
+</body>
+</html>
