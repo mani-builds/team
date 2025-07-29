@@ -1593,17 +1593,29 @@
     <script src="https://unpkg.com/feather-icons"></script>
     
     <!-- Load Projects Module -->
+    <script src="js/common.js"></script>
     <script src="js/projects.js"></script>
     
     <!-- Load Survey Module -->
     <script src="js/survey.js"></script>
     
     <script>
+        // Initialize managers (using window to avoid redeclaration errors)
+        window.projectsManager = window.projectsManager || new ProjectsManager();
+        window.surveyManager = window.surveyManager || new SurveyManager();
+        window.skillsManager = window.skillsManager || new SkillsManager();
+        
+        // Initialize router (only if HashRouter class is available)
+        if (typeof HashRouter !== 'undefined') {
+            window.router = window.router || new HashRouter();
+        }
+    </script>
+    
+    <script>
         // Initialize Feather Icons
         feather.replace();
 
-        // API Configuration
-        const API_BASE = 'http://localhost:8081/api';
+        // API Configuration loaded from common.js
         
         // Application State
         const AppState = {
@@ -1988,13 +2000,25 @@
 
         // Navigation Functions
         function goWelcome() {
-            router.navigate('home', 'welcome');
+            if (window.router) {
+                window.router.navigate('home', 'welcome');
+            } else {
+                window.location.hash = '#home/welcome';
+            }
         }
         function goPreferences() {
-            router.navigate('account', 'preferences');
+            if (window.router) {
+                window.router.navigate('account', 'preferences');
+            } else {
+                window.location.hash = '#account/preferences';
+            }
         }
         function goProjects() {
-            router.navigate('projects', 'opportunities');
+            if (window.router) {
+                window.router.navigate('projects', 'opportunities');
+            } else {
+                window.location.hash = '#projects/opportunities';
+            }
         }
 
         function signInWith(provider) {
@@ -2072,37 +2096,7 @@
             }
         }
 
-        // API Functions
-        async function apiCall(endpoint, method = 'GET', data = null) {
-            try {
-                const options = {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                };
-                
-                if (data) {
-                    options.body = JSON.stringify(data);
-                }
-                
-                const response = await fetch(`${API_BASE}${endpoint}`, options);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                return await response.json();
-            } catch (error) {
-                console.error('API call failed:', error);
-                // Return placeholder data for development
-                return {
-                    error: true,
-                    message: 'Connection failed - showing placeholder data',
-                    data: null
-                };
-            }
-        }
+        // API Functions loaded from common.js
 
         // Load initial data
         async function loadInitialData() {
@@ -2164,18 +2158,18 @@
             loadInitialData();
             
             // Initialize projects manager
-            if (typeof projectsManager !== 'undefined') {
-                projectsManager.init();
+            if (window.projectsManager) {
+                window.projectsManager.init();
             }
             
             // Initialize survey and skills managers
-            if (typeof surveyManager !== 'undefined') {
-                surveyManager.init();
-                surveyManager.loadSavedResponses();
+            if (window.surveyManager) {
+                window.surveyManager.init();
+                window.surveyManager.loadSavedResponses();
             }
             
-            if (typeof skillsManager !== 'undefined') {
-                skillsManager.init();
+            if (window.skillsManager) {
+                window.skillsManager.init();
             }
             
             // Setup filter change handlers to update URL

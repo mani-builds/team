@@ -33,14 +33,13 @@ class ProjectsManager {
             }
         });
 
-        // Search functionality
-        const searchInput = document.querySelector('#project-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => {
+        // Search functionality - using event delegation since input is created dynamically
+        document.addEventListener('input', (e) => {
+            if (e.target.matches('#project-search')) {
                 this.searchQuery = e.target.value;
                 this.filterProjects();
-            });
-        }
+            }
+        });
 
         // Filter functionality
         document.addEventListener('change', (e) => {
@@ -48,6 +47,211 @@ class ProjectsManager {
                 this.currentFilter = e.target.value;
                 this.filterProjects();
             }
+        });
+    }
+
+    // Flatten nested JSON structures and extract all fields
+    flattenObject(obj, prefix = '') {
+        const flattened = {};
+        
+        for (const key in obj) {
+            if (obj.hasOwnProperty(key)) {
+                const value = obj[key];
+                const newKey = prefix ? `${prefix}.${key}` : key;
+                
+                if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                    // Recursively flatten nested objects
+                    Object.assign(flattened, this.flattenObject(value, newKey));
+                } else {
+                    // Keep the value as is
+                    flattened[newKey] = value;
+                }
+            }
+        }
+        
+        return flattened;
+    }
+    
+    // Find project_description in nested structures
+    findProjectDescription(project) {
+        const flattened = this.flattenObject(project);
+        
+        // Look for project_description in various locations
+        const candidates = [
+            'project_description',
+            'projectDescription', 
+            'description.project',
+            'project.description',
+            'data.project_description',
+            'content.project_description',
+            'details.project_description'
+        ];
+        
+        for (const candidate of candidates) {
+            if (flattened[candidate] !== undefined && flattened[candidate] !== null && flattened[candidate] !== '') {
+                return flattened[candidate];
+            }
+        }
+        
+        // Also check direct nested access
+        if (project.project_description) return project.project_description;
+        if (project.projectDescription) return project.projectDescription;
+        if (project.description && project.description.project) return project.description.project;
+        if (project.project && project.project.description) return project.project.description;
+        if (project.data && project.data.project_description) return project.data.project_description;
+        if (project.content && project.content.project_description) return project.content.project_description;
+        if (project.details && project.details.project_description) return project.details.project_description;
+        
+        return null;
+    }
+
+    // Detect and return common prefix from all column names
+    detectCommonPrefix(columns) {
+        if (columns.length === 0) return '';
+        
+        // Find the shortest column name to limit prefix length
+        const minLength = Math.min(...columns.map(col => col.length));
+        if (minLength === 0) return '';
+        
+        let commonPrefix = '';
+        
+        // Check each character position
+        for (let i = 0; i < minLength; i++) {
+            const char = columns[0][i];
+            
+            // Check if all columns have the same character at this position
+            const allMatch = columns.every(col => col[i] === char);
+            
+            if (allMatch) {
+                commonPrefix += char;
+            } else {
+                break;
+            }
+        }
+        
+        // Only return prefix if it ends with an underscore or is substantial
+        // and all columns would still have meaningful names after removal
+        if (commonPrefix.length > 2 && 
+            (commonPrefix.endsWith('_') || commonPrefix.length >= 4)) {
+            
+            // Verify all columns would have meaningful names after prefix removal
+            const wouldBeValid = columns.every(col => {
+                const remaining = col.substring(commonPrefix.length);
+                return remaining.length > 0 && remaining !== '_';
+            });
+            
+            if (wouldBeValid) {
+                return commonPrefix;
+            }
+        }
+        
+        return '';
+    }
+
+    // Preprocess API data to normalize column names and ordering
+    preprocessProjectData(projects) {
+        if (!Array.isArray(projects)) {
+            return projects;
+        }
+        
+        return projects.map(project => {
+            // Create a new object to maintain original data
+            const processed = {};
+            
+            // Step 1: Flatten nested structures to get all available fields
+            const flatProject = this.flattenObject(project);
+            
+            // Step 2: Detect and remove common prefix from all columns
+            const allColumns = Object.keys(flatProject);
+            const commonPrefix = this.detectCommonPrefix(allColumns);
+            
+            // Create a mapping of original to cleaned column names
+            const columnMapping = {};
+            allColumns.forEach(col => {
+                let cleanedName = col;
+                if (commonPrefix && col.startsWith(commonPrefix)) {
+                    cleanedName = col.substring(commonPrefix.length);
+                    // Ensure the cleaned name doesn't start with underscore
+                    if (cleanedName.startsWith('_')) {
+                        cleanedName = cleanedName.substring(1);
+                    }
+                }
+                columnMapping[col] = cleanedName;
+            });
+            
+            // Step 3: Identify ID columns and add them first (using cleaned names)
+            const idColumns = [];
+            const otherColumns = [];
+            
+            Object.entries(columnMapping).forEach(([originalKey, cleanedKey]) => {
+                if (cleanedKey === 'id' || cleanedKey.endsWith('_id') || cleanedKey.endsWith('ID') || cleanedKey === 'ID') {
+                    idColumns.push({ original: originalKey, cleaned: cleanedKey });
+                } else {
+                    otherColumns.push({ original: originalKey, cleaned: cleanedKey });
+                }
+            });
+            
+            // Sort ID columns (id first, then others alphabetically)
+            idColumns.sort((a, b) => {
+                if (a.cleaned === 'id') return -1;
+                if (b.cleaned === 'id') return 1;
+                return a.cleaned.localeCompare(b.cleaned);
+            });
+            
+            // Step 4: Add ID columns first
+            idColumns.forEach(({ original, cleaned }) => {
+                processed[cleaned] = flatProject[original];
+            });
+            
+            // Step 5: Handle title column creation and positioning
+            let titleValue = null;
+            let titleColumnAdded = false;
+            
+            // First check for existing title (in cleaned names)
+            const titleColumn = otherColumns.find(({ cleaned }) => cleaned === 'title');
+            if (titleColumn && flatProject[titleColumn.original] !== undefined && 
+                flatProject[titleColumn.original] !== null && flatProject[titleColumn.original] !== '') {
+                titleValue = flatProject[titleColumn.original];
+                processed.title = titleValue;
+                titleColumnAdded = true;
+                // Remove from otherColumns to avoid duplication
+                const index = otherColumns.indexOf(titleColumn);
+                if (index > -1) {
+                    otherColumns.splice(index, 1);
+                }
+            } else {
+                // Look for project_description in nested structures (original project object)
+                titleValue = this.findProjectDescription(project);
+                if (titleValue !== null) {
+                    processed.title = titleValue;
+                    titleColumnAdded = true;
+                }
+            }
+            
+            // Step 6: Remove all project_description variants from otherColumns
+            const projectDescriptionKeys = otherColumns.filter(({ cleaned, original }) => 
+                cleaned === 'project_description' ||
+                cleaned === 'projectDescription' ||
+                cleaned === 'description' ||
+                cleaned.includes('project_description') ||
+                cleaned.includes('projectDescription') ||
+                original === 'project_description' ||
+                original === 'projectDescription'
+            );
+            
+            projectDescriptionKeys.forEach(item => {
+                const index = otherColumns.indexOf(item);
+                if (index > -1) {
+                    otherColumns.splice(index, 1);
+                }
+            });
+            
+            // Step 7: Add remaining columns with cleaned names
+            otherColumns.forEach(({ original, cleaned }) => {
+                processed[cleaned] = flatProject[original];
+            });
+            
+            return processed;
         });
     }
 
@@ -377,6 +581,11 @@ class ProjectsManager {
         const container = document.getElementById('opportunities-content');
         if (!container) return;
 
+        // Store current search input focus and cursor position
+        const searchInput = document.getElementById('project-search');
+        const wasFocused = searchInput && document.activeElement === searchInput;
+        const cursorPosition = searchInput ? searchInput.selectionStart : 0;
+
         const filteredProjects = this.getFilteredProjects();
         
         container.innerHTML = `
@@ -446,45 +655,63 @@ class ProjectsManager {
          if (window.initializeFeatherIcons) {
             window.initializeFeatherIcons();
         }
+
+        // Restore search input focus and cursor position if it was focused before
+        if (wasFocused) {
+            const newSearchInput = document.getElementById('project-search');
+            if (newSearchInput) {
+                newSearchInput.focus();
+                newSearchInput.setSelectionRange(cursorPosition, cursorPosition);
+            }
+        }
     }
 
-    // Get recognized fields from project data (similar to map/index.html)
+    // Get recognized fields from project data (adapted for database structure)
     getRecognizedFields(project) {
         const recognized = {};
         
-        // Title field - use project_description as title if no name/title is found
-        if (project.name) {
-            recognized.title = project.name;
-        } else if (project.title) {
-            recognized.title = project.title;
-        } else if (project.project_description) {
-            recognized.title = project.project_description;
-        }
+        // Title field - database projects have name field
+        recognized.title = project.name || project.title || 'Untitled Project';
         
-        // Description field - use project_positions as description if no description is found
-        if (project.description) {
-            recognized.description = project.description;
-        } else if (project.project_positions) {
-            // Trim "description: " from the front of the text
-            let positionsText = project.project_positions.toString();
-            if (positionsText.toLowerCase().startsWith('description: ')) {
-                positionsText = positionsText.substring(13); // Remove "description: " (13 characters)
-            }
-            recognized.description = positionsText;
-        }
+        // Description field - database projects have description field
+        recognized.description = project.description || 'No description available';
         
-        // Copy other common fields
-        recognized.location = project.location;
-        recognized.funding = project.funding;
-        recognized.team_size = project.team_size;
-        recognized.status = project.status;
-        recognized.priority = project.priority;
-        recognized.skills = project.skills;
-        recognized.activities = project.activities;
-        recognized.created_by = project.created_by;
-        recognized.created_date = project.created_date;
-        recognized.deadline = project.deadline;
+        // Database fields that exist
         recognized.id = project.id;
+        recognized.status = project.status || 'unknown';
+        recognized.created_date = project.created_date;
+        recognized.modified_date = project.modified_date;
+        
+        // Fields that don't exist in database - provide defaults
+        recognized.location = 'Location TBD';
+        recognized.funding = 'Funding TBD';
+        recognized.team_size = 0;
+        recognized.priority = 'medium';
+        recognized.skills = [];
+        recognized.activities = [];
+        recognized.created_by = 'System';
+        recognized.deadline = null;
+        
+        // Try to extract some info from description for better display
+        const desc = (project.description || '').toLowerCase();
+        
+        // Infer location if mentioned in description
+        if (desc.includes('atlanta')) recognized.location = 'Atlanta, GA';
+        else if (desc.includes('portland')) recognized.location = 'Portland, OR';
+        else if (desc.includes('detroit')) recognized.location = 'Detroit, MI';
+        else if (desc.includes('remote')) recognized.location = 'Remote';
+        
+        // Infer priority from keywords in name/description
+        const text = ((project.name || '') + ' ' + desc).toLowerCase();
+        if (text.includes('urgent') || text.includes('critical') || text.includes('priority')) {
+            recognized.priority = 'high';
+        }
+        
+        // Extract potential skills from description
+        const skillKeywords = ['react', 'node', 'python', 'javascript', 'typescript', 'postgres', 
+                              'sql', 'api', 'frontend', 'backend', 'fullstack', 'web', 'mobile'];
+        recognized.skills = skillKeywords.filter(skill => desc.includes(skill))
+                                        .map(skill => skill.charAt(0).toUpperCase() + skill.slice(1));
         
         return recognized;
     }
@@ -494,54 +721,54 @@ class ProjectsManager {
         // Use recognized fields for consistent display
         const recognized = this.getRecognizedFields(project);
         
-        const hasJobOpenings = project.activities.some(activity => activity.type === 'job_opening' && activity.status === 'open');
-        const openActivities = project.activities.filter(activity => activity.status === 'open');
+        const hasJobOpenings = project.activities && project.activities.some(activity => activity.type === 'job_opening' && activity.status === 'open');
+        const openActivities = project.activities ? project.activities.filter(activity => activity.status === 'open') : [];
         
         return `
             <div class="project-card ${recognized.priority}" data-project-id="${recognized.id}">
                 <div class="project-header">
                     <div class="project-title-section">
-                        <h3 class="project-title">${recognized.title}</h3>
+                        <h3 class="project-title">${recognized.title || 'Untitled Project'}</h3>
                         <div class="project-meta">
                             <span class="project-location">
                                 <i data-feather="map-pin"></i>
-                                ${recognized.location}
+                                ${recognized.location || 'Location TBD'}
                             </span>
                             <span class="project-funding">
                                 <i data-feather="dollar-sign"></i>
-                                ${recognized.funding}
+                                ${recognized.funding || 'Funding TBD'}
                             </span>
                             <span class="project-team">
                                 <i data-feather="users"></i>
-                                ${recognized.team_size} members
+                                ${recognized.team_size || 0} members
                             </span>
                         </div>
                     </div>
                     
                     <div class="project-status">
-                        <span class="status-badge status-${recognized.status}">${recognized.status.replace('_', ' ')}</span>
+                        <span class="status-badge status-${recognized.status || 'unknown'}">${(recognized.status || 'unknown').replace('_', ' ')}</span>
                         ${recognized.priority === 'high' ? '<span class="priority-badge">High Priority</span>' : ''}
                     </div>
                 </div>
 
                 <div class="project-description">
-                    <p>${recognized.description}</p>
+                    <p>${recognized.description || 'No description available'}</p>
                 </div>
 
                 <div class="project-skills">
-                    ${recognized.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                    ${(recognized.skills || []).map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
                 </div>
 
-                ${recognized.activities.length > 0 ? `
+                ${(recognized.activities || []).length > 0 ? `
                     <div class="project-activities">
                         <h4 class="activities-title">Open Activities</h4>
                         ${openActivities.slice(0, 2).map(activity => `
                             <div class="activity-item">
                                 <div class="activity-info">
-                                    <h5 class="activity-name">${activity.name}</h5>
-                                    <p class="activity-description">${activity.description}</p>
+                                    <h5 class="activity-name">${activity.name || 'Unnamed Activity'}</h5>
+                                    <p class="activity-description">${activity.description || 'No description'}</p>
                                     <div class="activity-skills">
-                                        ${activity.skills.map(skill => `<span class="skill-tag small">${skill}</span>`).join('')}
+                                        ${(activity.skills || []).map(skill => `<span class="skill-tag small">${skill}</span>`).join('')}
                                     </div>
                                 </div>
                                 <div class="activity-actions">
@@ -563,15 +790,15 @@ class ProjectsManager {
 
                 <div class="project-footer">
                     <div class="project-dates">
-                        <span class="created-date">Created ${this.formatDate(project.created_date)}</span>
-                        <span class="deadline">Deadline: ${this.formatDate(project.deadline)}</span>
+                        <span class="created-date">Created ${this.formatDate(recognized.created_date || new Date().toISOString())}</span>
+                        <span class="deadline">Deadline: ${this.formatDate(recognized.deadline || 'TBD')}</span>
                     </div>
                     
                     <div class="project-actions">
-                        <button class="btn btn-secondary" data-action="view-project" data-project-id="${project.id}">
+                        <button class="btn btn-secondary" data-action="view-project" data-project-id="${recognized.id}">
                             View Details
                         </button>
-                        <button class="btn btn-primary" data-action="join-project" data-project-id="${project.id}">
+                        <button class="btn btn-primary" data-action="join-project" data-project-id="${recognized.id}">
                             Join Project
                         </button>
                     </div>
@@ -588,29 +815,73 @@ class ProjectsManager {
         if (this.searchQuery) {
             const query = this.searchQuery.toLowerCase();
             filtered = filtered.filter(project => 
-                project.name.toLowerCase().includes(query) ||
-                project.description.toLowerCase().includes(query) ||
-                project.skills.some(skill => skill.toLowerCase().includes(query)) ||
-                project.location.toLowerCase().includes(query)
+                (project.name || '').toLowerCase().includes(query) ||
+                (project.description || '').toLowerCase().includes(query) ||
+                (project.id || '').toLowerCase().includes(query) ||
+                (project.status || '').toLowerCase().includes(query)
             );
         }
 
-        // Apply category filter
+        // Apply category filter - adapted for database project structure
         switch (this.currentFilter) {
             case 'opportunities':
-                filtered = filtered.filter(p => p.status === 'active');
+                // Filter for active projects (matching API status field)
+                filtered = filtered.filter(p => (p.status || '').toLowerCase() === 'active');
                 break;
             case 'job_openings':
-                filtered = filtered.filter(p => 
-                    p.activities.some(a => a.type === 'job_opening' && a.status === 'open')
-                );
+                // Filter projects that might be hiring (contains keywords in description)
+                filtered = filtered.filter(p => {
+                    const text = ((p.name || '') + ' ' + (p.description || '')).toLowerCase();
+                    return text.includes('hiring') || text.includes('job') || 
+                           text.includes('position') || text.includes('developer') ||
+                           text.includes('programmer') || text.includes('coder') ||
+                           text.includes('career') || text.includes('employment');
+                });
                 break;
             case 'innovation_bonds':
-                filtered = filtered.filter(p => p.funding === 'Innovation Bond');
+                // Filter projects related to innovation or funding
+                filtered = filtered.filter(p => {
+                    const text = ((p.name || '') + ' ' + (p.description || '')).toLowerCase();
+                    return text.includes('innovation') || text.includes('bond') || 
+                           text.includes('funding') || text.includes('grant') ||
+                           text.includes('financial') || text.includes('investment');
+                });
                 break;
             case 'high_priority':
-                filtered = filtered.filter(p => p.priority === 'high');
+                // Filter projects that might be high priority (recent or contains urgency keywords)
+                filtered = filtered.filter(p => {
+                    const text = ((p.name || '') + ' ' + (p.description || '')).toLowerCase();
+                    const isRecent = p.created_date && 
+                        new Date(p.created_date) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days
+                    return isRecent || text.includes('urgent') || text.includes('priority') || 
+                           text.includes('critical') || text.includes('important');
+                });
                 break;
+        }
+
+        // Sort projects - prioritize search relevance if searching, otherwise by creation date
+        if (this.searchQuery) {
+            const query = this.searchQuery.toLowerCase();
+            filtered.sort((a, b) => {
+                // Prioritize name matches over description matches
+                const aNameMatch = (a.name || '').toLowerCase().includes(query);
+                const bNameMatch = (b.name || '').toLowerCase().includes(query);
+                
+                if (aNameMatch && !bNameMatch) return -1;
+                if (!aNameMatch && bNameMatch) return 1;
+                
+                // If both match name or both match description, sort by creation date
+                const dateA = new Date(a.created_date || 0);
+                const dateB = new Date(b.created_date || 0);
+                return dateB - dateA;
+            });
+        } else {
+            // Sort by creation date (newest first) for consistent ordering
+            filtered.sort((a, b) => {
+                const dateA = new Date(a.created_date || 0);
+                const dateB = new Date(b.created_date || 0);
+                return dateB - dateA;
+            });
         }
 
         return filtered;
@@ -1013,9 +1284,9 @@ class ProjectsManager {
                                         <h4>${activity.name}</h4>
                                         <span class="activity-type-badge ${activity.type}">${activity.type.replace('_', ' ')}</span>
                                     </div>
-                                    <p class="activity-description">${activity.description}</p>
+                                    <p class="activity-description">${activity.description || 'No description'}</p>
                                     <div class="activity-skills">
-                                        ${activity.skills.map(skill => `<span class="skill-tag small">${skill}</span>`).join('')}
+                                        ${(activity.skills || []).map(skill => `<span class="skill-tag small">${skill}</span>`).join('')}
                                     </div>
                                     <div class="activity-footer">
                                         <span class="activity-status status-${activity.status}">${activity.status.replace('_', ' ')}</span>

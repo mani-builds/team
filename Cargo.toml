@@ -100,6 +100,10 @@ debug = true
 name = "gemini_crm"
 path = "src/main.rs"
 
+[[bin]]
+name = "test_recommendations"
+path = "src/test_recommendations.rs"
+
 [features]
 default = ["cli", "api"]
 cli = []

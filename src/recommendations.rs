@@ -1,33 +1,21 @@
 use serde::{Deserialize, Serialize};
-use calamine::{open_workbook, Reader, Xlsx, DataType};
+use calamine::{open_workbook, Reader, Xlsx};
 use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Project {
     pub id: f64,
-    #[serde(rename = "Project Name")]
     pub project_name: String,
-    #[serde(rename = "Project Description")]
     pub project_description: String,
-    #[serde(rename = "Country")]
     pub country: String,
-    #[serde(rename = "NAICS Sector")]
     pub naics_sector: String,
-    #[serde(rename = "Committed")]
     pub committed: f64,
-    #[serde(rename = "Department")]
     pub department: String,
-    #[serde(rename = "Project Type")]
     pub project_type: String,
-    #[serde(rename = "Region")]
     pub region: String,
-    #[serde(rename = "Fiscal Year")]
     pub fiscal_year: String,
-    #[serde(rename = "Project Number")]
     pub project_number: String,
-    #[serde(rename = "Framework")]
     pub framework: String,
-    #[serde(rename = "Project Profile URL")]
     pub project_profile_url: String,
     pub tags: Vec<String>,
     pub starred: bool,
@@ -58,6 +46,15 @@ fn get_preference_to_filter_mappings() -> HashMap<String, serde_json::Value> {
     mappings
 }
 
+fn find_column_index(headers: &[String], possible_names: &[&str]) -> Option<usize> {
+    for name in possible_names {
+        if let Some(index) = headers.iter().position(|h| h.to_lowercase().contains(&name.to_lowercase())) {
+            return Some(index);
+        }
+    }
+    None
+}
+
 pub fn get_recommendations(preferences: &[String], excel_file_path: &str) -> Result<Vec<Project>, anyhow::Error> {
     let mut excel: Xlsx<_> = open_workbook(excel_file_path)?;
     let mut projects = Vec::new();
@@ -66,28 +63,57 @@ pub fn get_recommendations(preferences: &[String], excel_file_path: &str) -> Res
         let mut rows = range.rows();
         let headers = rows.next().unwrap().iter().map(|c| c.to_string()).collect::<Vec<String>>();
 
+        // Find column indices dynamically using multiple possible column names
+        let project_name_idx = find_column_index(&headers, &["project name", "name", "title", "project"]);
+        let project_description_idx = find_column_index(&headers, &["project description", "description", "desc", "summary"]);
+        let country_idx = find_column_index(&headers, &["country", "nation", "location country"]);
+        let naics_sector_idx = find_column_index(&headers, &["naics sector", "sector", "industry", "naics", "industry sector"]);
+        let committed_idx = find_column_index(&headers, &["committed", "amount", "funding", "budget", "cost"]);
+        let department_idx = find_column_index(&headers, &["department", "dept", "division", "unit", "team"]);
+        let project_type_idx = find_column_index(&headers, &["project type", "type", "category", "kind"]);
+        let region_idx = find_column_index(&headers, &["region", "area", "zone", "territory"]);
+        let fiscal_year_idx = find_column_index(&headers, &["fiscal year", "year", "fy", "period"]);
+        let project_number_idx = find_column_index(&headers, &["project number", "number", "id", "reference", "code"]);
+        let framework_idx = find_column_index(&headers, &["framework", "method", "approach", "methodology"]);
+        let project_profile_url_idx = find_column_index(&headers, &["project profile url", "url", "link", "website", "profile"]);
+
         for (i, row) in rows.enumerate() {
-            let project_name = row.get(headers.iter().position(|h| h == "Project Name").unwrap()).and_then(|c| c.as_string()).unwrap_or_default();
+            // Helper to get string value from cell
+            let get_string = |idx: Option<usize>| -> String {
+                idx.and_then(|i| row.get(i))
+                   .map(|cell| cell.to_string())
+                   .unwrap_or_default()
+            };
+            
+            // Helper to get float value from cell
+            let get_float = |idx: Option<usize>| -> f64 {
+                idx.and_then(|i| row.get(i))
+                   .map(|cell| cell.to_string().parse().unwrap_or(0.0))
+                   .unwrap_or(0.0)
+            };
+            
+            let project_name = get_string(project_name_idx);
             if project_name.is_empty() {
                 continue;
             }
+            
             let project = Project {
                 id: (i + 1) as f64,
-                project_name: project_name.to_string(),
-                project_description: row.get(headers.iter().position(|h| h == "Project Description").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                country: row.get(headers.iter().position(|h| h == "Country").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                naics_sector: row.get(headers.iter().position(|h| h == "NAICS Sector").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                committed: row.get(headers.iter().position(|h| h == "Committed").unwrap()).and_then(|c| c.as_f64()).unwrap_or_default(),
-                department: row.get(headers.iter().position(|h| h == "Department").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                project_type: row.get(headers.iter().position(|h| h == "Project Type").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                region: row.get(headers.iter().position(|h| h == "Region").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                fiscal_year: row.get(headers.iter().position(|h| h == "Fiscal Year").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                project_number: row.get(headers.iter().position(|h| h == "Project Number").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                framework: row.get(headers.iter().position(|h| h == "Framework").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                project_profile_url: row.get(headers.iter().position(|h| h == "Project Profile URL").unwrap()).and_then(|c| c.as_string()).unwrap_or_default().to_string(),
-                tags: vec![], // Simplified for now
+                project_name,
+                project_description: get_string(project_description_idx),
+                country: get_string(country_idx),
+                naics_sector: get_string(naics_sector_idx),
+                committed: get_float(committed_idx),
+                department: get_string(department_idx),
+                project_type: get_string(project_type_idx),
+                region: get_string(region_idx),
+                fiscal_year: get_string(fiscal_year_idx),
+                project_number: get_string(project_number_idx),
+                framework: get_string(framework_idx),
+                project_profile_url: get_string(project_profile_url_idx),
+                tags: vec![],
                 starred: false,
-                comment: "".to_string(),
+                comment: String::new(),
             };
             projects.push(project);
         }
@@ -110,6 +136,9 @@ pub fn get_recommendations(preferences: &[String], excel_file_path: &str) -> Res
             }
         }
     }
+
+    // Limit the recommendations to 5 as mentioned in the commit
+    recommended_projects.truncate(5);
 
     Ok(recommended_projects)
 }

@@ -66,7 +66,7 @@ impl Config {
                     .parse()
                     .unwrap_or(8081),
                 excel_file_path: std::env::var("EXCEL_FILE_PATH")
-                    .unwrap_or_else(|_| r"C:\Users\yashg\Model Earth\membercommons\preferences\projects\DFC-ActiveProjects.xlsx".to_string()),
+                    .unwrap_or_else(|_| "preferences/projects/DFC-ActiveProjects.xlsx".to_string()),
                 site_favicon: std::env::var("SITE_FAVICON").ok(),
             })
         }
