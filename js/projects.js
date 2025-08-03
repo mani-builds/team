@@ -6,6 +6,7 @@ class ProjectsManager {
         this.opportunities = [];
         this.currentFilter = 'all';
         this.searchQuery = '';
+        this.isUsingPlaceholderData = false;
     }
 
     // Initialize projects section
@@ -469,6 +470,7 @@ class ProjectsManager {
             } else {
                 // Preprocess the data to normalize column names and ordering
                 this.projects = this.preprocessProjectData(response.data);
+                this.isUsingPlaceholderData = false;
                 this.renderProjects();
             }
         } catch (error) {
@@ -484,6 +486,7 @@ class ProjectsManager {
 
     // Load placeholder data for demo purposes
     loadPlaceholderData() {
+        this.isUsingPlaceholderData = true;
         this.projects = [
             {
                 id: '1',
@@ -590,7 +593,7 @@ class ProjectsManager {
         
         container.innerHTML = `
             <div style="position:relative">
-            <img src="img/presenting-bolt-4gov.png" style="width:100%;border-top-left-radius:25px;border-top-right-radius:25px;"><br><br></div>
+            <img src="${window.fixRelativePath ? window.fixRelativePath('img/presenting-bolt-4gov.png') : 'img/presenting-bolt-4gov.png'}" style="width:100%;border-top-left-radius:25px;border-top-right-radius:25px;"><br><br></div>
                 
             <div class="projects-header">
                 
@@ -635,6 +638,12 @@ class ProjectsManager {
                     </select>
                 </div>
             </div>
+
+            ${this.isUsingPlaceholderData ? `
+                <div class="placeholder-message" style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 16px 0; color: #92400e;">
+                    <strong>ℹ️ Demo Mode:</strong> Showing sample projects. Database connection unavailable - projects will load automatically when API is accessible.
+                </div>
+            ` : ''}
 
             <div class="projects-grid">
                 ${filteredProjects.map(project => this.renderProjectCard(project)).join('')}
