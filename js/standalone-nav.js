@@ -344,9 +344,14 @@ class StandaloneNavigation {
         }
         
         // Check for custom favicon from environment/config
-        this.updateLogoFromConfig().catch(error => {
-            console.log('Failed to update logo/favicon from config:', error);
-        });
+        // Skip favicon update if common.js is handling it
+        if (!window.updateFaviconPath) {
+            this.updateLogoFromConfig().catch(error => {
+                console.log('Failed to update logo/favicon from config:', error);
+            });
+        } else {
+            console.log('[FaviconManager] Skipping - common.js will handle favicon updates');
+        }
     }
     
     // Update logo and favicon based on SITE_FAVICON environment variable or config
@@ -1018,10 +1023,17 @@ function initializeStandaloneNav() {
         repoFolderName = 'team';
         basePath = '/team';
     } else if (pathSegments.length === 0) {
-        // We're at root level, might be external site at root
-        isExternalSite = true;
-        repoFolderName = 'team';
-        basePath = '/team';
+        // We're at root level - check if it's actually direct repo serving
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // Local development - likely direct repo serving
+            isExternalSite = false;
+            basePath = './';
+        } else {
+            // External site at root
+            isExternalSite = true;
+            repoFolderName = 'team';
+            basePath = '/team';
+        }
     } else {
         // Direct repo serving (legacy behavior)
         if (pathSegments.length > 1) {

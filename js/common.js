@@ -1,5 +1,66 @@
 // Common utilities and shared functions for MemberCommons
 
+// Base path detection utility
+function getBasePath() {
+    // Get the current script's path or the current page path
+    const currentPath = window.location.pathname;
+    
+    // Check if we're in a webroot container (has '/team/' in path)
+    if (currentPath.includes('/team/')) {
+        // Extract base path up to /team/
+        const teamIndex = currentPath.indexOf('/team/');
+        return currentPath.substring(0, teamIndex + 6); // Include '/team/'
+    }
+    
+    // For direct repo serving, determine depth based on current location
+    const pathSegments = currentPath.split('/').filter(segment => segment !== '');
+    
+    // Remove the current file if it's an HTML file
+    if (pathSegments.length > 0 && pathSegments[pathSegments.length - 1].includes('.html')) {
+        pathSegments.pop();
+    }
+    
+    // Calculate relative path to repo root
+    const depth = pathSegments.length;
+    return depth > 0 ? '../'.repeat(depth) : './';
+}
+
+// Global base path
+const BASE_PATH = getBasePath();
+
+// Function to fix relative paths dynamically
+function fixRelativePath(relativePath) {
+    if (relativePath.startsWith('../') || relativePath.startsWith('./')) {
+        // Already relative, keep as is for direct serving
+        if (!window.location.pathname.includes('/team/')) {
+            return relativePath;
+        }
+    }
+    
+    // For webroot container, use absolute path from webroot
+    if (window.location.pathname.includes('/team/')) {
+        return '/team/' + relativePath.replace(/^\.\.\/+/, '');
+    }
+    
+    return relativePath;
+}
+
+// Function to update favicon dynamically
+function updateFaviconPath() {
+    const faviconLinks = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+    faviconLinks.forEach(faviconLink => {
+        const originalHref = faviconLink.getAttribute('href');
+        if (originalHref && !originalHref.startsWith('http')) {
+            // Fix any incorrect /team/ paths for direct serving
+            if (originalHref.includes('/team/') && !window.location.pathname.includes('/team/')) {
+                faviconLink.href = originalHref.replace('/team/', '');
+            } else {
+                faviconLink.href = fixRelativePath(originalHref);
+            }
+        }
+    });
+}
+
 // API Configuration
 const API_BASE = 'http://localhost:8081/api';
 
@@ -451,6 +512,35 @@ function displayFile(pagePath, divID, target, callback, enableLogging = true) {
     fileDisplaySystem.displayFile(pagePath, divID, target, callback, enableLogging);
 }
 
+// Initialize path fixes when page loads
+function initializePathFixes() {
+    updateFaviconPath();
+    console.log('Base path detected:', BASE_PATH);
+    console.log('Current path:', window.location.pathname);
+    
+    // Watch for favicon changes and fix them immediately
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.tagName === 'LINK' && 
+                        (node.rel === 'icon' || node.rel === 'shortcut icon')) {
+                        setTimeout(updateFaviconPath, 10); // Fix after a brief delay
+                    }
+                });
+            }
+        });
+    });
+    observer.observe(document.head, { childList: true, subtree: true });
+}
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePathFixes);
+} else {
+    initializePathFixes();
+}
+
 // Make functions globally available
 window.apiCall = apiCall;
 window.showNotification = showNotification;
@@ -461,3 +551,7 @@ window.initializeFeatherIcons = initializeFeatherIcons;
 window.waitForDependencies = waitForDependencies;
 window.displayFile = displayFile;
 window.fileDisplaySystem = fileDisplaySystem;
+window.getBasePath = getBasePath;
+window.fixRelativePath = fixRelativePath;
+window.updateFaviconPath = updateFaviconPath;
+window.BASE_PATH = BASE_PATH;
