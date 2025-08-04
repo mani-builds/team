@@ -356,18 +356,14 @@ class StandaloneNavigation {
     
     // Update logo and favicon based on SITE_FAVICON environment variable or config
     async updateLogoFromConfig() {
-        console.log('[FaviconManager] Starting logo/favicon update...');
         let siteFavicon = null;
-        
+
         // First, try to fetch current config from the server
         try {
             const apiUrl = 'http://localhost:8081/api/config/current';
-            console.log('[FaviconManager] Fetching config from', apiUrl);
-            const response = await fetch(apiUrl);
-            console.log('[FaviconManager] Response status:', response.status);
+            const response = await fetch(apiUrl); // Since a connection error would be network-level, it cannot be surpressed by javascript
             if (response.ok) {
                 const config = await response.json();
-                console.log('[FaviconManager] Config received:', config);
                 if (config.site_favicon) {
                     siteFavicon = config.site_favicon;
                     console.log('[FaviconManager] Found site_favicon:', siteFavicon);
