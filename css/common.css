@@ -138,16 +138,16 @@ h2 {
 }
 
 .btn-primary {
-    background: var(--accent-blue);
+    background: #137AD1;
     color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-    background: #2563EB;
+    background: #1164A3;
 }
 
 .btn-secondary {
-    background: var(--bg-tertiary);
+    background: var(--border-light);
     color: var(--text-secondary);
     border: 1px solid var(--border-light);
 }
@@ -323,6 +323,54 @@ pre, pre code {
     box-sizing: border-box;
     /* Ensure code blocks can't expand beyond their container */
     min-width: 0;
+}
+
+/* ===== CARD SECTIONS ===== */
+.cardsection {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+#cli-commands {
+    margin-top: 16px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+}
+
+/* ===== COLLAPSIBLE SECTIONS ===== */
+.collapse-toggle-btn {
+    position: absolute !important;
+    top: 16px !important;
+    right: 16px !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    z-index: 10 !important;
+    border: none !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+}
+
+.collapse-toggle-btn.btn-primary:hover {
+    background: #1164A3 !important;
+    transform: translateY(-1px);
+}
+
+.collapse-toggle-btn.btn-secondary:hover {
+    background: var(--border-medium) !important;
+    transform: translateY(-1px);
+}
+
+.collapse-status {
+    color: var(--text-secondary) !important;
+    font-size: 14px !important;
+    font-style: italic !important;
+    padding: 8px 0 !important;
 }
 
 /* Additional fix for readme content within navigation layout */

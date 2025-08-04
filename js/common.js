@@ -64,6 +64,414 @@ function updateFaviconPath() {
 // API Configuration
 const API_BASE = 'http://localhost:8081/api';
 
+// OS Detection functionality
+function detectOS() {
+    const userAgent = navigator.userAgent;
+    const platform = navigator.platform;
+    
+    let detectedOS = '';
+    let osDetails = '';
+    
+    if (userAgent.includes('Mac') || platform.includes('Mac')) {
+        detectedOS = 'Mac';
+        osDetails = `Detected: macOS (${platform})`;
+    } else if (userAgent.includes('Windows') || platform.includes('Win')) {
+        detectedOS = 'PC';
+        osDetails = `Detected: Windows (${platform})`;
+    } else if (userAgent.includes('Linux') || platform.includes('Linux')) {
+        detectedOS = 'Linux';
+        osDetails = `Detected: Linux (${platform})`;
+    } else {
+        detectedOS = 'Other';
+        osDetails = `Detected: Unknown OS (${platform})`;
+    }
+    
+    return { os: detectedOS, details: osDetails };
+}
+
+// Function to create collapsible sections with Done/Show toggle
+function makeCollapsible(divId) {
+    const targetDiv = document.getElementById(divId);
+    if (!targetDiv) return;
+    
+    // Check if already made collapsible
+    if (targetDiv.querySelector('.collapse-toggle-btn')) return;
+    
+    // Get stored state
+    const isCollapsed = localStorage.getItem(`${divId}-collapsed`) === 'true';
+    
+    // Create toggle button
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = isCollapsed ? 'collapse-toggle-btn btn btn-secondary' : 'collapse-toggle-btn btn btn-primary';
+    toggleBtn.style.cssText = 'position: absolute; top: 16px; right: 16px; padding: 6px 12px; font-size: 12px; z-index: 10;';
+    toggleBtn.textContent = isCollapsed ? 'Show' : 'Done';
+    
+    // Create status div (hidden by default)
+    const statusDiv = document.createElement('div');
+    statusDiv.className = 'collapse-status';
+    statusDiv.style.cssText = 'display: none; color: var(--text-secondary); font-size: 14px; font-style: italic;';
+    statusDiv.textContent = 'Section completed and collapsed';
+    
+    // Wrap existing content
+    const originalContent = targetDiv.innerHTML;
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'collapse-content';
+    contentWrapper.innerHTML = originalContent;
+    
+    // Make target div position relative for absolute positioning of button
+    targetDiv.style.position = 'relative';
+    
+    // Clear and rebuild div structure
+    targetDiv.innerHTML = '';
+    targetDiv.appendChild(toggleBtn);
+    targetDiv.appendChild(contentWrapper);
+    targetDiv.appendChild(statusDiv);
+    
+    // Apply initial state
+    if (isCollapsed) {
+        contentWrapper.style.display = 'none';
+        statusDiv.style.display = 'block';
+    }
+    
+    // Add click handler
+    toggleBtn.addEventListener('click', function() {
+        const isCurrentlyCollapsed = contentWrapper.style.display === 'none';
+        
+        if (isCurrentlyCollapsed) {
+            // Show content
+            contentWrapper.style.display = 'block';
+            statusDiv.style.display = 'none';
+            toggleBtn.textContent = 'Done';
+            toggleBtn.className = 'collapse-toggle-btn btn btn-primary';
+            localStorage.setItem(`${divId}-collapsed`, 'false');
+        } else {
+            // Hide content
+            contentWrapper.style.display = 'none';
+            statusDiv.style.display = 'block';
+            toggleBtn.textContent = 'Show';
+            toggleBtn.className = 'collapse-toggle-btn btn btn-secondary';
+            localStorage.setItem(`${divId}-collapsed`, 'true');
+        }
+    });
+}
+
+// Function to create and render OS detection panel
+function createOSDetectionPanel(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`Container with ID '${containerId}' not found`);
+        return;
+    }
+    
+    const panelHTML = `
+        <div class="card" id="os-detection-panel">
+            <h2 class="card-title" id="cli-tools-title">My Command Line Tool</h2>
+            <div style="display: flex; gap: 32px; margin-bottom: 16px;">
+                <div>
+                    <select id="os" style="padding: 8px 12px; border: 1px solid var(--border-medium); border-radius: var(--radius-sm); font-size: 14px; min-width: 150px;">
+                        <option value="">Select OS...</option>
+                        <option value="Mac">Mac</option>
+                        <option value="PC">PC</option>
+                        <option value="Linux">Linux</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <div id="os-info" style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;"></div>
+                </div>
+                <div>
+                    <span style="font-weight: 500; margin-right: 12px;">I'll be coding with...</span><br>
+                    <div style="margin-bottom: 4px;"></div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" id="claude-code-cli" style="margin: 0;">
+                            <span>Claude Code CLI (Recommended)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="checkbox" id="gemini-cli" style="margin: 0;">
+                            <span>Gemini CLI (Not mature yet)</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div id="cli-commands" style="display: none;">
+                <div id="claude-code-commands" style="display: none;">
+                    <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Claude Code CLI Installation:</h4>
+                    <div style="margin: 8px 0 16px 0;">
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 4px;">
+                            <input type="radio" name="claude-install-status" value="initial" style="margin: 0;" checked>
+                            <span>Initial install</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                            <input type="radio" name="claude-install-status" value="already" style="margin: 0;">
+                            <span>Already installed</span>
+                        </label>
+                    </div>
+                    <div id="claude-install-text" style="display: block; margin-top: 12px; font-size: 14px; color: var(--text-secondary);">
+                        If you haven't installed Claude yet, install <a href="https://nodejs.org/en/download" target="_blank" style="color: var(--accent-blue); text-decoration: none;">NodeJS 18+</a>, then install Claude Code CLI with:<br>
+                        <pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; margin: 8px 0 0 0; display: inline-block;"><code>npm install -g @anthropic-ai/claude-code</code></pre>
+                    </div>
+
+                    <div id="cli-instructions" style="margin-bottom: 16px;">
+                        Right-click on your "<span id="repo-name">team</span>" repo, open a New Terminal at Folder, and run a virtual environment with Claude Code CLI.
+                    </div>
+                    
+                    <div id="command-display" style="font-family: monospace; font-size: 13px; line-height: 1.4; margin: 0;">python3 -m venv env
+source env/bin/activate
+npx @anthropic-ai/claude-code</div>
+                    <div style="font-size: .8em;">
+                        Starting a fresh terminal can help save tokens. Claude Pro reserves the right to throttle you after 50 sessions/month, but if sessions are small we assume they'll avoid throttling a fresh-session approach.
+                    </div>
+                </div>
+            </div>
+            <div class="cardsection" id="gemini-installation" style="display: none;">
+                <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Gemini CLI Installation:</h4>
+                <pre style="background: var(--bg-primary); padding: 12px; border-radius: var(--radius-sm); font-family: monospace; font-size: 13px; line-height: 1.4; margin: 0; overflow-x: auto;"><code>python3 -m venv env
+source env/bin/activate
+npm install -g @google/generative-ai</code></pre>
+            </div>
+            <div class="cardsection" id="gemini-resources">
+                <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">AI Insights Key:</h4>
+                <a href="https://ai.google.dev/gemini-api/docs/quickstart">Gemini quickstart</a> - Add your Gemini API key in .env
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = panelHTML;
+    
+    // Initialize the panel after creating it
+    initializeOSDetectionPanel();
+}
+
+// Function to initialize OS detection panel functionality
+function initializeOSDetectionPanel() {
+    const osSelect = document.getElementById('os');
+    const osInfo = document.getElementById('os-info');
+    const claudeCodeCli = document.getElementById('claude-code-cli');
+    const geminiCli = document.getElementById('gemini-cli');
+    const cliCommands = document.getElementById('cli-commands');
+    const claudeCodeCommands = document.getElementById('claude-code-commands');
+    const geminiInstallation = document.getElementById('gemini-installation');
+    const geminiResources = document.getElementById('gemini-resources');
+    const claudeInstallText = document.getElementById('claude-install-text');
+    const repoNameSpan = document.getElementById('repo-name');
+    
+    if (!osSelect || !osInfo) return;
+    
+    // Auto-detect OS and set initial values
+    const osInfo_detected = detectOS();
+    const detectedOS = osInfo_detected.os;
+    const osDetails = osInfo_detected.details;
+    
+    osSelect.value = detectedOS;
+    osInfo.textContent = osDetails;
+    
+    // Update repo name from current URL
+    const currentPath = window.location.pathname;
+    const pathSegments = currentPath.split('/').filter(segment => segment);
+    const repoName = pathSegments.length > 0 ? pathSegments[0] : 'webroot';
+    if (repoNameSpan) {
+        repoNameSpan.textContent = repoName;
+    }
+    
+    // Load saved CLI preferences
+    const savedClaudeCode = localStorage.getItem('claude-code-cli-installed');
+    const savedGemini = localStorage.getItem('gemini-cli-installed');
+    const savedInstallStatus = localStorage.getItem('claude-install-status');
+    
+    // Check Claude by default if no saved preference exists
+    if (claudeCodeCli) {
+        if (savedClaudeCode === null) {
+            claudeCodeCli.checked = true;
+        } else if (savedClaudeCode === 'true') {
+            claudeCodeCli.checked = true;
+        }
+    }
+    if (geminiCli && savedGemini === 'true') {
+        geminiCli.checked = true;
+    }
+    
+    // Set radio button based on saved preference, default to "initial"
+    const initialRadio = document.querySelector('input[name="claude-install-status"][value="initial"]');
+    const alreadyRadio = document.querySelector('input[name="claude-install-status"][value="already"]');
+    
+    if (savedInstallStatus === 'already' && alreadyRadio) {
+        alreadyRadio.checked = true;
+        initialRadio.checked = false;
+    } else {
+        // Default to "initial" if no saved preference or if saved preference is "initial"
+        if (initialRadio) {
+            initialRadio.checked = true;
+        }
+        if (alreadyRadio) {
+            alreadyRadio.checked = false;
+        }
+    }
+    
+    // Function to update CLI commands display
+    function updateCliCommands() {
+        const selectedOS = osSelect.value;
+        const claudeCodeChecked = claudeCodeCli ? claudeCodeCli.checked : false;
+        const geminiChecked = geminiCli ? geminiCli.checked : false;
+        
+        // Update title based on number of checked tools
+        const cliToolsTitle = document.getElementById('cli-tools-title');
+        if (cliToolsTitle) {
+            const checkedCount = (claudeCodeChecked ? 1 : 0) + (geminiChecked ? 1 : 0);
+            if (checkedCount === 2) {
+                cliToolsTitle.textContent = 'My Command Line Tools';
+            } else {
+                cliToolsTitle.textContent = 'My Command Line Tool';
+            }
+        }
+        
+        // Show/hide Claude install text based on radio button selection
+        const initialInstallRadio = document.querySelector('input[name="claude-install-status"][value="initial"]');
+        if (claudeInstallText && initialInstallRadio) {
+            if (initialInstallRadio.checked) {
+                claudeInstallText.style.display = 'block';
+            } else {
+                claudeInstallText.style.display = 'none';
+            }
+        }
+        
+        // Show CLI commands only when Claude Code CLI is checked
+        if (cliCommands) {
+            if (claudeCodeChecked) {
+                cliCommands.style.display = 'block';
+            } else {
+                cliCommands.style.display = 'none';
+                return;
+            }
+        }
+        
+        // Update Claude Code CLI commands based on OS
+        if (claudeCodeCommands) {
+            if (claudeCodeChecked) {
+                claudeCodeCommands.style.display = 'block';
+                updateCommandsForOS(selectedOS);
+            } else {
+                claudeCodeCommands.style.display = 'none';
+            }
+        }
+    }
+    
+    // Separate function to update commands - called after DOM is ready
+    function updateCommandsForOS(selectedOS) {
+        // Find the command display div
+        let commandDisplay = document.getElementById('command-display');
+        
+        // If not found directly, look for it within collapsed content
+        if (!commandDisplay) {
+            const claudeCodeCommands = document.getElementById('claude-code-commands');
+            if (claudeCodeCommands) {
+                commandDisplay = claudeCodeCommands.querySelector('#command-display') || 
+                               claudeCodeCommands.querySelector('.collapse-content #command-display');
+            }
+        }
+        
+        if (commandDisplay) {
+            let newContent = '';
+            
+            if (selectedOS === 'Mac' || selectedOS === 'Linux') {
+                newContent = `<pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); margin: 8px 0;"><code>python3 -m venv env
+source env/bin/activate
+npx @anthropic-ai/claude-code</code></pre>`;
+            } else if (selectedOS === 'PC') {
+                // Check if Initial install radio button is selected
+                const initialInstallRadio = document.querySelector('input[name="claude-install-status"][value="initial"]');
+                const isInitialInstall = initialInstallRadio && initialInstallRadio.checked;
+                
+                if (isInitialInstall) {
+                    // Show only first time instructions for initial install
+                    newContent = `WindowsOS (first time)
+
+<pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); margin: 8px 0;"><code>python -m venv env && env\\Scripts\\activate.bat && npx @anthropic-ai/claude-code</code></pre>
+
+Install Node.js if this <a href="https://nodejs.org/" target="_blank" style="color: var(--accent-blue); text-decoration: none;">https://nodejs.org/</a>
+
+<pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); margin: 8px 0;"><code>npx @anthropic-ai/claude-code</code></pre>`;
+                } else {
+                    // Show only subsequent times for already installed
+                    newContent = `WindowsOS (subsequent times)
+
+<pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); margin: 8px 0;"><code>python -m venv env && env\\Scripts\\activate.bat && npx @anthropic-ai/claude-code</code></pre>`;
+                }
+            } else {
+                newContent = `# For Unix/Linux/Mac:
+<pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); margin: 8px 0;"><code>python3 -m venv env
+source env/bin/activate
+npx @anthropic-ai/claude-code</code></pre>
+
+# For Windows:
+<pre style="background: var(--bg-primary); padding: 8px 12px; border-radius: var(--radius-sm); margin: 8px 0;"><code>python -m venv env
+env\\Scripts\\activate.bat
+npx @anthropic-ai/claude-code</code></pre>`;
+            }
+            
+            commandDisplay.innerHTML = newContent;
+            console.log('Updated commands for', selectedOS, '- Element in DOM:', document.contains(commandDisplay));
+        } else {
+            console.log('Could not find command-display element for OS:', selectedOS);
+        }
+        
+        // Update Gemini installation section (only show when Gemini CLI is checked)
+        if (geminiInstallation) {
+            if (geminiChecked) {
+                geminiInstallation.style.display = 'block';
+            } else {
+                geminiInstallation.style.display = 'none';
+            }
+        }
+        
+        // Gemini resources section is always visible (no conditional display)
+    }
+    
+    // Add OS select change event listener
+    osSelect.addEventListener('change', function() {
+        const selectedOS = this.value;
+        if (selectedOS) {
+            osInfo.textContent = `Selected: ${selectedOS}`;
+        } else {
+            osInfo.textContent = osDetails; // Show detection again if blank is selected
+        }
+        updateCliCommands();
+    });
+    
+    // Add checkbox event listeners
+    if (claudeCodeCli) {
+        claudeCodeCli.addEventListener('change', function() {
+            localStorage.setItem('claude-code-cli-installed', this.checked);
+            updateCliCommands();
+        });
+    }
+    
+    if (geminiCli) {
+        geminiCli.addEventListener('change', function() {
+            localStorage.setItem('gemini-cli-installed', this.checked);
+            updateCliCommands();
+        });
+    }
+    
+    // Add event listeners for Claude install status radio buttons
+    const installStatusRadios = document.querySelectorAll('input[name="claude-install-status"]');
+    installStatusRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            // Save the selected radio button value to localStorage
+            localStorage.setItem('claude-install-status', this.value);
+            updateCliCommands();
+        });
+    });
+    
+    // Initial update
+    updateCliCommands();
+    
+    // Make sections collapsible after initialization
+    setTimeout(() => {
+        makeCollapsible('cli-commands');
+        makeCollapsible('gemini-installation');
+        makeCollapsible('gemini-resources');
+    }, 100);
+}
+
 // API utility function
 async function apiCall(endpoint, method = 'GET', data = null) {
     try {
