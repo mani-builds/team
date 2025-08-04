@@ -314,13 +314,15 @@ h2 {
 }
 
 /* Specific fix for code blocks that are too wide */
-pre, pre code {
+/* removed: pre, */
+pre code {
     max-width: 100%; /* Use container width, not viewport width */
     overflow-x: auto !important;
     white-space: pre !important;
     word-wrap: normal !important;
     width: 100%;
     box-sizing: border-box;
+    margin-bottom: 22px;
     /* Ensure code blocks can't expand beyond their container */
     min-width: 0;
 }
