@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Listings Display</title>
     <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
+          crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
+            crossorigin=""></script>
+    <!-- Our Leaflet integration -->
+    <script type="text/javascript" src="../../js/leaflet.js"></script>
     <style>
         * {
             margin: 0;
@@ -623,7 +633,7 @@
                             "listTitle": "Team Locations",
                             "dataTitle": "Team Locations",
                             "datatype": "csv",
-                            "dataset": "/membermap/cities.csv",
+                            "dataset": "cities.csv",
                             "markerType": "google",
                             "nameColumn": "city",
                             "search": {
@@ -1041,6 +1051,13 @@
                 }
                 this.currentPage = 1;
                 this.render();
+                
+                // Update map with filtered results
+                if (window.leafletMap) {
+                    setTimeout(() => {
+                        window.leafletMap.updateFromListingsApp(this);
+                    }, 100);
+                }
             }
 
             getSearchFieldsSummary() {
@@ -1119,6 +1136,13 @@
                 this.searchPopupOpen = false;
                 await this.loadShowData();
                 this.render();
+                
+                // Update map with new show data
+                if (window.leafletMap) {
+                    setTimeout(() => {
+                        window.leafletMap.updateFromListingsApp(this);
+                    }, 100);
+                }
             }
 
             setupEventListeners() {
@@ -1318,6 +1342,9 @@
                         ${this.config?.mapInfo ? `<div class="info">${this.config.mapInfo}</div>` : ''}
                     </div>
 
+                    <!-- Map Container -->
+                    <div id="map" style="width: 100%; height: 500px; margin-bottom: 24px; border-radius: 8px; overflow: hidden;"></div>
+
                     <!-- Controls -->
                     <div class="controls-container">
                         <div class="search-container">
@@ -1367,7 +1394,10 @@
                     ${this.renderEmptyState()}
                 `;
 
-                setTimeout(() => this.setupEventListeners(), 0);
+                setTimeout(() => {
+                    this.setupEventListeners();
+                    this.initializeMap();
+                }, 0);
             }
 
             renderSearchPopup() {
@@ -1564,6 +1594,41 @@
                         <p class="empty-text">No listings available.</p>
                     </div>
                 `;
+            }
+
+            initializeMap() {
+                // Wait for LeafletMapManager to be available and Leaflet library to load
+                if (typeof window.LeafletMapManager === 'undefined' || typeof L === 'undefined') {
+                    setTimeout(() => this.initializeMap(), 100);
+                    return;
+                }
+                
+                // Check if map is already initialized by the auto-initialization in leaflet.js
+                if (window.leafletMap && window.leafletMap.map) {
+                    // Map already exists, just update it
+                    window.leafletMap.updateFromListingsApp(this);
+                } else {
+                    // Create new map instance
+                    try {
+                        window.leafletMap = new LeafletMapManager('map');
+                        window.leafletMap.updateFromListingsApp(this);
+                    } catch (error) {
+                        console.error('Error initializing map:', error);
+                        // If there's an error, try to clean up and retry
+                        const mapContainer = document.getElementById('map');
+                        if (mapContainer) {
+                            mapContainer.innerHTML = '';
+                            setTimeout(() => {
+                                try {
+                                    window.leafletMap = new LeafletMapManager('map');
+                                    window.leafletMap.updateFromListingsApp(this);
+                                } catch (retryError) {
+                                    console.error('Retry failed:', retryError);
+                                }
+                            }, 500);
+                        }
+                    }
+                }
             }
         }
 

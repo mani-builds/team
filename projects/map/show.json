@@ -4,7 +4,7 @@
     "listTitle": "Team Locations",
     "dataTitle": "Team Locations",
     "datatype": "csv",
-    "dataset": "/membermap/cities.csv",
+    "dataset": "cities.csv",
     "markerType": "google",
     "nameColumn": "city",
     "search": {
