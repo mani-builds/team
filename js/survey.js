@@ -397,18 +397,18 @@ class SurveyManager {
             const response = await apiCall('/user/preferences', 'POST', data);
             if (response.error) {
                 console.log('Responses saved locally (demo mode):', data);
-                localStorage.setItem('membercommons_preferences', JSON.stringify(data));
+                localStorage.setItem('PartnerTools_preferences', JSON.stringify(data));
             }
         } catch (error) {
             console.log('Responses saved locally (demo mode):', data);
-            localStorage.setItem('membercommons_preferences', JSON.stringify(data));
+            localStorage.setItem('PartnerTools_preferences', JSON.stringify(data));
         }
     }
 
     // Load saved responses
     loadSavedResponses() {
         try {
-            const saved = localStorage.getItem('membercommons_preferences');
+            const saved = localStorage.getItem('PartnerTools_preferences');
             if (saved) {
                 const data = JSON.parse(saved);
                 this.responses = data.survey_responses || {};
@@ -633,7 +633,7 @@ class SkillsManager {
     loadSkills() {
         // Load from localStorage for demo
         try {
-            const saved = localStorage.getItem('membercommons_skills');
+            const saved = localStorage.getItem('PartnerTools_skills');
             if (saved) {
                 this.skills = JSON.parse(saved);
             }
@@ -645,7 +645,7 @@ class SkillsManager {
     // Save skills
     saveSkills() {
         try {
-            localStorage.setItem('membercommons_skills', JSON.stringify(this.skills));
+            localStorage.setItem('PartnerTools_skills', JSON.stringify(this.skills));
         } catch (error) {
             console.log('Could not save skills:', error);
         }

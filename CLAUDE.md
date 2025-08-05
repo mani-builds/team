@@ -156,7 +156,7 @@ const API_BASE = 'http://localhost:8081/api'; // Backend URL
 ### Web Server Configuration
 The frontend can be served in two different configurations:
 
-1. **Direct Repo Serving**: Web server points directly to the MemberCommons repository root
+1. **Direct Repo Serving**: Web server points directly to the PartnerTools repository root
    - URLs: `http://localhost:8888/admin/import-data.html`
    - File paths: `preferences/projects/DFC-ActiveProjects.xlsx`
 
@@ -232,4 +232,4 @@ Run `cargo run -- init-db` to create all tables with proper relationships and co
 - **localhost/**: Submodule containing occasional sample code for local development
 - **planet/**: Submodule containing occasional sample code and examples
 
-**Important**: These submodules are not part of the main MemberCommons application and should not be documented or investigated by the CLI unless specific processes and files within them are explicitly referenced in the prompt. They contain sample code that may be used for reference but are not part of the core application functionality.
+**Important**: These submodules are not part of the main PartnerTools application and should not be documented or investigated by the CLI unless specific processes and files within them are explicitly referenced in the prompt. They contain sample code that may be used for reference but are not part of the core application functionality.

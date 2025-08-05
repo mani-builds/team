@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="img/logo/neighborhood/favicon.png">
-    <title>MemberCommons - Project Collaboration Platform</title>
+    <title>PartnerTools - Project Collaboration Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -508,7 +508,9 @@
                                 <h1 class="hero-title">Collaborative Data Science</h1>
                                 <p class="hero-subtitle">The AI<!--ultimate--> collaboration platform for <!--technical teams working on --> code automation projects</p>
                                 <button class="btn btn-secondary" onclick="showAuthModal()" style="margin-bottom:15px">Create Account</button>
-                                <button class="btn btn-secondary" onclick="goPreferences()">Policy Preferences</button>
+                                <!--
+                                <button class="btn btn-secondary" onclick="goPreferences()">Team Map</button>
+                                -->
                             </div>
 
                         </div>
@@ -568,7 +570,7 @@
                     <div class="tab-content" id="documentation-tab">
                         <div class="card">
                             <h2 class="card-title">Getting Started</h2>
-                            <p>MemberCommons is designed for technical collaborators working AI integrated projects. Here's how to get the most out of the platform:</p>
+                            <p>PartnerTools is designed for technical collaborators working AI integrated projects. Here's how to get the most out of the platform:</p>
                             
                             <!--
                             <h3 style="margin-top: 24px; margin-bottom: 12px;">Quick Start Guide</h3>
@@ -732,7 +734,7 @@
 
                     <div class="hero-section">
                         <div class="hero-content">
-                            <h1 class="hero-title">MemberCommons</h1>
+                            <h1 class="hero-title">Partner Tool Suite</h1>
                             <p class="hero-subtitle">Team Collaboration Platform for Project Tracking with AI Insights</p>
                             <div class="hero-actions">
                                 <button class="btn btn-primary" onclick="router.navigate('projects', 'opportunities')">
@@ -1956,7 +1958,7 @@
             
             const pageTitle = document.getElementById('page-title');
             if (pageTitle) {
-                pageTitle.textContent = titles[sectionName] || 'MemberCommons';
+                pageTitle.textContent = titles[sectionName] || 'PartnerTools';
             }
             
             // Scroll to top when switching main sections
@@ -2060,7 +2062,7 @@
         }
 
         function adminDemo() {
-            simulateLogin('admin@membercommons.local', 'Admin User');
+            simulateLogin('admin@PartnerTools.local', 'Admin User');
         }
 
         function simulateLogin(email, name = null) {

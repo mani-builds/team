@@ -1,4 +1,4 @@
-// Common utilities and shared functions for MemberCommons
+// Common utilities and shared functions for PartnerTools
 
 // Function to create OS detection panel directly in a container
 function createOSDetectionPanelIn(containerId) {

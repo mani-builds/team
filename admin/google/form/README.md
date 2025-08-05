@@ -30,7 +30,7 @@ A comprehensive Google Sheets-integrated member management form with OAuth authe
 3. **Create Service Account** (for Sheets API)
    - Go to IAM & Admin > Service Accounts
    - Click "Create Service Account"
-   - Name: `membercommons-sheets-service`
+   - Name: `partner-sheets-service`
    - Grant role: `Editor` (for sheet access)
    - Create and download JSON key file
 
@@ -45,7 +45,7 @@ A comprehensive Google Sheets-integrated member management form with OAuth authe
 
 1. **Create Member Management Sheet**
    - Create a new Google Sheet
-   - Name it "MemberCommons Members" or similar
+   - Name it "PartnerTools Members" or similar
    - Set up headers in row 1 (see column mapping below)
    - Share the sheet with your service account email (found in the JSON key file)
    - Give "Editor" permissions

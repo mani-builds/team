@@ -1,5 +1,5 @@
 /**
- * Shared utility functions for MemberCommons
+ * Shared utility functions for PartnerTools
  * Extracted from admin/import-data.html for reuse across multiple pages
  */
 
@@ -689,7 +689,7 @@ function updateListHashParam(listValue) {
 // LOCAL STORAGE UTILITIES
 // =============================================================================
 
-function savePromptToStorage(prompt, storageKey = 'membercommons_prompt') {
+function savePromptToStorage(prompt, storageKey = 'PartnerTools_prompt') {
     if (prompt && prompt.trim()) {
         localStorage.setItem(storageKey, prompt.trim());
         console.log('Saved prompt to browser storage:', prompt.substring(0, 50) + (prompt.length > 50 ? '...' : ''));
@@ -700,7 +700,7 @@ function savePromptToStorage(prompt, storageKey = 'membercommons_prompt') {
     }
 }
 
-function loadPromptFromStorage(storageKey = 'membercommons_prompt') {
+function loadPromptFromStorage(storageKey = 'PartnerTools_prompt') {
     const savedPrompt = localStorage.getItem(storageKey);
     if (savedPrompt) {
         console.log('Loaded prompt from browser storage:', savedPrompt.substring(0, 50) + (savedPrompt.length > 50 ? '...' : ''));
@@ -709,7 +709,7 @@ function loadPromptFromStorage(storageKey = 'membercommons_prompt') {
     return null;
 }
 
-function saveFileSelectionToStorage(fileValue, storageKey = 'membercommons_selected_file') {
+function saveFileSelectionToStorage(fileValue, storageKey = 'PartnerTools_selected_file') {
     if (fileValue && fileValue !== 'custom') {
         localStorage.setItem(storageKey, fileValue);
         console.log('Saved file selection to browser storage:', fileValue);
@@ -720,7 +720,7 @@ function saveFileSelectionToStorage(fileValue, storageKey = 'membercommons_selec
     }
 }
 
-function loadFileSelectionFromStorage(storageKey = 'membercommons_selected_file') {
+function loadFileSelectionFromStorage(storageKey = 'PartnerTools_selected_file') {
     const savedFileSelection = localStorage.getItem(storageKey);
     if (savedFileSelection) {
         // Filter out hardcoded system paths that contain other users' directories

@@ -1,4 +1,4 @@
-// Configuration file for MemberCommons
+// Configuration file for PartnerTools
 // Copy this file to settings.js and update with your actual values
 // Database and Gemini Config are in .env
 
@@ -61,7 +61,7 @@ const CONFIG = {
 
     // Application Settings
     APP: {
-        NAME: 'MemberCommons',
+        NAME: 'PartnerTools',
         VERSION: '1.0.0',
         ENVIRONMENT: 'development', // development, staging, production
         DEBUG: true,
@@ -82,7 +82,7 @@ const CONFIG = {
         // Email Service (for notifications)
         EMAIL: {
             PROVIDER: 'smtp', // smtp, sendgrid, etc.
-            FROM_ADDRESS: 'noreply@membercommons.org'
+            FROM_ADDRESS: 'noreply@PartnerTools.org'
         },
         
         // Analytics

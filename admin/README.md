@@ -17,6 +17,6 @@ On Windows:
 	python -m http.server 8887
 
 
-Next, fork [membercommons](https://github.com/modelearth/team/) and clone into your webroot.
+Next, fork [PartnerTools](https://github.com/modelearth/team/) and clone into your webroot.
 
 Then [start your Rust REST API](server/)

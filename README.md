@@ -2,7 +2,7 @@
 
 ### Team Project Collaboration Platform
 
-MemberCommons is a JAM Stack toolset for teams implementing partner tools using modern web technologies with AI-powered insights. MemberCommons connects staff with developers, designers, and innovators to collaborate on coding projects focused on skill training, job creation and environmental improvement.
+PartnerTools is a JAM Stack toolset for teams implementing partner tools using modern web technologies with AI-powered insights. PartnerTools connects staff with developers, designers, and innovators to collaborate on coding projects focused on skill training, job creation and environmental improvement.
 
 ## 🌟 Key Features
 
@@ -98,7 +98,7 @@ team/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd MemberCommons
+   cd PartnerTools
    ```
 
 2. **Configure environment**
@@ -113,7 +113,7 @@ team/
    createdb ModelEarthDB
    
    # Run schema setup
-   psql membercommons < sql/suitecrm-postgres.sql
+   psql partnertools < sql/suitecrm-postgres.sql
    ```
 
 4. **Configure environment variables**

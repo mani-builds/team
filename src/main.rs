@@ -445,7 +445,7 @@ async fn get_env_config() -> Result<HttpResponse> {
             };
             
             let display_name = match prefix {
-                "COMMONS" => "MemberCommons Database (Default)".to_string(),
+                "COMMONS" => "PartnerTools Database (Default)".to_string(),
                 "EXIOBASE" => "EXIOBASE Database".to_string(),
                 _ => format!("{} Database", prefix.replace('_', " ")),
             };
@@ -500,7 +500,7 @@ async fn get_env_config() -> Result<HttpResponse> {
                 
                 // Add to connections list with display name
                 let display_name = match key.as_str() {
-                    "DATABASE_URL" => "MemberCommons Database (Default)".to_string(),
+                    "DATABASE_URL" => "PartnerTools Database (Default)".to_string(),
                     "EXIOBASE_URL" => "EXIOBASE Database".to_string(),
                     _ => {
                         let name = key.replace("_URL", "").replace("_", " ");
@@ -871,7 +871,7 @@ async fn get_sheets_config() -> Result<HttpResponse> {
                         "accentColor": "#10B981"
                     },
                     "messages": {
-                        "welcomeNew": "Welcome to MemberCommons! Please fill out the registration form to join our community of developers working on sustainable impact projects.",
+                        "welcomeNew": "Welcome to PartnerTools! Please fill out the registration form to join our community of developers working on sustainable impact projects.",
                         "welcomeReturning": "Welcome back! Your existing information has been loaded. Please review and update any details as needed."
                     },
                     "behavior": {

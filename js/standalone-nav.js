@@ -140,7 +140,7 @@ class StandaloneNavigation {
                     <div class="logo">
                         <a href="${rootPath}"><img id="sidebar-logo" src="${logoPath}" alt="Up" /></a>
                     </div>
-                    <span class="logo-text">MemberCommons</span>
+                    <span class="logo-text">PartnerTools</span>
                 </div>
                 
                 <div class="nav-menu">

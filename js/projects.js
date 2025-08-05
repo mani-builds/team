@@ -592,9 +592,10 @@ class ProjectsManager {
         const filteredProjects = this.getFilteredProjects();
         
         container.innerHTML = `
+            <!--
             <div style="position:relative">
             <img src="${window.fixRelativePath ? window.fixRelativePath('img/presenting-bolt-4gov.png') : 'img/presenting-bolt-4gov.png'}" style="width:100%;border-top-left-radius:25px;border-top-right-radius:25px;"><br><br></div>
-                
+            -->
             <div class="projects-header">
                 
                 <div class="projects-title-section" style="clear:both">
