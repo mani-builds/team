@@ -26,7 +26,7 @@ class SurveyManager {
             "Environmental justice should guide technology deployment decisions",
             "Small businesses should receive priority in government contracts",
             "Digital equity should be measured and reported by local governments",
-            "Smart city initiatives should priomarily focus on open technology"
+            "Smart city initiatives should primarily focus on open technology"
         ];
     }
 
