@@ -2,7 +2,7 @@
 
 ### Team Project Collaboration Platform
 
-PartnerTools is a JAM Stack toolset for teams implementing partner tools using modern web technologies with AI-powered insights. PartnerTools connects staff with developers, designers, and innovators to collaborate on coding projects focused on skill training, job creation and environmental improvement.
+PartnerTools is a JAM Stack toolset for teams implementing Rust REST API backends with AI-powered insights. PartnerTools connects site users with developers, designers, and innovators to collaborate on coding projects focused on skill training, job creation and environmental improvement.
 
 ## 🌟 Key Features
 
