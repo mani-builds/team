@@ -1,20 +1,69 @@
 // Common utilities and shared functions for MemberCommons
 
-// Function to automatically create OS detection panel on DOM load
+// Function to create OS detection panel directly in a container
+function createOSDetectionPanelIn(containerId) {
+    function createPanel() {
+        const container = document.getElementById(containerId);
+        if (!container) {
+            console.warn(`createOSDetectionPanelIn: Container '${containerId}' not found`);
+            return;
+        }
+        
+        // Create the panel directly in the specified container
+        createOSDetectionPanel(containerId);
+    }
+    
+    // Check if DOM is already loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', createPanel);
+    } else {
+        createPanel();
+    }
+}
+
+// Function to automatically create OS detection panel - works in any location
 function autoCreateOSDetectionPanel(targetSelector = '.content', beforeSelector = '#readmeDiv') {
-    document.addEventListener('DOMContentLoaded', function() {
+    function createPanel() {
         // Create container for OS detection panel
         const osContainer = document.createElement('div');
         osContainer.id = 'os-detection-container';
         
-        // Insert before specified element
+        // Find target container
         const contentDiv = document.querySelector(targetSelector);
-        const beforeElement = document.querySelector(beforeSelector);
-        if (contentDiv && beforeElement) {
-            contentDiv.insertBefore(osContainer, beforeElement);
-            createOSDetectionPanel('os-detection-container');
+        if (!contentDiv) {
+            console.warn(`autoCreateOSDetectionPanel: Target selector '${targetSelector}' not found`);
+            return;
         }
-    });
+        
+        // Find beforeElement and attempt insertion with fallback
+        const beforeElement = document.querySelector(beforeSelector);
+        if (beforeElement && contentDiv.contains(beforeElement)) {
+            try {
+                // Attempt insertBefore - this should be safe but can still fail in edge cases
+                contentDiv.insertBefore(osContainer, beforeElement);
+            } catch (error) {
+                console.warn(`autoCreateOSDetectionPanel: insertBefore failed (${error.message}), falling back to appendChild`);
+                contentDiv.appendChild(osContainer);
+            }
+        } else {
+            // Either beforeElement not found or not a child of contentDiv, append instead
+            if (beforeElement) {
+                console.warn(`autoCreateOSDetectionPanel: beforeSelector '${beforeSelector}' found but not a child of '${targetSelector}', appending instead`);
+            }
+            contentDiv.appendChild(osContainer);
+        }
+        
+        createOSDetectionPanel('os-detection-container');
+    }
+    
+    // Check if DOM is already loaded
+    if (document.readyState === 'loading') {
+        // DOM not yet loaded, wait for it
+        document.addEventListener('DOMContentLoaded', createPanel);
+    } else {
+        // DOM already loaded, create panel immediately
+        createPanel();
+    }
 }
 
 // Base path detection utility
@@ -293,7 +342,8 @@ gemini</code></pre>
             </div>
             <div class="cardsection" id="gemini-resources">
                 <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Add AI Insights Key:</h4>
-                <a href="https://ai.google.dev/gemini-api/docs/quickstart">Gemini quickstart</a> - Add your Gemini API key in .env
+                You can use a free Gemini key for AI insights.<br>
+                <a href="https://ai.google.dev/gemini-api/docs/quickstart">Get your Gemini key</a> and add it in team/.env
             </div>
         </div>
     `;
