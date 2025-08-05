@@ -1,5 +1,22 @@
 // Common utilities and shared functions for MemberCommons
 
+// Function to automatically create OS detection panel on DOM load
+function autoCreateOSDetectionPanel(targetSelector = '.content', beforeSelector = '#readmeDiv') {
+    document.addEventListener('DOMContentLoaded', function() {
+        // Create container for OS detection panel
+        const osContainer = document.createElement('div');
+        osContainer.id = 'os-detection-container';
+        
+        // Insert before specified element
+        const contentDiv = document.querySelector(targetSelector);
+        const beforeElement = document.querySelector(beforeSelector);
+        if (contentDiv && beforeElement) {
+            contentDiv.insertBefore(osContainer, beforeElement);
+            createOSDetectionPanel('os-detection-container');
+        }
+    });
+}
+
 // Base path detection utility
 function getBasePath() {
     // Get the current script's path or the current page path
