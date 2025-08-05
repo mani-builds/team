@@ -6,7 +6,8 @@ class LeafletMapManager {
         this.containerId = containerId;
         this.map = null;
         this.markers = [];
-        this.currentMapStyle = 'light';
+        this.currentMapStyle = 'coral';
+        this.currentOverlay = null;
         this.popupOptions = {
             maxWidth: 300,
             className: 'custom-popup',
@@ -20,12 +21,18 @@ class LeafletMapManager {
             width: '100%',
             defaultLat: 33.7490,  // Atlanta, GA
             defaultLng: -84.3880,
-            defaultZoom: 7,
+            defaultZoom: 9,
             ...options
         };
         
         // Map style configurations
         this.mapStyles = {
+            coral: {
+                name: 'Coral Reef',
+                url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                attribution: '© OpenStreetMap contributors, © CARTO',
+                filter: 'hue-rotate(330deg) saturate(1.4) contrast(1.1) brightness(1.1)'
+            },
             light: {
                 name: 'Light Mode',
                 url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -49,7 +56,9 @@ class LeafletMapManager {
             satellite: {
                 name: 'Satellite',
                 url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community'
+                attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community',
+                overlayUrl: 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+                overlayAttribution: '© OpenStreetMap contributors, © CARTO'
             },
             terrain: {
                 name: 'Terrain',
@@ -72,12 +81,6 @@ class LeafletMapManager {
                 attribution: '© OpenStreetMap contributors',
                 filter: 'sepia(0.8) contrast(1.2) brightness(0.9) hue-rotate(15deg)'
             },
-            blueprint: {
-                name: 'Blueprint',
-                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                attribution: '© OpenStreetMap contributors, © CARTO',
-                filter: 'invert(1) hue-rotate(180deg) saturate(2) contrast(1.5)'
-            },
             sunset: {
                 name: 'Sunset',
                 url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -94,13 +97,15 @@ class LeafletMapManager {
                 name: 'Infrared',
                 url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                 attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics',
-                filter: 'hue-rotate(180deg) saturate(2.5) contrast(1.4)'
+                filter: 'hue-rotate(180deg) saturate(2.5) contrast(1.4)',
+                overlayUrl: 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+                overlayAttribution: '© OpenStreetMap contributors, © CARTO'
             },
-            cyberpunk: {
-                name: 'Cyberpunk',
-                url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+            emerald: {
+                name: 'Emerald City',
+                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
                 attribution: '© OpenStreetMap contributors, © CARTO',
-                filter: 'saturate(3) contrast(1.8) brightness(1.3) hue-rotate(300deg)'
+                filter: 'hue-rotate(120deg) saturate(1.8) contrast(1.2) brightness(0.9)'
             },
             sepia: {
                 name: 'Old Map',
@@ -114,11 +119,11 @@ class LeafletMapManager {
                 attribution: '© OpenTopoMap contributors',
                 filter: 'hue-rotate(25deg) saturate(1.2) contrast(1.1) brightness(1.1)'
             },
-            comic: {
-                name: 'Comic Book',
-                url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                attribution: '© OpenStreetMap contributors, © CARTO',
-                filter: 'saturate(2.5) contrast(1.6) brightness(1.1) hue-rotate(10deg)'
+            autumn: {
+                name: 'Autumn Leaves',
+                url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                attribution: '© OpenTopoMap contributors',
+                filter: 'hue-rotate(15deg) saturate(1.6) contrast(1.1) brightness(1.0) sepia(0.3)'
             },
             monochrome: {
                 name: 'Monochrome',
@@ -126,17 +131,25 @@ class LeafletMapManager {
                 attribution: '© OpenStreetMap contributors',
                 filter: 'grayscale(1) contrast(1.3) brightness(0.9)'
             },
-            steampunk: {
-                name: 'Steampunk',
-                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                attribution: '© OpenStreetMap contributors',
-                filter: 'sepia(0.7) saturate(1.3) hue-rotate(30deg) contrast(1.2) brightness(0.8)'
-            },
             thermal: {
                 name: 'Thermal Vision',
                 url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                 attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics',
-                filter: 'hue-rotate(60deg) saturate(3) contrast(1.8) brightness(1.2)'
+                filter: 'hue-rotate(60deg) saturate(3) contrast(1.8) brightness(1.2)',
+                overlayUrl: 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
+                overlayAttribution: '© OpenStreetMap contributors, © CARTO'
+            },
+            sage: {
+                name: 'Sage',
+                url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                attribution: '© OpenTopoMap contributors',
+                filter: 'hue-rotate(90deg) saturate(0.7) contrast(1.0) brightness(0.95)'
+            },
+            bronze: {
+                name: 'Bronze Age',
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attribution: '© OpenStreetMap contributors',
+                filter: 'sepia(0.4) hue-rotate(35deg) saturate(1.1) contrast(1.1) brightness(0.9)'
             }
         };
         
@@ -193,11 +206,30 @@ class LeafletMapManager {
             return;
         }
         
-        // Initialize map
-        this.map = L.map(this.containerId).setView(
+        // Initialize map with scroll zoom disabled initially
+        this.map = L.map(this.containerId, {
+            scrollWheelZoom: false
+        }).setView(
             [this.options.defaultLat, this.options.defaultLng], 
             this.options.defaultZoom
         );
+        
+        // Add click event to toggle scroll zoom
+        this.map.on('click', () => {
+            if (this.map.scrollWheelZoom.enabled()) {
+                this.map.scrollWheelZoom.disable();
+                this.showScrollZoomNotification(false);
+            } else {
+                this.map.scrollWheelZoom.enable();
+                this.showScrollZoomNotification(true);
+            }
+        });
+        
+        // Load cached background style
+        const cachedStyle = this.loadCachedMapStyle();
+        if (cachedStyle && this.mapStyles[cachedStyle]) {
+            this.currentMapStyle = cachedStyle;
+        }
         
         // Add initial tile layer
         this.setMapStyle(this.currentMapStyle);
@@ -230,6 +262,7 @@ class LeafletMapManager {
             const select = div.querySelector('.map-style-select');
             select.addEventListener('change', (e) => {
                 this.setMapStyle(e.target.value);
+                this.saveCachedMapStyle(e.target.value);
             });
             
             return div;
@@ -251,11 +284,26 @@ class LeafletMapManager {
             }
         });
         
-        // Add new tile layer
+        // Add base tile layer
         const tileLayer = L.tileLayer(style.url, {
             attribution: style.attribution,
             maxZoom: 18
         }).addTo(this.map);
+        
+        // Add overlay layer if specified (for labels on satellite imagery)
+        // Only show labels at zoom level 8 and above
+        if (style.overlayUrl) {
+            const overlayLayer = L.tileLayer(style.overlayUrl, {
+                attribution: style.overlayAttribution || '',
+                maxZoom: 18,
+                minZoom: 8  // Only show labels at zoom 8+
+            }).addTo(this.map);
+            
+            // Store reference to overlay for dynamic visibility
+            this.currentOverlay = overlayLayer;
+        } else {
+            this.currentOverlay = null;
+        }
         
         // Apply CSS filter if specified
         if (style.filter) {
@@ -311,7 +359,10 @@ class LeafletMapManager {
         // Fit map to show all markers if we have valid markers
         if (validMarkers.length > 0) {
             const group = new L.featureGroup(validMarkers.map(m => m.marker));
-            this.map.fitBounds(group.getBounds(), { padding: [20, 20] });
+            this.map.fitBounds(group.getBounds(), { 
+                padding: [10, 10],
+                maxZoom: 15  // Zoom closer to fill screen more
+            });
         }
         
         console.log(`Added ${validMarkers.length} markers to map from ${data.length} data items`);
@@ -350,16 +401,17 @@ class LeafletMapManager {
     
     createMarker(lat, lng, data, config = {}) {
         try {
-            // Create custom icon with zoom-based sizing
-            const iconSize = this.getIconSizeForZoom(this.map.getZoom());
+            // Create custom icon with zoom-based sizing and shape
+            const currentZoom = this.map.getZoom();
+            const iconSize = this.getIconSizeForZoom(currentZoom);
+            const markerHtml = this.getMarkerHtml(currentZoom, iconSize);
+            
             const customIcon = L.divIcon({
                 className: 'custom-marker',
-                html: `<div class="marker-pin" style="width: ${iconSize}px; height: ${iconSize}px;">
-                         <div class="marker-dot"></div>
-                       </div>`,
+                html: markerHtml,
                 iconSize: [iconSize, iconSize],
-                iconAnchor: [iconSize/2, iconSize],
-                popupAnchor: [0, -iconSize]
+                iconAnchor: this.getIconAnchor(currentZoom, iconSize),
+                popupAnchor: this.getPopupAnchor(currentZoom, iconSize)
             });
             
             // Create marker with custom icon
@@ -548,8 +600,8 @@ class LeafletMapManager {
     getIconSizeForZoom(zoom) {
         // Scale icon size based on zoom level
         // Zoom levels typically range from 1-18
-        const minSize = 8;   // Minimum icon size at low zoom
-        const maxSize = 32;  // Maximum icon size at high zoom
+        const minSize = 6;   // Smaller minimum icon size at low zoom
+        const maxSize = 28;  // Slightly smaller maximum icon size at high zoom
         const minZoom = 1;
         const maxZoom = 18;
         
@@ -558,20 +610,64 @@ class LeafletMapManager {
         return Math.round(minSize + (maxSize - minSize) * ratio);
     }
     
+    getMarkerHtml(zoom, iconSize) {
+        // Use different dot styles based on zoom level
+        if (zoom <= 4) {
+            // Extra small dots for very distant zoom
+            const extraSmallSize = Math.max(1, Math.round(iconSize * 0.15));
+            return `<div class="marker-dot-tiny" style="width: ${extraSmallSize}px; height: ${extraSmallSize}px;"></div>`;
+        } else if (zoom <= 6) {
+            // Small dots without border for distant zoom
+            const smallSize = Math.max(3, Math.round(iconSize * 0.6));
+            return `<div class="marker-dot-tiny" style="width: ${smallSize}px; height: ${smallSize}px;"></div>`;
+        } else {
+            // Pin markers for close zoom
+            return `<div class="marker-pin" style="width: ${iconSize}px; height: ${iconSize}px;">
+                      <div class="marker-dot"></div>
+                    </div>`;
+        }
+    }
+    
+    getIconAnchor(zoom, iconSize) {
+        // Adjust anchor based on marker type and size
+        if (zoom <= 4) {
+            const extraSmallSize = Math.max(1, Math.round(iconSize * 0.15));
+            return [extraSmallSize/2, extraSmallSize/2];  // Center anchor for extra tiny dots
+        } else if (zoom <= 6) {
+            const smallSize = Math.max(3, Math.round(iconSize * 0.6));
+            return [smallSize/2, smallSize/2];  // Center anchor for tiny dots
+        } else {
+            return [iconSize/2, iconSize];    // Bottom center for pins
+        }
+    }
+    
+    getPopupAnchor(zoom, iconSize) {
+        // Adjust popup position based on marker type
+        if (zoom <= 4) {
+            const extraSmallSize = Math.max(1, Math.round(iconSize * 0.15));
+            return [0, -extraSmallSize/2];  // Above center for extra tiny dots
+        } else if (zoom <= 6) {
+            const smallSize = Math.max(3, Math.round(iconSize * 0.6));
+            return [0, -smallSize/2];  // Above center for tiny dots
+        } else {
+            return [0, -iconSize];    // Above pin point
+        }
+    }
+    
     updateMarkerSizes() {
         const currentZoom = this.map.getZoom();
         const newIconSize = this.getIconSizeForZoom(currentZoom);
         
         this.markers.forEach(marker => {
-            // Create new icon with updated size
+            // Create new icon with updated size and shape
+            const markerHtml = this.getMarkerHtml(currentZoom, newIconSize);
+            
             const customIcon = L.divIcon({
                 className: 'custom-marker',
-                html: `<div class="marker-pin" style="width: ${newIconSize}px; height: ${newIconSize}px;">
-                         <div class="marker-dot"></div>
-                       </div>`,
+                html: markerHtml,
                 iconSize: [newIconSize, newIconSize],
-                iconAnchor: [newIconSize/2, newIconSize],
-                popupAnchor: [0, -newIconSize]
+                iconAnchor: this.getIconAnchor(currentZoom, newIconSize),
+                popupAnchor: this.getPopupAnchor(currentZoom, newIconSize)
             });
             
             // Update marker icon
@@ -611,7 +707,7 @@ class LeafletMapManager {
             .marker-pin {
                 position: relative;
                 background: #137AD1;
-                border: 3px solid white;
+                border: 1px solid white;
                 border-radius: 50% 50% 50% 0;
                 transform: rotate(-45deg);
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -633,6 +729,22 @@ class LeafletMapManager {
                 background: white;
                 border-radius: 50%;
                 transform: translate(-50%, -50%) rotate(45deg);
+            }
+            
+            
+            /* Tiny dot marker for very low zoom levels */
+            .marker-dot-tiny {
+                background: #137AD1;
+                border: none;
+                border-radius: 50%;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            
+            .marker-dot-tiny:hover {
+                transform: scale(1.3);
+                box-shadow: 0 1px 4px rgba(0,0,0,0.3);
             }
             
             /* Custom Popup Styles */
@@ -730,6 +842,30 @@ class LeafletMapManager {
                 border-top: 1px solid #e5e5e5;
             }
             
+            /* Scroll zoom notification */
+            .scroll-zoom-notification {
+                position: absolute;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 500;
+                z-index: 1000;
+                animation: fadeInOut 2s ease-in-out;
+                pointer-events: none;
+            }
+            
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+                20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            }
+            
             /* Responsive popup */
             @media (max-width: 600px) {
                 .leaflet-popup-content-wrapper {
@@ -756,6 +892,45 @@ class LeafletMapManager {
         }
         
         this.addMarkersFromData(listingsApp.filteredListings, listingsApp.config);
+    }
+    
+    // Cache management methods
+    saveCachedMapStyle(styleKey) {
+        try {
+            localStorage.setItem('leafletMapStyle', styleKey);
+        } catch (error) {
+            console.warn('Failed to save map style to cache:', error);
+        }
+    }
+    
+    loadCachedMapStyle() {
+        try {
+            return localStorage.getItem('leafletMapStyle');
+        } catch (error) {
+            console.warn('Failed to load map style from cache:', error);
+            return null;
+        }
+    }
+    
+    // Show notification for scroll zoom state
+    showScrollZoomNotification(enabled) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'scroll-zoom-notification';
+        notification.textContent = enabled ? 'Scroll zoom enabled' : 'Scroll zoom disabled';
+        
+        // Add to map container
+        const mapContainer = document.getElementById(this.containerId);
+        if (mapContainer) {
+            mapContainer.appendChild(notification);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 2000);
+        }
     }
     
     destroy() {

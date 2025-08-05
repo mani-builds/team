@@ -573,7 +573,7 @@
                 this.loading = true;
                 this.error = null;
                 this.showConfigs = {};
-                this.currentShow = 'cities';
+                this.currentShow = this.getInitialShow();
                 this.currentPage = 1;
                 this.itemsPerPage = 200;
                 this.searchFields = new Set();
@@ -590,7 +590,19 @@
                     await this.loadShowConfigs();
                     
                     this.showLoadingState("Loading listings...");
-                    await this.loadShowData();
+                    
+                    // If currentShow came from hash, don't update cache on initial load
+                    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+                    const fromHash = urlParams.has('list');
+                    
+                    if (fromHash) {
+                        // Load data without updating cache
+                        await this.loadShowData();
+                    } else {
+                        // Normal load, can update cache
+                        await this.loadShowData();
+                        this.updateUrlHash(this.currentShow);
+                    }
                     
                     this.render();
                     this.setupEventListeners();
@@ -641,7 +653,7 @@
                                 "In County Name": "County"
                             },
                             "datastates": ["GA"],
-                            "mapInfo": "Cities and Counties in Georgia"
+                            "mapInfo": "Cities in Georgia"
                         },
                         "recyclers": {
                             "listTitle": "B2B Recyclers",
@@ -1131,18 +1143,25 @@
                 this.render();
             }
 
-            async changeShow(showKey) {
+            async changeShow(showKey, updateCache = true) {
                 this.currentShow = showKey;
                 this.searchPopupOpen = false;
+                
+                // Update URL hash
+                this.updateUrlHash(showKey);
+                
+                // Only save to cache if this is a user-initiated change
+                if (updateCache) {
+                    this.saveCachedShow(showKey);
+                }
+                
                 await this.loadShowData();
                 this.render();
                 
-                // Update map with new show data
-                if (window.leafletMap) {
-                    setTimeout(() => {
-                        window.leafletMap.updateFromListingsApp(this);
-                    }, 100);
-                }
+                // Update map with new show data - ensure map container exists
+                setTimeout(() => {
+                    this.initializeMap();
+                }, 100);
             }
 
             setupEventListeners() {
@@ -1595,6 +1614,44 @@
                     </div>
                 `;
             }
+            
+            // URL Hash and Cache Management
+            getInitialShow() {
+                // Check URL hash first
+                const urlParams = new URLSearchParams(window.location.hash.substring(1));
+                const hashList = urlParams.get('list');
+                if (hashList) {
+                    return hashList;
+                }
+                
+                // Fall back to cached list
+                const cachedList = this.loadCachedShow();
+                return cachedList || 'cities';
+            }
+            
+            updateUrlHash(showKey) {
+                const currentHash = window.location.hash.substring(1);
+                const urlParams = new URLSearchParams(currentHash);
+                urlParams.set('list', showKey);
+                window.location.hash = urlParams.toString();
+            }
+            
+            saveCachedShow(showKey) {
+                try {
+                    localStorage.setItem('listingsAppShow', showKey);
+                } catch (error) {
+                    console.warn('Failed to save show to cache:', error);
+                }
+            }
+            
+            loadCachedShow() {
+                try {
+                    return localStorage.getItem('listingsAppShow');
+                } catch (error) {
+                    console.warn('Failed to load show from cache:', error);
+                    return null;
+                }
+            }
 
             initializeMap() {
                 // Wait for LeafletMapManager to be available and Leaflet library to load
@@ -1603,31 +1660,40 @@
                     return;
                 }
                 
-                // Check if map is already initialized by the auto-initialization in leaflet.js
+                const mapContainer = document.getElementById('map');
+                if (!mapContainer) {
+                    console.error('Map container not found');
+                    return;
+                }
+                
+                // Always clean up and recreate the map to avoid issues
                 if (window.leafletMap && window.leafletMap.map) {
-                    // Map already exists, just update it
-                    window.leafletMap.updateFromListingsApp(this);
-                } else {
-                    // Create new map instance
                     try {
-                        window.leafletMap = new LeafletMapManager('map');
-                        window.leafletMap.updateFromListingsApp(this);
+                        window.leafletMap.destroy();
                     } catch (error) {
-                        console.error('Error initializing map:', error);
-                        // If there's an error, try to clean up and retry
-                        const mapContainer = document.getElementById('map');
-                        if (mapContainer) {
-                            mapContainer.innerHTML = '';
-                            setTimeout(() => {
-                                try {
-                                    window.leafletMap = new LeafletMapManager('map');
-                                    window.leafletMap.updateFromListingsApp(this);
-                                } catch (retryError) {
-                                    console.error('Retry failed:', retryError);
-                                }
-                            }, 500);
-                        }
+                        console.warn('Error destroying existing map:', error);
                     }
+                }
+                
+                // Clear the container
+                mapContainer.innerHTML = '';
+                
+                // Create new map instance
+                try {
+                    window.leafletMap = new LeafletMapManager('map');
+                    window.leafletMap.updateFromListingsApp(this);
+                } catch (error) {
+                    console.error('Error initializing map:', error);
+                    // Retry once after a delay
+                    setTimeout(() => {
+                        try {
+                            mapContainer.innerHTML = '';
+                            window.leafletMap = new LeafletMapManager('map');
+                            window.leafletMap.updateFromListingsApp(this);
+                        } catch (retryError) {
+                            console.error('Retry failed:', retryError);
+                        }
+                    }, 500);
                 }
             }
         }
