@@ -6,13 +6,14 @@ class LeafletMapManager {
         this.containerId = containerId;
         this.map = null;
         this.markers = [];
-        this.currentMapStyle = 'coral';
+        this.currentMapStyle = 'monochrome';
         this.currentOverlay = null;
         this.popupOptions = {
             maxWidth: 300,
             className: 'custom-popup',
             closeButton: true,
-            autoPan: true
+            autoPan: true,
+            autoPanPadding: [20, 48]  // More comfortable space above popup [horizontal, vertical] - added 18px
         };
         
         // Default options
@@ -27,6 +28,12 @@ class LeafletMapManager {
         
         // Map style configurations
         this.mapStyles = {
+            monochrome: {
+                name: 'Monochrome',
+                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attribution: '© OpenStreetMap contributors',
+                filter: 'grayscale(1) contrast(1.3) brightness(0.9)'
+            },
             coral: {
                 name: 'Coral Reef',
                 url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
@@ -124,12 +131,6 @@ class LeafletMapManager {
                 url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
                 attribution: '© OpenTopoMap contributors',
                 filter: 'hue-rotate(15deg) saturate(1.6) contrast(1.1) brightness(1.0) sepia(0.3)'
-            },
-            monochrome: {
-                name: 'Monochrome',
-                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                attribution: '© OpenStreetMap contributors',
-                filter: 'grayscale(1) contrast(1.3) brightness(0.9)'
             },
             thermal: {
                 name: 'Thermal Vision',
@@ -237,7 +238,11 @@ class LeafletMapManager {
         // Add zoom event listener for dynamic icon sizing
         this.map.on('zoomend', () => {
             this.updateMarkerSizes();
+            this.updateZoomDisplay();
         });
+        
+        // Add zoom display
+        this.addZoomDisplay();
     }
     
     addMapStyleSelector() {
@@ -612,16 +617,29 @@ class LeafletMapManager {
     
     getMarkerHtml(zoom, iconSize) {
         // Use different dot styles based on zoom level
-        if (zoom <= 4) {
-            // Extra small dots for very distant zoom
-            const extraSmallSize = Math.max(1, Math.round(iconSize * 0.15));
-            return `<div class="marker-dot-tiny" style="width: ${extraSmallSize}px; height: ${extraSmallSize}px;"></div>`;
-        } else if (zoom <= 6) {
-            // Small dots without border for distant zoom
-            const smallSize = Math.max(3, Math.round(iconSize * 0.6));
-            return `<div class="marker-dot-tiny" style="width: ${smallSize}px; height: ${smallSize}px;"></div>`;
+        if (zoom <= 3) {
+            // Half-size dots for zoom 1-3
+            const halfSize = Math.max(1, Math.round(iconSize * 0.2));
+            return `<div class="marker-dot-tiny" style="width: ${halfSize}px; height: ${halfSize}px;"></div>`;
+        } else if (zoom === 4) {
+            // 30% dots for zoom 4
+            const size4 = Math.max(1, Math.round(iconSize * 0.3));
+            return `<div class="marker-dot-tiny" style="width: ${size4}px; height: ${size4}px;"></div>`;
+        } else if (zoom === 5) {
+            // 40% dots for zoom 5
+            const size5 = Math.max(2, Math.round(iconSize * 0.4));
+            return `<div class="marker-dot-tiny" style="width: ${size5}px; height: ${size5}px;"></div>`;
+        } else if (zoom === 6) {
+            // 60% dots for zoom 6
+            const size6 = Math.max(2, Math.round(iconSize * 0.6));
+            return `<div class="marker-dot-tiny" style="width: ${size6}px; height: ${size6}px;"></div>`;
+        } else if (zoom === 7) {
+            // 100% pins for zoom 7
+            return `<div class="marker-pin" style="width: ${iconSize}px; height: ${iconSize}px;">
+                      <div class="marker-dot"></div>
+                    </div>`;
         } else {
-            // Pin markers for close zoom
+            // Regular pin markers for zoom 8+
             return `<div class="marker-pin" style="width: ${iconSize}px; height: ${iconSize}px;">
                       <div class="marker-dot"></div>
                     </div>`;
@@ -630,27 +648,43 @@ class LeafletMapManager {
     
     getIconAnchor(zoom, iconSize) {
         // Adjust anchor based on marker type and size
-        if (zoom <= 4) {
-            const extraSmallSize = Math.max(1, Math.round(iconSize * 0.15));
-            return [extraSmallSize/2, extraSmallSize/2];  // Center anchor for extra tiny dots
-        } else if (zoom <= 6) {
-            const smallSize = Math.max(3, Math.round(iconSize * 0.6));
-            return [smallSize/2, smallSize/2];  // Center anchor for tiny dots
+        if (zoom <= 3) {
+            const halfSize = Math.max(1, Math.round(iconSize * 0.2));
+            return [halfSize/2, halfSize/2];  // Center anchor for half-size dots
+        } else if (zoom === 4) {
+            const size4 = Math.max(1, Math.round(iconSize * 0.3));
+            return [size4/2, size4/2];  // Center anchor for 30% dots
+        } else if (zoom === 5) {
+            const size5 = Math.max(2, Math.round(iconSize * 0.4));
+            return [size5/2, size5/2];  // Center anchor for 40% dots
+        } else if (zoom === 6) {
+            const size6 = Math.max(2, Math.round(iconSize * 0.6));
+            return [size6/2, size6/2];  // Center anchor for 60% dots
+        } else if (zoom === 7) {
+            return [iconSize/2, iconSize];    // Bottom center for 100% pins
         } else {
-            return [iconSize/2, iconSize];    // Bottom center for pins
+            return [iconSize/2, iconSize];    // Bottom center for regular pins
         }
     }
     
     getPopupAnchor(zoom, iconSize) {
         // Adjust popup position based on marker type
-        if (zoom <= 4) {
-            const extraSmallSize = Math.max(1, Math.round(iconSize * 0.15));
-            return [0, -extraSmallSize/2];  // Above center for extra tiny dots
-        } else if (zoom <= 6) {
-            const smallSize = Math.max(3, Math.round(iconSize * 0.6));
-            return [0, -smallSize/2];  // Above center for tiny dots
+        if (zoom <= 3) {
+            const halfSize = Math.max(1, Math.round(iconSize * 0.2));
+            return [0, -halfSize/2];  // Above center for half-size dots
+        } else if (zoom === 4) {
+            const size4 = Math.max(1, Math.round(iconSize * 0.3));
+            return [0, -size4/2];  // Above center for 30% dots
+        } else if (zoom === 5) {
+            const size5 = Math.max(2, Math.round(iconSize * 0.4));
+            return [0, -size5/2];  // Above center for 40% dots
+        } else if (zoom === 6) {
+            const size6 = Math.max(2, Math.round(iconSize * 0.6));
+            return [0, -size6/2];  // Above center for 60% dots
+        } else if (zoom === 7) {
+            return [0, -iconSize];    // Above 100% pin point
         } else {
-            return [0, -iconSize];    // Above pin point
+            return [0, -iconSize];    // Above regular pin point
         }
     }
     
@@ -675,6 +709,32 @@ class LeafletMapManager {
         });
     }
     
+    addZoomDisplay() {
+        // Create zoom level display control
+        const zoomControl = L.control({ position: 'bottomleft' });
+        
+        zoomControl.onAdd = (map) => {
+            const div = L.DomUtil.create('div', 'zoom-display');
+            div.innerHTML = `Level: ${this.map.getZoom()}`;
+            
+            // Prevent map interaction when clicking display
+            L.DomEvent.disableClickPropagation(div);
+            L.DomEvent.disableScrollPropagation(div);
+            
+            return div;
+        };
+        
+        zoomControl.addTo(this.map);
+        this.zoomControl = zoomControl;
+    }
+    
+    updateZoomDisplay() {
+        const zoomDisplay = document.querySelector('.zoom-display');
+        if (zoomDisplay) {
+            zoomDisplay.innerHTML = `Level: ${this.map.getZoom()}`;
+        }
+    }
+    
     addCustomCSS() {
         if (document.querySelector('#leaflet-custom-styles')) return;
         
@@ -687,6 +747,18 @@ class LeafletMapManager {
                 padding: 5px;
                 border-radius: 4px;
                 box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+            }
+            
+            /* Zoom Level Display */
+            .zoom-display {
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                font-weight: 500;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.3);
             }
             
             .map-style-select {
@@ -760,6 +832,7 @@ class LeafletMapManager {
             
             .popup-content {
                 padding: 12px;
+                padding-top: 20px;
                 font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             }
             

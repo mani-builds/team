@@ -1062,7 +1062,7 @@
                     });
                 }
                 this.currentPage = 1;
-                this.render();
+                this.renderListingsOnly();
                 
                 // Update map with filtered results
                 if (window.leafletMap) {
@@ -1367,6 +1367,7 @@
                     <!-- Controls -->
                     <div class="controls-container">
                         <div class="search-container">
+                            ${window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? `
                             <div class="show-selector">
                                 <select id="showSelect" class="show-select">
                                     ${Object.keys(this.showConfigs).map(key => 
@@ -1374,6 +1375,7 @@
                                     ).join('')}
                                 </select>
                             </div>
+                            ` : ''}
                             <div class="search-wrapper">
                                 <div class="search-box">
                                     <input
@@ -1613,6 +1615,48 @@
                         <p class="empty-text">No listings available.</p>
                     </div>
                 `;
+            }
+            
+            renderListingsOnly() {
+                // Update only the dynamic parts without recreating the entire interface
+                const searchResults = document.querySelector('.search-results');
+                if (searchResults) {
+                    searchResults.innerHTML = `
+                        Showing ${this.getCurrentPageListings().length} of ${this.filteredListings.length} listings
+                        ${this.filteredListings.length !== this.listings.length ? ` (${this.listings.length} total)` : ''}
+                    `;
+                }
+                
+                const paginationContainers = document.querySelectorAll('.pagination-container');
+                const paginationHTML = this.renderPagination();
+                paginationContainers.forEach(container => {
+                    if (paginationHTML) {
+                        container.outerHTML = paginationHTML;
+                    } else {
+                        container.style.display = 'none';
+                    }
+                });
+                
+                const listingsGrid = document.querySelector('.listings-grid');
+                if (listingsGrid) {
+                    listingsGrid.innerHTML = this.renderListings();
+                }
+                
+                const noResults = document.querySelector('.no-results');
+                if (noResults) {
+                    noResults.remove();
+                }
+                
+                const emptyState = document.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.remove();
+                }
+                
+                if (this.filteredListings.length === 0 && this.listings.length > 0) {
+                    listingsGrid.insertAdjacentHTML('afterend', this.renderNoResults());
+                } else if (this.listings.length === 0) {
+                    listingsGrid.insertAdjacentHTML('afterend', this.renderEmptyState());
+                }
             }
             
             // URL Hash and Cache Management
