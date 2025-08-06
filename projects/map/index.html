@@ -1354,6 +1354,15 @@
                     const displayData = this.getDisplayData(listing);
                     const uniqueId = `details-${Math.random().toString(36).substr(2, 9)}`;
                     
+                    // Count additional details (excluding featured columns and coordinates)
+                    const additionalDetailsCount = Object.entries(listing)
+                        .filter(([key, value]) => 
+                            !(this.config?.featuredColumns || []).includes(key) && 
+                            value && 
+                            key !== 'latitude' && 
+                            key !== 'longitude'
+                        ).length;
+                    
                     return `
                         <div class="listing-card">
                             <div class="listing-content">
@@ -1363,7 +1372,7 @@
                                 
                                 <div class="details-toggle">
                                     <span class="toggle-arrow" id="arrow-${uniqueId}" onclick="toggleDetails('${uniqueId}')">▶</span>
-                                    <span class="toggle-label" onclick="toggleDetails('${uniqueId}')">Additional Details</span>
+                                    <span class="toggle-label" onclick="toggleDetails('${uniqueId}')">Additional Details (${additionalDetailsCount})</span>
                                 </div>
                                 
                                 <div class="details-content" id="${uniqueId}">
