@@ -327,7 +327,7 @@ function createOSDetectionPanel(containerId) {
 source env/bin/activate
 npx @anthropic-ai/claude-code</div>
                     <div style="font-size: .8em;">
-                        Starting a fresh terminal can help save tokens. Claude Pro reserves the right to throttle you after 50 sessions/month, but if sessions are small we assume they'll avoid throttling a fresh-session approach.
+                        If you're changing to a new prompting topic after a large interaction with Claude, then starting a fresh terminal can help save tokens. Claude Pro does reserves the right to throttle you after 50 sessions/month, but if sessions are small we assume they'll avoid throttling a fresh-session approach.
                     </div>
                 </div>
             </div>
