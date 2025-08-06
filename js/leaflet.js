@@ -444,87 +444,52 @@ class LeafletMapManager {
     }
     
     createPopupContent(data, config = {}) {
-        // Get recognized fields
-        const name = this.getFieldValue(data, config.nameColumn || ['name', 'Name', 'organization name', 'city', 'City']);
-        const title = this.getFieldValue(data, config.titleColumn || ['title', 'Title']);
-        const address = this.getFieldValue(data, config.addressColumn || ['address', 'Address']);
-        const category = this.getFieldValue(data, config.valueColumn || ['category', 'Category']);
-        const description = this.getFieldValue(data, ['description', 'Description', 'details']);
-        const phone = this.getFieldValue(data, ['phone', 'Phone', 'telephone']);
-        const email = this.getFieldValue(data, ['email', 'Email']);
-        const website = this.getFieldValue(data, ['website', 'Website', 'url', 'URL']);
-        const population = this.getFieldValue(data, ['population', 'Population']);
-        
         let content = '<div class="popup-content">';
         
-        // Header section
-        if (name) {
-            content += `<div class="popup-title">${this.escapeHtml(name)}</div>`;
-        }
-        
-        if (title && title !== name) {
-            content += `<div class="popup-subtitle">${this.escapeHtml(title)}</div>`;
-        }
-        
-        if (category) {
-            content += `<div class="popup-category">${this.escapeHtml(category)}</div>`;
-        }
-        
-        // Description
-        if (description) {
-            content += `<div class="popup-description">${this.escapeHtml(description)}</div>`;
-        }
-        
-        // Address
-        if (address) {
-            content += `<div class="popup-field">
-                <span class="popup-icon">📍</span>
-                <span class="popup-text">${this.escapeHtml(address)}</span>
-            </div>`;
-        }
-        
-        // Contact info
-        if (phone) {
-            content += `<div class="popup-field">
-                <span class="popup-icon">📞</span>
-                <a href="tel:${phone}" class="popup-link">${this.formatPhone(phone)}</a>
-            </div>`;
-        }
-        
-        if (email) {
-            content += `<div class="popup-field">
-                <span class="popup-icon">✉️</span>
-                <a href="mailto:${email}" class="popup-link">${this.escapeHtml(email)}</a>
-            </div>`;
-        }
-        
-        if (website) {
-            const url = website.startsWith('http') ? website : `https://${website}`;
-            content += `<div class="popup-field">
-                <span class="popup-icon">🌐</span>
-                <a href="${url}" target="_blank" rel="noopener noreferrer" class="popup-link">${this.escapeHtml(website)}</a>
-            </div>`;
-        }
-        
-        // Population
-        if (population) {
-            content += `<div class="popup-field">
-                <span class="popup-icon">👥</span>
-                <span class="popup-text">Population: ${this.formatNumber(population)}</span>
-            </div>`;
-        }
-        
-        // Additional data (show up to 3 extra fields)
-        const extraFields = this.getExtraFields(data, { nameColumn: config.nameColumn, titleColumn: config.titleColumn, addressColumn: config.addressColumn, valueColumn: config.valueColumn });
-        if (extraFields.length > 0) {
-            content += '<div class="popup-extra">';
-            extraFields.slice(0, 3).forEach(([key, value]) => {
-                content += `<div class="popup-field popup-field-small">
-                    <span class="popup-label">${this.formatFieldName(key)}:</span>
-                    <span class="popup-text">${this.escapeHtml(String(value))}</span>
-                </div>`;
+        // Use featuredColumns if available in config
+        if (config.featuredColumns && Array.isArray(config.featuredColumns)) {
+            config.featuredColumns.forEach((column, index) => {
+                const value = data[column];
+                if (value) {
+                    if (index === 0) {
+                        // First column - bold title
+                        content += `<div class="popup-title">${this.escapeHtml(value)}</div>`;
+                    } else if (index === 1) {
+                        // Second column - with appropriate prefix
+                        const displayValue = column.toLowerCase().includes('population') ? 
+                            `Population: ${this.formatNumber(value)}` : 
+                            `${column}: ${this.escapeHtml(value)}`;
+                        content += `<div class="popup-field"><span class="popup-text">${displayValue}</span></div>`;
+                    } else if (index === 2) {
+                        // Third column - with appropriate suffix
+                        const displayValue = column.toLowerCase().includes('county') ? 
+                            `${value} County` : 
+                            `${column}: ${value}`;
+                        content += `<div class="popup-field"><span class="popup-text">${displayValue}</span></div>`;
+                    }
+                }
             });
-            content += '</div>';
+        } else {
+            // Fallback to old popup behavior
+            const name = this.getFieldValue(data, config.nameColumn || ['name', 'Name', 'organization name', 'city', 'City']);
+            const population = this.getFieldValue(data, ['population', 'Population']);
+            const county = this.getFieldValue(data, ['county', 'County']);
+            
+            if (name) {
+                content += `<div class="popup-title">${this.escapeHtml(name)}</div>`;
+            }
+            
+            if (population) {
+                content += `<div class="popup-field">
+                    <span class="popup-text">Population: ${this.formatNumber(population)}</span>
+                </div>`;
+            }
+            
+            if (county) {
+                content += `<div class="popup-field">
+                    <span class="popup-text">${county} County</span>
+                </div>`;
+            }
         }
         
         content += '</div>';

@@ -61,11 +61,11 @@
             margin-bottom: 12px;
         }
 
-        .show-selector {
+        .list-selector {
             min-width: 200px;
         }
 
-        .show-select {
+        .list-select {
             width: 100%;
             padding: 12px 16px;
             font-size: 1rem;
@@ -76,7 +76,7 @@
             transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        .show-select:focus {
+        .list-select:focus {
             border-color: #007bff;
             box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
         }
@@ -394,6 +394,20 @@
             font-size: 0.9rem;
             line-height: 1.5;
         }
+        
+        .listing-secondary {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 4px;
+            line-height: 1.4;
+        }
+        
+        .listing-tertiary {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 2px;
+            line-height: 1.4;
+        }
 
         .address-section {
             display: flex;
@@ -476,13 +490,11 @@
             font-size: 0.7rem;
         }
 
-        .toggle-arrow.expanded {
-            transform: rotate(90deg);
-        }
-
         .details-content {
             margin-top: 8px;
             display: none;
+            font-size: 11px;
+            line-height: 1.6;
         }
 
         .details-content.expanded {
@@ -495,17 +507,30 @@
             gap: 4px;
         }
 
-        .detail-row {
+        .detail-row,
+        .detail-item {
             display: flex;
-            font-size: 0.85rem;
+            font-size: 11px;
             gap: 8px;
+            line-height: 1.6;
+            margin-bottom: 4px;
+        }
+        
+        .detail-item.stacked {
+            flex-direction: column;
+            gap: 2px;
         }
 
-        .detail-key {
+        .detail-key,
+        .detail-label {
             font-weight: 500;
             color: #666;
-            min-width: 0;
+            min-width: 90px;
             flex-shrink: 0;
+        }
+        
+        .detail-label {
+            font-weight: bold;
         }
 
         .detail-value {
@@ -648,6 +673,7 @@
                             "dataset": "cities.csv",
                             "markerType": "google",
                             "nameColumn": "city",
+                            "featuredColumns": ["City", "Population", "County"],
                             "search": {
                                 "In City": "City",
                                 "In County Name": "County"
@@ -843,7 +869,7 @@
             parseCSV(csvText) {
                 try {
                     console.log('Parsing CSV...');
-                    const lines = csvText.trim().split('\n');
+                    const lines = this.splitCSVIntoLines(csvText.trim());
                     if (lines.length < 2) {
                         console.warn('CSV has insufficient data');
                         return [];
@@ -894,6 +920,46 @@
                 
                 result.push(current.trim());
                 return result;
+            }
+
+            splitCSVIntoLines(csvText) {
+                const lines = [];
+                let currentLine = '';
+                let inQuotes = false;
+                
+                for (let i = 0; i < csvText.length; i++) {
+                    const char = csvText[i];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                        currentLine += char;
+                    } else if (char === '\n' && !inQuotes) {
+                        // Only split on line breaks when not inside quotes
+                        if (currentLine.trim()) {
+                            lines.push(currentLine);
+                        }
+                        currentLine = '';
+                    } else if (char === '\r' && !inQuotes) {
+                        // Handle Windows line endings - ignore \r when not in quotes
+                        // The \n will be handled in the next iteration
+                        if (csvText[i + 1] !== '\n') {
+                            // Standalone \r (old Mac format)
+                            if (currentLine.trim()) {
+                                lines.push(currentLine);
+                            }
+                            currentLine = '';
+                        }
+                    } else {
+                        currentLine += char;
+                    }
+                }
+                
+                // Add the last line if it exists
+                if (currentLine.trim()) {
+                    lines.push(currentLine);
+                }
+                
+                return lines;
             }
 
             initializeSearchFields() {
@@ -1143,6 +1209,13 @@
                 this.render();
             }
 
+            clearSearch() {
+                this.searchTerm = '';
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.value = '';
+                this.filterListings();
+            }
+
             async changeShow(showKey, updateCache = true) {
                 this.currentShow = showKey;
                 this.searchPopupOpen = false;
@@ -1173,7 +1246,7 @@
                     });
                 }
 
-                const showSelect = document.getElementById('showSelect');
+                const showSelect = document.getElementById('listSelect');
                 if (showSelect) {
                     showSelect.addEventListener('change', (e) => {
                         this.changeShow(e.target.value);
@@ -1241,9 +1314,11 @@
                                 if (isExpanded) {
                                     content.classList.remove('expanded');
                                     arrow.classList.remove('expanded');
+                                    arrow.textContent = '▶';
                                 } else {
                                     content.classList.add('expanded');
                                     arrow.classList.add('expanded');
+                                    arrow.textContent = '▼';
                                 }
                             }
                         }
@@ -1270,6 +1345,85 @@
                 const startIndex = (this.currentPage - 1) * this.itemsPerPage;
                 const endIndex = startIndex + this.itemsPerPage;
                 return this.filteredListings.slice(startIndex, endIndex);
+            }
+
+            renderListings() {
+                const currentPageListings = this.getCurrentPageListings();
+                
+                return currentPageListings.map(listing => {
+                    const displayData = this.getDisplayData(listing);
+                    const uniqueId = `details-${Math.random().toString(36).substr(2, 9)}`;
+                    
+                    return `
+                        <div class="listing-card">
+                            <div class="listing-content">
+                                <div class="listing-name">${displayData.primary || 'No Name'}</div>
+                                ${displayData.secondary ? `<div class="listing-info">${displayData.secondary}</div>` : ''}
+                                ${displayData.tertiary ? `<div class="listing-info">${displayData.tertiary}</div>` : ''}
+                                
+                                <div class="details-toggle">
+                                    <span class="toggle-arrow" id="arrow-${uniqueId}" onclick="toggleDetails('${uniqueId}')">▶</span>
+                                    <span class="toggle-label" onclick="toggleDetails('${uniqueId}')">Additional Details</span>
+                                </div>
+                                
+                                <div class="details-content" id="${uniqueId}">
+                                    ${Object.entries(listing)
+                                        .filter(([key, value]) => 
+                                            !(this.config?.featuredColumns || []).includes(key) && 
+                                            value && 
+                                            key !== 'latitude' && 
+                                            key !== 'longitude'
+                                        )
+                                        .map(([key, value]) => {
+                                            const formattedValue = this.formatFieldValue(value);
+                                            const shouldStack = key.length > 16 && formattedValue.length > 38;
+                                            const stackedClass = shouldStack ? ' stacked' : '';
+                                            
+                                            return `
+                                                <div class="detail-item${stackedClass}">
+                                                    <span class="detail-label">${key}:</span>
+                                                    <span class="detail-value">${formattedValue}</span>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderNoResults() {
+                // Show no results message when data is loaded but filtered results are empty
+                if (this.dataLoaded && this.filteredListings.length === 0 && this.searchTerm) {
+                    return `
+                        <div class="no-results">
+                            <div class="no-results-content">
+                                <h3>No results found</h3>
+                                <p>No listings match your search for "${this.searchTerm}"</p>
+                                <button onclick="window.listingsApp.clearSearch()" class="clear-search-btn">
+                                    Clear Search
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+                return '';
+            }
+
+            renderEmptyState() {
+                // Show empty state when data is loaded but there are no listings at all
+                if (this.dataLoaded && this.listings.length === 0) {
+                    return `
+                        <div class="empty-state">
+                            <div class="empty-state-content">
+                                <h3>No listings available</h3>
+                                <p>There are currently no listings to display for this dataset.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                return '';
             }
 
             renderPagination() {
@@ -1368,8 +1522,8 @@
                     <div class="controls-container">
                         <div class="search-container">
                             ${window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? `
-                            <div class="show-selector">
-                                <select id="showSelect" class="show-select">
+                            <div class="list-selector">
+                                <select id="listSelect" class="list-select">
                                     ${Object.keys(this.showConfigs).map(key => 
                                         `<option value="${key}" ${key === this.currentShow ? 'selected' : ''}>${this.showConfigs[key].listTitle || key}</option>`
                                     ).join('')}
@@ -1420,242 +1574,35 @@
                     this.initializeMap();
                 }, 0);
             }
-
-            renderSearchPopup() {
-                const configFields = this.config?.search ? Object.entries(this.config.search) : [];
-                
-                return `
-                    <div class="search-popup">
-                        <div class="search-popup-header">
-                            <div class="search-popup-title">Search Fields</div>
-                            <button class="search-popup-close" onclick="event.stopPropagation(); window.listingsApp.closeSearchPopup();">
-                                ×
-                            </button>
-                        </div>
-                        ${configFields.length > 0 ? `
-                            <div class="search-popup-actions">
-                                <button class="popup-btn" onclick="event.stopPropagation(); window.listingsApp.useConfigSearchFields();">
-                                    Use Config Fields
-                                </button>
-                            </div>
-                        ` : ''}
-                        <div class="search-fields-list">
-                            ${configFields.length > 0 ? 
-                                configFields.map(([displayName, fieldName]) => `
-                                    <div class="search-field-item" onclick="event.stopPropagation(); window.listingsApp.toggleSearchField('${fieldName}');">
-                                        <input 
-                                            type="checkbox" 
-                                            class="search-field-checkbox"
-                                            ${this.searchFields.has(fieldName) ? 'checked' : ''}
-                                            onclick="event.stopPropagation(); window.listingsApp.toggleSearchField('${fieldName}');"
-                                        />
-                                        <label class="search-field-label">${displayName}</label>
-                                    </div>
-                                `).join('') :
-                                Array.from(this.availableFields).map(field => `
-                                    <div class="search-field-item" onclick="event.stopPropagation(); window.listingsApp.toggleSearchField('${field}');">
-                                        <input 
-                                            type="checkbox" 
-                                            class="search-field-checkbox"
-                                            ${this.searchFields.has(field) ? 'checked' : ''}
-                                            onclick="event.stopPropagation(); window.listingsApp.toggleSearchField('${field}');"
-                                        />
-                                        <label class="search-field-label">${field}</label>
-                                    </div>
-                                `).join('')
-                            }
-                        </div>
-                    </div>
-                `;
-            }
-
-            renderListings() {
-                // Use getCurrentPageListings() to limit results per page
-                const currentPageListings = this.getCurrentPageListings();
-                
-                return currentPageListings.map((listing, index) => {
-                    const recognized = this.getRecognizedFields(listing);
-                    const unrecognized = this.getUnrecognizedFields(listing);
-                    
-                    return `
-                        <div class="listing-card">
-                            <div class="listing-content">
-                                ${recognized.name ? `<h3 class="listing-name">${recognized.name}</h3>` : ''}
-                                ${recognized.title && recognized.title !== recognized.name ? `<h4 class="listing-title">${recognized.title}</h4>` : ''}
-                                
-                                ${recognized.category ? `<span class="listing-category">${recognized.category}</span>` : ''}
-                                
-                                ${recognized.description ? `<p class="listing-description">${recognized.description}</p>` : ''}
-                                
-                                ${this.renderAddressSection(recognized)}
-                                ${this.renderContactSection(recognized)}
-                                ${this.renderPopulationSection(recognized)}
-                            </div>
-
-                            ${Object.keys(unrecognized).length > 0 ? this.renderAdditionalDetails(unrecognized) : ''}
-                        </div>
-                    `;
-                }).join('');
-            }
-
-            renderAddressSection(recognized) {
-                const hasAddress = recognized.address || recognized.city || recognized.state || recognized.zip || recognized.county;
-                if (!hasAddress) return '';
-
-                return `
-                    <div class="address-section">
-                        ${recognized.address ? `
-                            <div class="address-main">
-                                📍 ${recognized.address}
-                            </div>
-                        ` : ''}
-                        
-                        ${(recognized.city || recognized.state || recognized.zip) ? `
-                            <div class="address-details">
-                                ${[recognized.city, recognized.state, recognized.zip].filter(Boolean).join(', ')}
-                            </div>
-                        ` : ''}
-                        
-                        ${recognized.county ? `
-                            <div class="address-details">
-                                ${recognized.county} County
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }
-
-            renderContactSection(recognized) {
-                const hasContact = recognized.phone || recognized.email || recognized.website;
-                if (!hasContact) return '';
-
-                return `
-                    <div class="contact-section">
-                        ${recognized.phone ? `
-                            <div class="contact-item">
-                                📞 <a href="tel:${recognized.phone}">
-                                    ${this.formatFieldValue(recognized.phone, 'phone')}
-                                </a>
-                            </div>
-                        ` : ''}
-                        
-                        ${recognized.email ? `
-                            <div class="contact-item">
-                                ✉️ <a href="mailto:${recognized.email}">
-                                    ${recognized.email}
-                                </a>
-                            </div>
-                        ` : ''}
-                        
-                        ${recognized.website ? `
-                            <div class="contact-item">
-                                🌐 <a 
-                                    href="${recognized.website.startsWith('http') ? recognized.website : `https://${recognized.website}`}"
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    class="break-all"
-                                >
-                                    ${recognized.website}
-                                </a>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            }
-
-            renderPopulationSection(recognized) {
-                if (!recognized.population) return '';
-
-                return `
-                    <div class="population-item">
-                        👥 Population: ${this.formatFieldValue(recognized.population, 'population')}
-                    </div>
-                `;
-            }
-
-            renderAdditionalDetails(unrecognized) {
-                return `
-                    <div class="additional-details">
-                        <button class="details-toggle">
-                            <span class="toggle-arrow">▶</span>
-                            Additional Details (${Object.keys(unrecognized).length})
-                        </button>
-                        <div class="details-content">
-                            <div class="details-grid">
-                                ${Object.entries(unrecognized).map(([key, value]) => `
-                                    <div class="detail-row">
-                                        <span class="detail-key">${this.formatFieldName(key)}:</span>
-                                        <span class="detail-value">${this.formatFieldValue(value)}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            renderNoResults() {
-                if (this.filteredListings.length > 0 || this.listings.length === 0) return '';
-                
-                return `
-                    <div class="no-results">
-                        <p class="no-results-text">No listings match your search criteria.</p>
-                        <button id="clearSearch" class="clear-search">
-                            Clear search to show all listings
-                        </button>
-                    </div>
-                `;
-            }
-
-            renderEmptyState() {
-                if (this.listings.length > 0) return '';
-                
-                return `
-                    <div class="empty-state">
-                        <p class="empty-text">No listings available.</p>
-                    </div>
-                `;
-            }
             
-            renderListingsOnly() {
-                // Update only the dynamic parts without recreating the entire interface
-                const searchResults = document.querySelector('.search-results');
-                if (searchResults) {
-                    searchResults.innerHTML = `
-                        Showing ${this.getCurrentPageListings().length} of ${this.filteredListings.length} listings
-                        ${this.filteredListings.length !== this.listings.length ? ` (${this.listings.length} total)` : ''}
-                    `;
+            initializeMap() {
+                // Check if LeafletMapManager is available
+                if (typeof LeafletMapManager === 'undefined') {
+                    console.warn('LeafletMapManager not available');
+                    return;
                 }
                 
-                const paginationContainers = document.querySelectorAll('.pagination-container');
-                const paginationHTML = this.renderPagination();
-                paginationContainers.forEach(container => {
-                    if (paginationHTML) {
-                        container.outerHTML = paginationHTML;
-                    } else {
-                        container.style.display = 'none';
+                try {
+                    // Always destroy existing map since DOM container gets recreated
+                    if (window.leafletMap && window.leafletMap.map) {
+                        window.leafletMap.map.remove();
+                        window.leafletMap = null;
                     }
-                });
-                
-                const listingsGrid = document.querySelector('.listings-grid');
-                if (listingsGrid) {
-                    listingsGrid.innerHTML = this.renderListings();
-                }
-                
-                const noResults = document.querySelector('.no-results');
-                if (noResults) {
-                    noResults.remove();
-                }
-                
-                const emptyState = document.querySelector('.empty-state');
-                if (emptyState) {
-                    emptyState.remove();
-                }
-                
-                if (this.filteredListings.length === 0 && this.listings.length > 0) {
-                    listingsGrid.insertAdjacentHTML('afterend', this.renderNoResults());
-                } else if (this.listings.length === 0) {
-                    listingsGrid.insertAdjacentHTML('afterend', this.renderEmptyState());
+                    
+                    // Create new map instance
+                    window.leafletMap = new LeafletMapManager('map', {
+                        height: '500px',
+                        width: '100%'
+                    });
+                    
+                    // Update map with current listings data
+                    if (this.listings && this.listings.length > 0) {
+                        setTimeout(() => {
+                            window.leafletMap.updateFromListingsApp(this);
+                        }, 100);
+                    }
+                } catch (error) {
+                    console.warn('Failed to initialize map:', error);
                 }
             }
             
@@ -1696,48 +1643,60 @@
                     return null;
                 }
             }
-
-            initializeMap() {
-                // Wait for LeafletMapManager to be available and Leaflet library to load
-                if (typeof window.LeafletMapManager === 'undefined' || typeof L === 'undefined') {
-                    setTimeout(() => this.initializeMap(), 100);
-                    return;
+            
+            getDisplayData(listing) {
+                if (!this.config || !this.config.featuredColumns) {
+                    // Fallback to old behavior
+                    const recognized = this.getRecognizedFields(listing);
+                    return {
+                        primary: recognized.name,
+                        secondary: recognized.population ? `Population: ${this.formatFieldValue(recognized.population, 'population')}` : null,
+                        tertiary: recognized.county ? `${recognized.county} County` : null
+                    };
                 }
                 
-                const mapContainer = document.getElementById('map');
-                if (!mapContainer) {
-                    console.error('Map container not found');
-                    return;
-                }
+                const featuredColumns = this.config.featuredColumns;
+                const data = {};
                 
-                // Always clean up and recreate the map to avoid issues
-                if (window.leafletMap && window.leafletMap.map) {
-                    try {
-                        window.leafletMap.destroy();
-                    } catch (error) {
-                        console.warn('Error destroying existing map:', error);
-                    }
-                }
-                
-                // Clear the container
-                mapContainer.innerHTML = '';
-                
-                // Create new map instance
-                try {
-                    window.leafletMap = new LeafletMapManager('map');
-                    window.leafletMap.updateFromListingsApp(this);
-                } catch (error) {
-                    console.error('Error initializing map:', error);
-                    // Retry once after a delay
-                    setTimeout(() => {
-                        try {
-                            mapContainer.innerHTML = '';
-                            window.leafletMap = new LeafletMapManager('map');
-                            window.leafletMap.updateFromListingsApp(this);
-                        } catch (retryError) {
-                            console.error('Retry failed:', retryError);
+                featuredColumns.forEach((column, index) => {
+                    const value = listing[column];
+                    if (value) {
+                        if (index === 0) {
+                            data.primary = value;
+                        } else if (index === 1) {
+                            // Add "Population: " prefix for population data
+                            data.secondary = column.toLowerCase().includes('population') ? 
+                                `Population: ${this.formatFieldValue(value, 'population')}` : 
+                                `${column}: ${this.formatFieldValue(value)}`;
+                        } else if (index === 2) {
+                            // Add " County" suffix for county data
+                            data.tertiary = column.toLowerCase().includes('county') ? 
+                                `${value} County` : 
+                                `${column}: ${value}`;
                         }
-                    }, 500);
+                    }
+                });
+                
+                return data;
+            }
+        }
+
+        // Global function for toggle details
+        window.toggleDetails = function(detailsId) {
+            const content = document.getElementById(detailsId);
+            const arrow = document.getElementById(`arrow-${detailsId}`);
+            
+            if (content && arrow) {
+                const isExpanded = content.classList.contains('expanded');
+                
+                if (isExpanded) {
+                    content.classList.remove('expanded');
+                    arrow.classList.remove('expanded');
+                    arrow.textContent = '▶';
+                } else {
+                    content.classList.add('expanded');
+                    arrow.classList.add('expanded');
+                    arrow.textContent = '▼';
                 }
             }
         }
