@@ -107,10 +107,11 @@ class StandaloneNavigation {
         let rootPath, adminPath, logoPath;
         
         if (isExternalSite) {
-            // Called from external site, use absolute paths to team folder
-            rootPath = '/team/';
-            adminPath = '/team/admin/';
-            logoPath = '/team/img/logo/neighborhood/favicon.png';
+            // Called from external site, use absolute paths to repo folder
+            const repoName = repoFolderName || 'team';
+            rootPath = `/${repoName}/`;
+            adminPath = `/${repoName}/admin/`;
+            logoPath = `/${repoName}/img/logo/neighborhood/favicon.png`;
         } else if (isWebrootContainer && repoFolderName) {
             // In webroot container, need to include repo folder in paths
             const repoPath = `/${repoFolderName}/`;
@@ -1000,24 +1001,48 @@ function initializeStandaloneNav() {
     let isWebrootContainer = false;
     let isExternalSite = false;
     
-    // Check if we're being called from an external site
-    // Look for the team folder in the current path or detect if we're external
-    if (pathSegments.includes('team')) {
-        // We're inside the team folder
-        repoFolderName = 'team';
+    // Auto-detect repository folder name by checking for known files
+    // Look for typical repo files to identify the repository folder
+    const knownRepoFiles = ['Cargo.toml', 'package.json', 'README.md', 'CLAUDE.md'];
+    let detectedRepoName = null;
+    
+    // Try to detect repo folder from current path
+    for (const segment of pathSegments) {
+        // Skip common non-repo segments
+        if (!['admin', 'js', 'css', 'img', 'projects', 'preferences'].includes(segment)) {
+            detectedRepoName = segment;
+            break;
+        }
+    }
+    
+    // Fallback detection logic
+    if (!detectedRepoName) {
+        // Check if we have any path segments that could be a repo
+        const possibleRepoSegment = pathSegments.find(segment => 
+            !['admin', 'js', 'css', 'img', 'projects', 'preferences', 'src', 'target'].includes(segment)
+        );
+        if (possibleRepoSegment) {
+            detectedRepoName = possibleRepoSegment;
+        }
+    }
+    
+    // Check if we're being called from an external site or within a webroot container
+    if (detectedRepoName && pathSegments.includes(detectedRepoName)) {
+        // We're inside the repository folder
+        repoFolderName = detectedRepoName;
         isWebrootContainer = true;
-        const repoIndex = pathSegments.indexOf('team');
+        const repoIndex = pathSegments.indexOf(detectedRepoName);
         const segmentsAfterRepo = pathSegments.slice(repoIndex + 1);
         
         if (segmentsAfterRepo.length > 0) {
             basePath = '../'.repeat(segmentsAfterRepo.length);
             basePath = basePath.replace(/\/$/, '');
         }
-    } else if (pathSegments.length > 0 && !currentPath.startsWith('/team/')) {
-        // We're in a different site in the webroot, need to reference team folder
+    } else if (pathSegments.length > 0 && detectedRepoName) {
+        // We're in a different site in the webroot, need to reference detected repo folder
         isExternalSite = true;
-        repoFolderName = 'team';
-        basePath = '/team';
+        repoFolderName = detectedRepoName;
+        basePath = `/${detectedRepoName}`;
     } else if (pathSegments.length === 0) {
         // We're at root level - check if it's actually direct repo serving
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
@@ -1025,10 +1050,10 @@ function initializeStandaloneNav() {
             isExternalSite = false;
             basePath = './';
         } else {
-            // External site at root
+            // External site at root - use fallback name
             isExternalSite = true;
-            repoFolderName = 'team';
-            basePath = '/team';
+            repoFolderName = 'explore'; // Default fallback
+            basePath = '/explore';
         }
     } else {
         // Direct repo serving (legacy behavior)
