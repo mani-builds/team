@@ -602,17 +602,6 @@ class ProjectsManager {
                     <h2 class="section-title">Project Opportunities</h2>
                     <p><a href="../projects/">Our Active Projects</a></p>
                     <p><a href="projects/#list=modelteam">Our Model Team</a></p>
-                    <br>
-
-                    <p class="section-subtitle">Mockups:</p>
-                    <p>
-                        <a href="/profile/preferences">Project Preferences - Bolt AI Prototype</a><br>
-                        <a href="/profile/preferences/projects">Project Details - US DFC Funded Projects - Bolt AI Prototype</a><br>
-                        <a href="/profile/preferences/manager.html">Preferences Manager - Bolt AI Prototype</a><br>
-                        <!--
-                        https://democracylab2.org/profile/project/commons
-                        -->
-                    </p>
                 </div>
                 
                 <div class="projects-actions">
