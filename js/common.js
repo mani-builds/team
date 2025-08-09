@@ -323,7 +323,7 @@ function createOSDetectionPanel(containerId) {
                         Right-click on your "<span id="repo-name">team</span>" repo, open a New Terminal at Folder, and run a virtual environment with Claude Code CLI.
                     </div>
                     
-                    <div id="command-display" style="font-family: monospace; font-size: 13px; line-height: 1.4; margin: 0;">python3 -m venv env
+                    <div id="command-display">python3 -m venv env
 source env/bin/activate
 npx @anthropic-ai/claude-code</div>
                     <div style="font-size: .8em;">
