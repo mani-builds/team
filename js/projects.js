@@ -642,7 +642,7 @@ class ProjectsManager {
 
             ${this.isUsingPlaceholderData ? `
                 <div class="placeholder-message" style="background: #fef3c7; border: 1px solid #f59e0b; border-radius: 8px; padding: 12px 16px; margin: 16px 0; color: #92400e;">
-                    <strong>ℹ️ Demo Mode:</strong> Showing sample projects. Database connection unavailable - projects will load automatically when API is accessible.
+                    <strong>ℹ️ Demo Mode:</strong> Showing sample projects. Database connection unavailable - projects will load automatically locally when you've <a href="admin/server/" style="white-space:nowrap">Configured your Server</a>.
                 </div>
             ` : ''}
 

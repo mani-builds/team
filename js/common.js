@@ -274,8 +274,8 @@ function createOSDetectionPanel(containerId) {
     
     const panelHTML = `
         <div class="card" id="os-detection-panel">
-            <h2 class="card-title" id="cli-tools-title">My Command Line Tool</h2>
-            <div style="display: flex; gap: 32px; margin-bottom: 16px;">
+            <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px;">
+                <h2 class="card-title" id="cli-tools-title" style="margin: 0;">My Command Line Tool</h2>
                 <div>
                     <select id="os" style="padding: 8px 12px; border: 1px solid var(--border-medium); border-radius: var(--radius-sm); font-size: 14px; min-width: 150px;">
                         <option value="">Select OS...</option>
@@ -286,19 +286,19 @@ function createOSDetectionPanel(containerId) {
                     </select>
                     <div id="os-info" style="color: var(--text-secondary); font-size: 12px; margin-top: 4px;"></div>
                 </div>
-                <div>
-                    <span style="font-weight: 500; margin-right: 12px;">I'll be coding with...</span><br>
-                    <div style="margin-bottom: 4px;"></div>
-                    <div style="display: flex; flex-direction: column; gap: 4px;">
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                            <input type="checkbox" id="claude-code-cli" style="margin: 0;">
-                            <span>Claude Code CLI (Recommended)</span>
-                        </label>
-                        <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
-                            <input type="checkbox" id="gemini-cli" style="margin: 0;">
-                            <span>Gemini CLI (Not mature yet)</span>
-                        </label>
-                    </div>
+            </div>
+            <div style="margin-bottom: 16px;">
+                <span style="font-weight: 500; margin-right: 12px;">I'll be coding with...</span><br>
+                <div style="margin-bottom: 4px;"></div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                        <input type="checkbox" id="claude-code-cli" style="margin: 0;">
+                        <span>Claude Code CLI (Recommended)</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                        <input type="checkbox" id="gemini-cli" style="margin: 0;">
+                        <span>Gemini CLI (Not mature yet)</span>
+                    </label>
                 </div>
             </div>
             <div id="cli-commands" style="display: none;">
@@ -327,7 +327,7 @@ function createOSDetectionPanel(containerId) {
 source env/bin/activate
 npx @anthropic-ai/claude-code</div>
                     <div style="font-size: .8em;">
-                        If you're changing to a new prompting topic after a large interaction with Claude, then starting a fresh terminal can help save tokens. Claude Pro does reserves the right to throttle you after 50 sessions/month, but if sessions are small we assume they'll avoid throttling a fresh-session approach.
+                        After a large interaction with Claude, if you're changing to a new topic, by starting a fresh terminal session you'll use fewer tokens. Claude Pro reserves the right to throttle you after 50 sessions/month, but if sessions are small we assume Anthropic will avoid throttling a fresh-session approach.
                     </div>
                 </div>
             </div>
@@ -375,7 +375,16 @@ function initializeOSDetectionPanel() {
     const osDetails = osInfo_detected.details;
     
     osSelect.value = detectedOS;
-    osInfo.textContent = osDetails;
+    
+    // Update dropdown options to show (current) for detected OS
+    const options = osSelect.querySelectorAll('option');
+    options.forEach(option => {
+        if (option.value === detectedOS) {
+            option.textContent = `${option.value} (current)`;
+        }
+    });
+    
+    console.log(osDetails);
     
     // Update repo name from current URL
     const currentPath = window.location.pathname;
@@ -547,11 +556,6 @@ npx @anthropic-ai/claude-code</code></pre>`;
     // Add OS select change event listener
     osSelect.addEventListener('change', function() {
         const selectedOS = this.value;
-        if (selectedOS) {
-            osInfo.textContent = `Selected: ${selectedOS}`;
-        } else {
-            osInfo.textContent = osDetails; // Show detection again if blank is selected
-        }
         updateCliCommands();
     });
     
