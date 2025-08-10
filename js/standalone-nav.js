@@ -114,13 +114,15 @@ class StandaloneNavigation {
                         webrootFolderName: firstFolder
                     };
                 } else {
-                    // Could be a nested repo structure, treat second folder as repo
-                    console.log('[WebrootDetector] Detected nested structure (not webroot):', { parentFolder: firstFolder, repoName: secondFolder });
+                    // Check if this might be a case like /comparison/team/js/ where comparison is a repo accessing team
+                    // In this case, we're probably in a webroot but accessed through a specific repo
+                    console.log('[WebrootDetector] Detected cross-repo access:', { callingRepo: firstFolder, targetRepo: secondFolder });
                     
+                    // Assume we're in a webroot scenario, just accessed via a different repo
                     return {
-                        isWebrootContainer: false,
-                        repoFolderName: secondFolder,
-                        webrootFolderName: null
+                        isWebrootContainer: true,
+                        repoFolderName: secondFolder, // Use the target repo (team)
+                        webrootFolderName: null       // Webroot name unknown, will use relative paths
                     };
                 }
             }
@@ -220,11 +222,10 @@ class StandaloneNavigation {
                 adminPath = `/${webrootFolderName}/${repoFolderName}/admin/`;
                 logoPath = `/${webrootFolderName}/${repoFolderName}/img/logo/neighborhood/favicon.png`;
             } else {
-                // Fallback if webroot name not detected
-                const repoPath = `/${repoFolderName}/`;
-                rootPath = repoPath;
-                adminPath = `${repoPath}admin/`;
-                logoPath = `${repoPath}img/logo/neighborhood/favicon.png`;
+                // Webroot name unknown - use relative paths to target repo
+                rootPath = `../${repoFolderName}/`;
+                adminPath = `../${repoFolderName}/admin/`;
+                logoPath = `../${repoFolderName}/img/logo/neighborhood/favicon.png`;
             }
         } else {
             // Direct repo serving or relative paths
