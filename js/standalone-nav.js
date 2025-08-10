@@ -219,20 +219,21 @@ class StandaloneNavigation {
         } else if (isWebrootContainer && repoFolderName) {
             // In webroot container, need to include both webroot and repo folder in paths
             if (webrootFolderName) {
-                rootPath = `/${webrootFolderName}/${repoFolderName}/`;
+                // Root path points to webroot folder, not team folder
+                rootPath = `/${webrootFolderName}/`;
                 adminPath = `/${webrootFolderName}/${repoFolderName}/admin/`;
                 // Favicon is in localsite repo, not team repo
                 logoPath = `/${webrootFolderName}/localsite/img/logo/neighborhood/favicon.png`;
             } else {
-                // Webroot name unknown - use relative paths to target repo
-                rootPath = `../${repoFolderName}/`;
+                // Webroot name unknown - root path goes up one level to repo collection
+                rootPath = `../`;
                 adminPath = `../${repoFolderName}/admin/`;
                 // Favicon is in localsite repo, not team repo
                 logoPath = `../localsite/img/logo/neighborhood/favicon.png`;
             }
         } else {
-            // Direct repo serving or relative paths
-            rootPath = basePath ? `${basePath}/` : './';
+            // Direct repo serving - go up to root level where all repos are
+            rootPath = basePath ? `${basePath}/../` : '../';
             adminPath = basePath ? `${basePath}/admin/` : './admin/';
             // Favicon is in localsite repo
             logoPath = basePath ? `${basePath}${basePath.endsWith('/') ? '' : '/'}../localsite/img/logo/neighborhood/favicon.png` : '../localsite/img/logo/neighborhood/favicon.png';
