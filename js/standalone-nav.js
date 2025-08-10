@@ -214,24 +214,28 @@ class StandaloneNavigation {
             const repoName = repoFolderName || 'team';
             rootPath = `/${repoName}/`;
             adminPath = `/${repoName}/admin/`;
-            logoPath = `/${repoName}/img/logo/neighborhood/favicon.png`;
+            // Favicon is in localsite repo, not team repo
+            logoPath = `/localsite/img/logo/neighborhood/favicon.png`;
         } else if (isWebrootContainer && repoFolderName) {
             // In webroot container, need to include both webroot and repo folder in paths
             if (webrootFolderName) {
                 rootPath = `/${webrootFolderName}/${repoFolderName}/`;
                 adminPath = `/${webrootFolderName}/${repoFolderName}/admin/`;
-                logoPath = `/${webrootFolderName}/${repoFolderName}/img/logo/neighborhood/favicon.png`;
+                // Favicon is in localsite repo, not team repo
+                logoPath = `/${webrootFolderName}/localsite/img/logo/neighborhood/favicon.png`;
             } else {
                 // Webroot name unknown - use relative paths to target repo
                 rootPath = `../${repoFolderName}/`;
                 adminPath = `../${repoFolderName}/admin/`;
-                logoPath = `../${repoFolderName}/img/logo/neighborhood/favicon.png`;
+                // Favicon is in localsite repo, not team repo
+                logoPath = `../localsite/img/logo/neighborhood/favicon.png`;
             }
         } else {
             // Direct repo serving or relative paths
             rootPath = basePath ? `${basePath}/` : './';
             adminPath = basePath ? `${basePath}/admin/` : './admin/';
-            logoPath = basePath ? `${basePath}${basePath.endsWith('/') ? '' : '/'}img/logo/neighborhood/favicon.png` : 'img/logo/neighborhood/favicon.png';
+            // Favicon is in localsite repo
+            logoPath = basePath ? `${basePath}${basePath.endsWith('/') ? '' : '/'}../localsite/img/logo/neighborhood/favicon.png` : '../localsite/img/logo/neighborhood/favicon.png';
         }
         
         // Debug logging
