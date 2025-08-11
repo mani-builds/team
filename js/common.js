@@ -669,13 +669,16 @@ function handleApiConnectionError(error, containerId) {
     let adminPath = 'admin/server/';
     const currentPath = window.location.pathname;
     
-    // If we're in a subdirectory, adjust the path
+    // Calculate the correct path based on current location
     if (currentPath.includes('/admin/')) {
-        adminPath = '../server/';
-    } else if (currentPath.includes('/projects/')) {
+        // Already in admin folder, just go to server subfolder
+        adminPath = 'server/';
+    } else if (currentPath.includes('/projects/') || currentPath.includes('/preferences/')) {
+        // In subdirectories, go up one level then to admin/server
         adminPath = '../admin/server/';
-    } else if (currentPath.includes('/preferences/')) {
-        adminPath = '../admin/server/';
+    } else {
+        // From root team directory, path to admin/server
+        adminPath = 'admin/server/';
     }
 
     const errorMessage = `
