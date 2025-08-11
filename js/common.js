@@ -521,22 +521,7 @@ npx @anthropic-ai/claude-code</code></pre>`;
                 // Check if Initial install radio button is selected
                 const initialInstallRadio = document.querySelector('input[name="claude-install-status"][value="initial"]');
                 const isInitialInstall = initialInstallRadio && initialInstallRadio.checked;
-                
-                if (isInitialInstall) {
-                    // Show only first time instructions for initial install
-                    newContent = `WindowsOS (first time)
-
-<pre><code>python -m venv env && env\\Scripts\\activate.bat && npx @anthropic-ai/claude-code</code></pre>
-
-Install Node.js if this <a href="https://nodejs.org/" target="_blank" style="color: var(--accent-blue); text-decoration: none;">https://nodejs.org/</a>
-
-<pre><code>npx @anthropic-ai/claude-code</code></pre>`;
-                } else {
-                    // Show only subsequent times for already installed
-                    newContent = `WindowsOS (subsequent times)
-
-<pre><code>python -m venv env && env\\Scripts\\activate.bat && npx @anthropic-ai/claude-code</code></pre>`;
-                }
+                newContent = `WindowsOS<pre><code>python -m venv env && env\\Scripts\\activate.bat && npx @anthropic-ai/claude-code</code></pre>`;
             } else {
                 newContent = `# For Unix/Linux/Mac:
 <pre><code>python3 -m venv env
