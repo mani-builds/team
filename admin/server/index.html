@@ -894,7 +894,7 @@
                 
                 // Try to call the restart endpoint to stop the server
                 try {
-                    const response = await fetch(`${GEMINI_API_BASE}/admin/restart`, {
+                    const response = await fetch(`${GEMINI_API_BASE}/config/restart`, {
                         method: 'POST'
                     });
                 } catch (e) {
