@@ -606,7 +606,7 @@ npx @anthropic-ai/claude-code</code></pre>`;
     setTimeout(() => {
         makeCollapsible('cli-commands', 'Claude Code CLI Installation');
         makeCollapsible('gemini-installation', 'Gemini CLI Installation');
-        makeCollapsible('gemini-resources', 'AI Insights Key');
+        makeCollapsible('gemini-resources', 'Gemini AI Insights Key');
     }, 100);
 }
 
