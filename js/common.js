@@ -347,7 +347,7 @@ env\Scripts\activate.bat
 npx @qwen-code/qwen-code
 qwen</code></pre>
                 </div>
-                <div style="font-size: 10px; margin-top: 10px;">
+                <div style="font-size: 13px; margin-top: 10px;">
                     After starting the QWEN CLI, you will be prompted for authorization. Select "Qwen OAuth" and then sign up for QWEN. The free tier includes a benefit of 2,000 requests per day.
                 </div>
             </div>
