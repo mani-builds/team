@@ -11,117 +11,266 @@
         input {
             min-width: 250px;
         }
+        input[name="total_participants"] {
+            width: 60px !important;
+            height: 32px !important;
+            min-width: 60px !important;
+        }
+        input[type="date"] {
+            width: 120px !important;
+            height: 32px !important;
+            min-width: 100px !important;
+        }
+        .form-field.project-name-field,
+        .form-field.location-field {
+            overflow: auto;
+        }
+        .form-field.project-name-field .form-value,
+        .form-field.location-field .form-value {
+            width: calc(100% - 165px);
+        }
+        @media (max-width: 700px) {
+            .form-field.project-name-field .form-label,
+            .form-field.location-field .form-label {
+                float: none;
+                margin-bottom: 5px;
+            }
+            .form-field.project-name-field .form-value,
+            .form-field.location-field .form-value {
+                float: none;
+                width: 100%;
+            }
+        }
+        input[name="name"],
+        input[name="location"] {
+            height: 32px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .form-field.description-field {
+            overflow: auto;
+        }
+        .form-field.description-field .form-value {
+            width: calc(100% - 165px);
+        }
+        @media (max-width: 700px) {
+            .form-field.description-field .form-label,
+            .form-field.participant-handles-field .form-label,
+            .form-field.project-name-field .form-label,
+            .form-field.location-field .form-label {
+                float: none !important;
+                margin-bottom: 5px;
+            }
+            .form-field.description-field .form-value,
+            .form-field.participant-handles-field .form-value,
+            .form-field.project-name-field .form-value,
+            .form-field.location-field .form-value {
+                float: none !important;
+                width: 100% !important;
+            }
+        }
+        .form-field.participant-handles-field {
+            overflow: auto;
+        }
+        .form-field.participant-handles-field .form-value {
+            width: calc(100% - 165px);
+        }
+        textarea[name="participant_handles"] {
+            width: 100% !important;
+            padding: 10px !important;
+            box-sizing: border-box !important;
+        }
+        .tip-text {
+            font-size: 0.85em;
+            color: #666;
+            font-style: italic;
+            margin-top: 3px;
+        }
+        textarea[name="description"] {
+            width: 100% !important;
+            padding: 10px !important;
+            box-sizing: border-box !important;
+        }
+        .form-field {
+            margin-bottom: 15px;
+            overflow: auto;
+            border: 1px solid #fff;
+        }
+        .form-label {
+            min-width: 155px;
+            float: left;
+            font-weight: bold;
+            padding-top: 5px;
+            padding-right: 10px;
+        }
+        .form-value {
+            float: left;
+            overflow: auto;
+        }
+        #upIconTray, #sideIcons {
+            display: none !important;
+        }
     </style>
+    <link type="text/css" href="../../localsite/css/base.css" rel="stylesheet" />
+    <script type="text/javascript" src="../../localsite/js/localsite.js?showheader=true&showsearch=false"></script>
     <script src="../js/common.js"></script>
 </head>
 <body>
-    <h1>Database Edit Test</h1>
-    
+
+<div id="formHolder" class="content contentpadding">
+
     <div id="connection-status">
         <p>Checking database connection...</p>
     </div>
+
+    <h1>Project</h1>
     
     <div id="tables-list"></div>
     
-    <hr>
-    
-    <h2>Add New Project</h2>
     <form id="project-form">
-        <label>Project Name: <input type="text" name="name" required></label><br>
-        <label>Description: <textarea name="description"></textarea></label><br>
-        <label>Status: 
-            <select name="status">
-                <option value="Draft">Draft</option>
-                <option value="In Review">In Review</option>
-                <option value="Published">Published</option>
-            </select>
-        </label><br>
-        <label>Start Date: <input type="date" name="estimated_start_date"></label><br>
-        <label>End Date: <input type="date" name="estimated_end_date"></label><br>
-        <button type="submit">Add Project</button>
+        <div class="form-field project-name-field">
+            <div class="form-label">Project Name</div>
+            <div class="form-value"><input type="text" name="name" required></div>
+        </div>
+        <div class="form-field location-field">
+            <div class="form-label">Location</div>
+            <div class="form-value"><input type="text" name="location"></div>
+        </div>
+        <div class="form-field description-field">
+            <div class="form-label">Description</div>
+            <div class="form-value"><textarea name="description"></textarea></div>
+        </div>
+        <div class="form-field participant-handles-field">
+            <div class="form-label">Handles</div>
+            <div class="form-value">
+                <textarea name="participant_handles"></textarea>
+                <div class="tip-text">Comma separated list. Example: bdole, jcarter</div>
+            </div>
+        </div>
+        <div class="form-field">
+            <div class="form-label">Total Participants</div>
+            <div class="form-value"><input type="number" name="total_participants"></div>
+        </div>
+        <div class="form-field">
+            <div class="form-label">Status</div>
+            <div class="form-value">
+                <select name="status">
+                    <option value="Included">Include on Map</option>
+                    <option value="In Review">In Review</option>        
+                </select>
+            </div>
+        </div>
+        <div class="form-field">
+            <div class="form-label">Start Date</div>
+            <div class="form-value"><input type="date" name="estimated_start_date"></div>
+        </div>
+        <div class="form-field">
+            <div class="form-label">End Date</div>
+            <div class="form-value"><input type="date" name="estimated_end_date"></div>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
     </form>
     
     <div id="form-result"></div>
+</div>
+
+<script>
+    // Check database connection and load tables
+    async function checkConnection() {
+        try {
+            const response = await fetch(`${API_BASE}/health`);
+            const data = await response.json();
+            
+            if (data.database_connected) {
+                document.getElementById('connection-status').innerHTML = 
+                    '<p style="color: green;">✓ Database connected</p>';
+                loadTables();
+            } else {
+                document.getElementById('connection-status').innerHTML = 
+                    `<p style="color: red;">✗ Database connection failed: ${data.error}</p>`;
+            }
+        } catch (error) {
+            handleApiConnectionError(error, 'connection-status');
+        }
+    }
     
-    <script>
-        // Check database connection and load tables
-        async function checkConnection() {
-            try {
-                const response = await fetch(`${API_BASE}/health`);
-                const data = await response.json();
-                
-                if (data.database_connected) {
-                    document.getElementById('connection-status').innerHTML = 
-                        '<p style="color: green;">✓ Database connected</p>';
-                    loadTables();
-                } else {
-                    document.getElementById('connection-status').innerHTML = 
-                        `<p style="color: red;">✗ Database connection failed: ${data.error}</p>`;
-                }
-            } catch (error) {
-                handleApiConnectionError(error, 'connection-status');
-            }
-        }
-        
-        // Load and display tables
-        async function loadTables() {
-            try {
-                const response = await fetch(`${API_BASE}/tables`);
-                const data = await response.json();
-                
-                let html = '<h2>Database Tables:</h2><ul>';
-                for (const table of data.tables) {
-                    html += `<li>${table.name} (${table.row_count} rows)</li>`;
-                }
-                html += '</ul>';
-                
-                document.getElementById('tables-list').innerHTML = html;
-            } catch (error) {
-                handleApiConnectionError(error, 'tables-list');
-            }
-        }
-        
-        // Handle project form submission
-        document.getElementById('project-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
+    // Load and display tables
+    async function loadTables() {
+        try {
+            const response = await fetch(`${API_BASE}/tables`);
+            const data = await response.json();
             
-            const formData = new FormData(e.target);
-            const project = {
-                name: formData.get('name'),
-                description: formData.get('description'),
-                status: formData.get('status'),
-                estimated_start_date: formData.get('estimated_start_date') || null,
-                estimated_end_date: formData.get('estimated_end_date') || null
-            };
+            let html = '<h2>Database Tables:</h2><ul>';
+            for (const table of data.tables) {
+                html += `<li>${table.name} (${table.row_count} rows)</li>`;
+            }
+            html += '</ul>';
             
-            try {
-                const response = await fetch(`${API_BASE}/projects`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(project)
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok) {
-                    document.getElementById('form-result').innerHTML = 
-                        '<p style="color: green;">✓ Project added successfully!</p>';
-                    e.target.reset();
-                    loadTables(); // Refresh table counts
-                } else {
-                    document.getElementById('form-result').innerHTML = 
-                        `<p style="color: red;">✗ Error: ${result.error}</p>`;
-                }
-            } catch (error) {
+            document.getElementById('tables-list').innerHTML = html;
+        } catch (error) {
+            handleApiConnectionError(error, 'tables-list');
+        }
+    }
+    
+    // Handle project form submission
+    document.getElementById('project-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(e.target);
+        const project = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            status: formData.get('status'),
+            estimated_start_date: formData.get('estimated_start_date') || null,
+            estimated_end_date: formData.get('estimated_end_date') || null
+        };
+        
+        try {
+            const response = await fetch(`${API_BASE}/projects`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(project)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
                 document.getElementById('form-result').innerHTML = 
-                    `<p style="color: red;">✗ Error: ${error.message}</p>`;
+                    '<p style="color: green;">✓ Project added successfully!</p>';
+                e.target.reset();
+                loadTables(); // Refresh table counts
+            } else {
+                document.getElementById('form-result').innerHTML = 
+                    `<p style="color: red;">✗ Error: ${result.error}</p>`;
             }
-        });
-        
-        // Initialize
-        checkConnection();
-    </script>
+        } catch (error) {
+            document.getElementById('form-result').innerHTML = 
+                `<p style="color: red;">✗ Error: ${error.message}</p>`;
+        }
+    });
+    
+    // Handle participant handles field - clean up email addresses
+    document.querySelector('textarea[name="participant_handles"]').addEventListener('blur', function() {
+        let value = this.value;
+        if (value.trim()) {
+            // Split by comma, clean each handle, and rejoin
+            let handles = value.split(',').map(handle => {
+                handle = handle.trim();
+                // If handle contains @, remove @ and everything after it
+                if (handle.includes('@')) {
+                    handle = handle.split('@')[0];
+                }
+                return handle;
+            }).filter(handle => handle.length > 0); // Remove empty handles
+            
+            this.value = handles.join(', ');
+        }
+    });
+    
+    // Initialize
+    checkConnection();
+</script>
 </body>
 </html>
