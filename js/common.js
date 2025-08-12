@@ -337,6 +337,10 @@ npx @anthropic-ai/claude-code</div>
             </div>
             <div class="cardsection" id="qwen-installation" style="display: none;">
                 <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Qwen CLI Installation:</h4>
+                <div id="qwen-install-text" style="display: block; margin-top: 12px; font-size: 14px;">
+                    If you haven't installed Qwen yet, install <a href="https://nodejs.org/en/download" target="_blank" style="color: var(--accent-blue); text-decoration: none;">NodeJS 18+</a>, then install Qwen Code CLI with:<br><br>
+                    <pre><code>npm install -g @qwen-code/qwen-code@latest</code></pre>
+                </div>
                 <div id="qwen-command-display">
                     <pre><code>python -m venv env
 env\Scripts\activate.bat
