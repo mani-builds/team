@@ -344,11 +344,8 @@ npx @anthropic-ai/claude-code</div>
                 <div id="qwen-command-display">
                     <pre><code>python -m venv env
 env\Scripts\activate.bat
-pip install qwen-agent
+npx @qwen-code/qwen-code
 qwen</code></pre>
-                </div>
-                <div style="font-size: .8em;">
-                    After starting the QWEN CLI, you will be prompted for authorization. Select "Qwen OAuth" and then sign up for QWEN. The free tier includes a benefit of 2,000 requests per day.
                 </div>
             </div>
             <div class="cardsection" id="gemini-installation" style="display: none;">
@@ -530,12 +527,12 @@ function initializeOSDetectionPanel() {
             if (selectedOS === 'PC') {
                 qwenContent = `<pre><code>python -m venv env
 env\\Scripts\\activate.bat
-pip install qwen-agent
+npx @qwen-code/qwen-code
 qwen</code></pre>`;
             } else {
                 qwenContent = `<pre><code>python3 -m venv env
 source env/bin/activate
-pip install qwen-agent
+npx @qwen-code/qwen-code
 qwen</code></pre>`;
             }
             
