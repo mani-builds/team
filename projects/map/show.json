@@ -1,8 +1,8 @@
 {
   "cities": {
-    "shortTitle": "Team Location Visits",
-    "listTitle": "Team Location Visits",
-    "dataTitle": "Team Location Visits",
+    "shortTitle": "Location Visits",
+    "listTitle": "Location Visits",
+    "dataTitle": "Location Visits",
     "datatype": "csv",
     "dataset": "cities.csv",
     "markerType": "google",

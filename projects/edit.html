@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Database Edit Test</title>
+    <title id="page-title">Database Edit Test</title>
     <link rel="icon" type="image/x-icon" href="../img/logo/neighborhood/favicon.png">
     <style>
         body {
@@ -110,6 +110,24 @@
         #upIconTray, #sideIcons {
             display: none !important;
         }
+        #connection-status {
+            display: none;
+        }
+        #connection-status.localhost {
+            display: block;
+        }
+        .add-visit-btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
     </style>
     <link type="text/css" href="../../localsite/css/base.css" rel="stylesheet" />
     <script type="text/javascript" src="../../localsite/js/localsite.js?showheader=true&showsearch=false"></script>
@@ -149,7 +167,7 @@
         </div>
         <div class="form-field">
             <div class="form-label">Total Participants</div>
-            <div class="form-value"><input type="number" name="total_participants"></div>
+            <div class="form-value"><input type="number" name="total_participants" value="1"></div>
         </div>
         <div class="form-field">
             <div class="form-label">Status</div>
@@ -168,7 +186,7 @@
             <div class="form-label">End Date</div>
             <div class="form-value"><input type="date" name="estimated_end_date"></div>
         </div>
-        <button type="submit" class="btn btn-primary">Submit</button>
+        <button type="submit" class="btnX btn-primary add-visit-btn">Submit</button>
     </form>
     
     <div id="form-result"></div>
@@ -177,20 +195,25 @@
 <script>
     // Check database connection and load tables
     async function checkConnection() {
-        try {
-            const response = await fetch(`${API_BASE}/health`);
-            const data = await response.json();
+        // Only show connection status on localhost
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            document.getElementById('connection-status').classList.add('localhost');
             
-            if (data.database_connected) {
-                document.getElementById('connection-status').innerHTML = 
-                    '<p style="color: green;">✓ Database connected</p>';
-                loadTables();
-            } else {
-                document.getElementById('connection-status').innerHTML = 
-                    `<p style="color: red;">✗ Database connection failed: ${data.error}</p>`;
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.database_connected) {
+                    document.getElementById('connection-status').innerHTML = 
+                        '<p style="color: green;">✓ Database connected</p>';
+                    loadTables();
+                } else {
+                    document.getElementById('connection-status').innerHTML = 
+                        `<p style="color: red;">✗ Database connection failed: ${data.error}</p>`;
+                }
+            } catch (error) {
+                handleApiConnectionError(error, 'connection-status');
             }
-        } catch (error) {
-            handleApiConnectionError(error, 'connection-status');
         }
     }
     
@@ -241,6 +264,11 @@
                     '<p style="color: green;">✓ Project added successfully!</p>';
                 e.target.reset();
                 loadTables(); // Refresh table counts
+                
+                // Redirect to map folder after successful submission
+                setTimeout(() => {
+                    window.location.href = '../map/';
+                }, 1500);
             } else {
                 document.getElementById('form-result').innerHTML = 
                     `<p style="color: red;">✗ Error: ${result.error}</p>`;
@@ -268,6 +296,18 @@
             this.value = handles.join(', ');
         }
     });
+    
+    // Select all content when clicking Total Participants field
+    document.querySelector('input[name="total_participants"]').addEventListener('click', function() {
+        this.select();
+    });
+    
+    // Check URL parameters and update title if needed
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('add') === 'visit') {
+        document.getElementById('page-title').textContent = 'Add City Visit';
+        document.querySelector('h1').textContent = 'Add City Visit';
+    }
     
     // Initialize
     checkConnection();
