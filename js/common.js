@@ -335,6 +335,15 @@ npx @anthropic-ai/claude-code</div>
                     </div>
                 </div>
             </div>
+            <div class="cardsection" id="qwen-installation" style="display: none;">
+                <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Qwen CLI Installation:</h4>
+                <div id="qwen-command-display">
+                    <pre><code>python -m venv env
+env\Scripts\activate.bat
+pip install qwen-agent
+qwen</code></pre>
+                </div>
+            </div>
             <div class="cardsection" id="gemini-installation" style="display: none;">
                 <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Gemini CLI Installation:</h4>
                 <div id="gemini-command-display">
@@ -367,10 +376,7 @@ function initializeOSDetectionPanel() {
     const geminiCli = document.getElementById('gemini-cli');
     const cliCommands = document.getElementById('cli-commands');
     const claudeCodeCommands = document.getElementById('claude-code-commands');
-    const qwenInstallation = document.createElement('div');
-    qwenInstallation.id = 'qwen-installation';
-    qwenInstallation.className = 'cardsection';
-    qwenInstallation.style.display = 'none';
+    const qwenInstallation = document.getElementById('qwen-installation');
     const geminiInstallation = document.getElementById('gemini-installation');
     const geminiResources = document.getElementById('gemini-resources');
     const claudeInstallText = document.getElementById('claude-install-text');
@@ -504,27 +510,6 @@ function initializeOSDetectionPanel() {
     
     // Separate function to update Qwen commands based on OS
     function updateQwenCommandsForOS(selectedOS) {
-        // Ensure qwenInstallation div is properly added to the DOM
-        if (!document.getElementById('qwen-installation')) {
-            const panel = document.getElementById('os-detection-panel');
-            if (panel) {
-                // Insert qwenInstallation after claude-code-commands
-                const claudeCommands = document.getElementById('claude-code-commands');
-                if (claudeCommands && claudeCommands.parentNode) {
-                    claudeCommands.parentNode.insertBefore(qwenInstallation, claudeCommands.nextSibling);
-                } else {
-                    panel.appendChild(qwenInstallation);
-                }
-            }
-        }
-
-        // Update content of qwenInstallation
-        qwenInstallation.innerHTML = `
-            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Qwen CLI Installation:</h4>
-            <div id="qwen-command-display"></div>
-        `;
-        qwenInstallation.style.display = 'block';
-
         const qwenCommandDisplay = document.getElementById('qwen-command-display');
         if (qwenCommandDisplay) {
             let qwenContent = '';
@@ -542,6 +527,11 @@ qwen</code></pre>`;
             }
             
             qwenCommandDisplay.innerHTML = qwenContent;
+        }
+        
+        // Show the Qwen installation section
+        if (qwenInstallation) {
+            qwenInstallation.style.display = 'block';
         }
     }
 
