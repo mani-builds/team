@@ -347,6 +347,9 @@ env\Scripts\activate.bat
 pip install qwen-agent
 qwen</code></pre>
                 </div>
+                <div style="font-size: .8em;">
+                    After starting the QWEN CLI, you will be prompted for authorization. Select "Qwen OAuth" and then sign up for QWEN. The free tier includes a benefit of 2,000 requests per day.
+                </div>
             </div>
             <div class="cardsection" id="gemini-installation" style="display: none;">
                 <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Gemini CLI Installation:</h4>
