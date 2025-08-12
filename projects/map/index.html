@@ -259,6 +259,26 @@
             background: white;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .add-visit-btn {
+            position: absolute;
+            right: 16px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .add-visit-btn:hover {
+            background: #0056b3;
         }
 
         .pagination-info {
@@ -1488,6 +1508,8 @@
                         <div class="pagination-info">
                             Page ${currentPage} of ${totalPages}
                         </div>
+                        
+                        <a href="../edit.html?add=visit" class="add-visit-btn">Add Visit</a>
                     </div>
                 `;
             }
