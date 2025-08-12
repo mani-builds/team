@@ -341,11 +341,17 @@ npx @anthropic-ai/claude-code</div>
                     If you haven't installed Qwen yet, install <a href="https://nodejs.org/en/download" target="_blank" style="color: var(--accent-blue); text-decoration: none;">NodeJS 18+</a>, then install Qwen Code CLI with:<br><br>
                     <pre><code>npm install -g @qwen-code/qwen-code@latest</code></pre>
                 </div>
+                <div id="qwen-cli-instructions" style="margin-bottom: 16px;">
+                    Right-click on your "<span id="qwen-repo-name">webroot</span>" repo, open a New Terminal at Folder, and run a virtual environment with Qwen CLI.
+                </div>
                 <div id="qwen-command-display">
                     <pre><code>python -m venv env
 env\Scripts\activate.bat
 pip install qwen-agent
 qwen</code></pre>
+                </div>
+                <div style="font-size: .8em;">
+                    After starting the QWEN CLI, you will be prompted for authorization. Select "Qwen OAuth" and then sign up for QWEN. The free tier includes a benefit of 2,000 requests per day.
                 </div>
             </div>
             <div class="cardsection" id="gemini-installation" style="display: none;">
@@ -411,6 +417,18 @@ function initializeOSDetectionPanel() {
     const repoName = pathSegments.length > 0 ? pathSegments[0] : 'webroot';
     if (repoNameSpan) {
         repoNameSpan.textContent = repoName;
+    }
+    
+    // Update Qwen repo name
+    const qwenRepoNameSpan = document.getElementById('qwen-repo-name');
+    if (qwenRepoNameSpan) {
+        qwenRepoNameSpan.textContent = repoName;
+    }
+    
+    // Update Qwen repo name
+    const qwenRepoNameSpan = document.getElementById('qwen-repo-name');
+    if (qwenRepoNameSpan) {
+        qwenRepoNameSpan.textContent = repoName;
     }
     
     // Load saved CLI preferences
