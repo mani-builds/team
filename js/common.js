@@ -296,6 +296,10 @@ function createOSDetectionPanel(containerId) {
                         <span>Claude Code CLI (Recommended)</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+                        <input type="checkbox" id="qwen-cli" style="margin: 0;">
+                        <span>Qwen CLI</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
                         <input type="checkbox" id="gemini-cli" style="margin: 0;">
                         <span>Gemini CLI (Not mature yet)</span>
                     </label>
@@ -359,9 +363,14 @@ function initializeOSDetectionPanel() {
     const osSelect = document.getElementById('os');
     const osInfo = document.getElementById('os-info');
     const claudeCodeCli = document.getElementById('claude-code-cli');
+    const qwenCli = document.getElementById('qwen-cli');
     const geminiCli = document.getElementById('gemini-cli');
     const cliCommands = document.getElementById('cli-commands');
     const claudeCodeCommands = document.getElementById('claude-code-commands');
+    const qwenInstallation = document.createElement('div');
+    qwenInstallation.id = 'qwen-installation';
+    qwenInstallation.className = 'cardsection';
+    qwenInstallation.style.display = 'none';
     const geminiInstallation = document.getElementById('gemini-installation');
     const geminiResources = document.getElementById('gemini-resources');
     const claudeInstallText = document.getElementById('claude-install-text');
@@ -396,6 +405,7 @@ function initializeOSDetectionPanel() {
     
     // Load saved CLI preferences
     const savedClaudeCode = localStorage.getItem('claude-code-cli-installed');
+    const savedQwen = localStorage.getItem('qwen-cli-installed');
     const savedGemini = localStorage.getItem('gemini-cli-installed');
     const savedInstallStatus = localStorage.getItem('claude-install-status');
     
@@ -406,6 +416,9 @@ function initializeOSDetectionPanel() {
         } else if (savedClaudeCode === 'true') {
             claudeCodeCli.checked = true;
         }
+    }
+    if (qwenCli && savedQwen === 'true') {
+        qwenCli.checked = true;
     }
     if (geminiCli && savedGemini === 'true') {
         geminiCli.checked = true;
@@ -437,6 +450,7 @@ function initializeOSDetectionPanel() {
     function updateCliCommands() {
         const selectedOS = osSelect.value;
         const claudeCodeChecked = claudeCodeCli ? claudeCodeCli.checked : false;
+        const qwenChecked = qwenCli ? qwenCli.checked : false;
         const geminiChecked = geminiCli ? geminiCli.checked : false;
         
         // Update title based on number of checked tools
@@ -459,6 +473,20 @@ function initializeOSDetectionPanel() {
             }
         }
         
+        // Handle Qwen CLI section
+        if (qwenChecked) {
+            // Show and expand Qwen installation section
+            expandSection('qwen-installation');
+            
+            // Update Qwen commands based on OS
+            updateQwenCommandsForOS(selectedOS);
+        } else {
+            // Hide Qwen installation section
+            if (qwenInstallation) {
+                qwenInstallation.style.display = 'none';
+            }
+        }
+        
         // Handle Gemini CLI section
         if (geminiChecked) {
             // Show and expand Gemini installation section
@@ -474,6 +502,49 @@ function initializeOSDetectionPanel() {
         }
     }
     
+    // Separate function to update Qwen commands based on OS
+    function updateQwenCommandsForOS(selectedOS) {
+        // Ensure qwenInstallation div is properly added to the DOM
+        if (!document.getElementById('qwen-installation')) {
+            const panel = document.getElementById('os-detection-panel');
+            if (panel) {
+                // Insert qwenInstallation after claude-code-commands
+                const claudeCommands = document.getElementById('claude-code-commands');
+                if (claudeCommands && claudeCommands.parentNode) {
+                    claudeCommands.parentNode.insertBefore(qwenInstallation, claudeCommands.nextSibling);
+                } else {
+                    panel.appendChild(qwenInstallation);
+                }
+            }
+        }
+
+        // Update content of qwenInstallation
+        qwenInstallation.innerHTML = `
+            <h4 style="margin: 0 0 8px 0; color: var(--text-primary);">Qwen CLI Installation:</h4>
+            <div id="qwen-command-display"></div>
+        `;
+        qwenInstallation.style.display = 'block';
+
+        const qwenCommandDisplay = document.getElementById('qwen-command-display');
+        if (qwenCommandDisplay) {
+            let qwenContent = '';
+            
+            if (selectedOS === 'PC') {
+                qwenContent = `<pre><code>python -m venv env
+env\\Scripts\\activate.bat
+pip install qwen-agent
+qwen</code></pre>`;
+            } else {
+                qwenContent = `<pre><code>python3 -m venv env
+source env/bin/activate
+pip install qwen-agent
+qwen</code></pre>`;
+            }
+            
+            qwenCommandDisplay.innerHTML = qwenContent;
+        }
+    }
+
     // Separate function to update Gemini commands based on OS
     function updateGeminiCommandsForOS(selectedOS) {
         const geminiCommandDisplay = document.getElementById('gemini-command-display');
@@ -552,6 +623,13 @@ npx @anthropic-ai/claude-code</code></pre>`;
         });
     }
     
+    if (qwenCli) {
+        qwenCli.addEventListener('change', function() {
+            localStorage.setItem('qwen-cli-installed', this.checked);
+            updateCliCommands();
+        });
+    }
+    
     if (geminiCli) {
         geminiCli.addEventListener('change', function() {
             localStorage.setItem('gemini-cli-installed', this.checked);
@@ -605,6 +683,7 @@ npx @anthropic-ai/claude-code</code></pre>`;
     // Make sections collapsible after initialization
     setTimeout(() => {
         makeCollapsible('cli-commands', 'Claude Code CLI Installation');
+        makeCollapsible('qwen-installation', 'Qwen CLI Installation');
         makeCollapsible('gemini-installation', 'Gemini CLI Installation');
         makeCollapsible('gemini-resources', 'AI Insights Key');
     }, 100);
